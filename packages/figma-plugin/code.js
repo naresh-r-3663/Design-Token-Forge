@@ -878,6 +878,33 @@ async function generateComponentFromBlueprint(blueprint) {
   var t2Vars = await buildCollectionVarMap('T2 Surface Context Tokens');
   var t3Vars = await buildCollectionVarMap('T3 Status Context Tokens');
 
+  /* ── Step 2a: Normalize legacy T2 variable names ────────────
+     Older project files have T2 vars named `default/component/bg` and
+     `default/component/outline` (no -default suffix). The blueprint's
+     state-Default overrides reference `…-default` to be symmetric with
+     `-hover`/`-pressed`. Rename in-place (preserves variable IDs and all
+     bindings) so legacy files self-heal on every plugin run. */
+  var t2Aliases = [
+    { from: 'default/component/bg',      to: 'default/component/bg-default' },
+    { from: 'default/component/outline', to: 'default/component/outline-default' }
+  ];
+  for (var ai2 = 0; ai2 < t2Aliases.length; ai2++) {
+    var fromName = t2Aliases[ai2].from;
+    var toName = t2Aliases[ai2].to;
+    if (t2Vars[fromName] && !t2Vars[toName]) {
+      try {
+        t2Vars[fromName].name = toName;
+        t2Vars[toName] = t2Vars[fromName];
+        delete t2Vars[fromName];
+        log('Renamed T2 var: ' + fromName + ' → ' + toName);
+        stats.bindings++;
+      } catch (rne) {
+        log('Failed to rename T2 var ' + fromName + ': ' + rne.message);
+      }
+    }
+  }
+
+
   var csCount = Object.keys(compSizeVars).length;
   var t2Count = Object.keys(t2Vars).length;
   var t3Count = Object.keys(t3Vars).length;
