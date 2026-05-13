@@ -1031,7 +1031,7 @@ async function generateComponentFromBlueprint(blueprint) {
     if (child.type === 'COMPONENT_SET' && child.name.indexOf('button/') === 0) {
       child.remove(); continue;
     }
-    if (child.type === 'COMPONENT' && child.name === 'DTF/Icon/Placeholder') {
+    if (child.type === 'COMPONENT' && (child.name === 'Icon/Placeholder' || child.name === 'DTF/Icon/Placeholder')) {
       child.remove(); continue;
     }
     if (child.type === 'TEXT' && (child.name.indexOf('MASTER ') === 0 || child.name.indexOf('VARIANT ') === 0 || child.name === 'Icon Primitive' || child.name.indexOf('DTF-') === 0)) {
@@ -1295,7 +1295,15 @@ async function generateComponentFromBlueprint(blueprint) {
   figma.ui.postMessage({ type: 'gen-progress', text: 'Building icon placeholder…' });
 
   var iconPlaceholder = figma.createComponent();
-  iconPlaceholder.name = 'DTF/Icon/Placeholder';
+  iconPlaceholder.name = 'Icon/Placeholder';
+  iconPlaceholder.description =
+    'Default icon placeholder used by every Button master as the INSTANCE_SWAP target.\n\n' +
+    'REPLACE THIS with your own icon component (e.g. from Lucide, Phosphor, Material Symbols, ' +
+    'or your in-house icon library). Any component with the same 1:1 frame can be swapped in via ' +
+    'the right-panel "Icon" property on a button instance.\n\n' +
+    'Sizing is controlled by the button\u2019s comp-size variables (icon container) \u2014 the icon ' +
+    'inherits the slot size and color automatically. Use a vector with `constraints: SCALE` so it ' +
+    'fills the swap target cleanly.';
   iconPlaceholder.resize(20, 20);
   iconPlaceholder.clipsContent = true;
   iconPlaceholder.fills = [];
