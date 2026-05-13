@@ -674,7 +674,7 @@ async function tryBindVar(node, field, variable) {
 
 var BUTTON_BLUEPRINT = {
   name: 'Button',
-  description: 'A multi-purpose button supporting 4 structures (Fill, Outlined, Ghost, Fill & Outline), 10 density sizes, icon + text slots, and full state coverage. Uses comp-size variables for spacing and T2/T3 context tokens for color.',
+  description: 'A multi-purpose button supporting 4 structures (Filled, Outlined, Ghost, Fill & Outline), 10 density sizes, icon + text slots, and full state coverage. Uses comp-size variables for spacing and T2/T3 context tokens for color.',
 
   /* Master component layouts (TIER 1)
      Each master defines: slots, rootPAlign, and slot-specific overrides.
@@ -691,7 +691,7 @@ var BUTTON_BLUEPRINT = {
       rootPAlign: 'MIN',
       iconWrapperPAlign: 'MIN'
     },
-    'Text button': {
+    'Text Button': {
       slots: ['textWrapper'],
       rootPAlign: 'MIN'
     },
@@ -731,49 +731,49 @@ var BUTTON_BLUEPRINT = {
   masterContentColor: 'default/content/default',
 
   /* Variant axes */
-  types:  ['Fill', 'outlined', 'ghost', 'Fill & Outline'],
-  states: ['default', 'hover', 'pressed', 'pressed (themed)', 'focus', 'disabled'],
+  types:  ['Filled', 'Outlined', 'Ghost', 'Fill & Outline'],
+  states: ['Default', 'Hover', 'Pressed', 'Pressed (Themed)', 'Focus', 'Disabled'],
 
   /* Color overrides per Type × State applied on the INSTANCE inside each variant.
      String values = T2 Surface Context path.
      { t3: path } = T3 Status Context path.
      text/icon overrides only needed when differing from master default.        */
   stateOverrides: {
-    'Fill': {
-      'default':          { fill: 'default/component/bg' },
-      'hover':            { fill: 'default/component/bg-hover' },
-      'pressed':          { fill: 'default/component/bg-pressed' },
-      'pressed (themed)': { fill: { t3: 'container/bg' }, stroke: { t3: 'component/outline-default' }, strokeWeight: 1,
+    'Filled': {
+      'Default':          { fill: 'default/component/bg' },
+      'Hover':            { fill: 'default/component/bg-hover' },
+      'Pressed':          { fill: 'default/component/bg-pressed' },
+      'Pressed (Themed)': { fill: { t3: 'container/bg' }, stroke: { t3: 'component/outline-default' }, strokeWeight: 1,
                             text: { t3: 'oncontainer-content/default' }, icon: { t3: 'oncontainer-content/default' } },
-      'focus':            { fill: 'default/component/bg', stroke: { t3: 'component/outline-default' }, strokeWeight: 2 },
-      'disabled':         { fill: 'default/component/bg', componentOpacity: 0.3 }
+      'Focus':            { fill: 'default/component/bg', stroke: { t3: 'component/outline-default' }, strokeWeight: 2 },
+      'Disabled':         { fill: 'default/component/bg', componentOpacity: 0.3 }
     },
-    'outlined': {
-      'default':          { stroke: 'default/component/outline', strokeWeight: 1 },
-      'hover':            { fill: 'default/component/bg-hover', stroke: 'default/component/outline', strokeWeight: 1 },
-      'pressed':          { fill: 'default/component/bg-pressed', stroke: 'default/component/outline', strokeWeight: 1 },
-      'pressed (themed)': { fill: { t3: 'container/bg' }, stroke: { t3: 'component/outline-default' }, strokeWeight: 1,
+    'Outlined': {
+      'Default':          { stroke: 'default/component/outline', strokeWeight: 1 },
+      'Hover':            { fill: 'default/component/bg-hover', stroke: 'default/component/outline', strokeWeight: 1 },
+      'Pressed':          { fill: 'default/component/bg-pressed', stroke: 'default/component/outline', strokeWeight: 1 },
+      'Pressed (Themed)': { fill: { t3: 'container/bg' }, stroke: { t3: 'component/outline-default' }, strokeWeight: 1,
                             text: { t3: 'oncontainer-content/default' }, icon: { t3: 'oncontainer-content/default' } },
-      'focus':            { stroke: { t3: 'component/outline-default' }, strokeWeight: 2 },
-      'disabled':         { stroke: 'default/component/outline', strokeWeight: 1, componentOpacity: 0.3 }
+      'Focus':            { stroke: { t3: 'component/outline-default' }, strokeWeight: 2 },
+      'Disabled':         { stroke: 'default/component/outline', strokeWeight: 1, componentOpacity: 0.3 }
     },
-    'ghost': {
-      'default':          {},
-      'hover':            { fill: 'default/component/bg-hover' },
-      'pressed':          { fill: 'default/component/bg-pressed' },
-      'pressed (themed)': { fill: { t3: 'container/bg' }, stroke: { t3: 'component/outline-default' }, strokeWeight: 1,
+    'Ghost': {
+      'Default':          {},
+      'Hover':            { fill: 'default/component/bg-hover' },
+      'Pressed':          { fill: 'default/component/bg-pressed' },
+      'Pressed (Themed)': { fill: { t3: 'container/bg' }, stroke: { t3: 'component/outline-default' }, strokeWeight: 1,
                             text: { t3: 'oncontainer-content/default' }, icon: { t3: 'oncontainer-content/default' } },
-      'focus':            { stroke: { t3: 'component/outline-default' }, strokeWeight: 2 },
-      'disabled':         { componentOpacity: 0.3 }
+      'Focus':            { stroke: { t3: 'component/outline-default' }, strokeWeight: 2 },
+      'Disabled':         { componentOpacity: 0.3 }
     },
     'Fill & Outline': {
-      'default':          { fill: 'default/component/bg', stroke: 'default/component/outline', strokeWeight: 1 },
-      'hover':            { fill: 'default/component/bg-hover', stroke: 'default/component/outline', strokeWeight: 1 },
-      'pressed':          { fill: 'default/component/bg-pressed', stroke: 'default/component/outline', strokeWeight: 1 },
-      'pressed (themed)': { fill: { t3: 'container/bg' }, stroke: { t3: 'component/outline-default' }, strokeWeight: 1,
+      'Default':          { fill: 'default/component/bg', stroke: 'default/component/outline', strokeWeight: 1 },
+      'Hover':            { fill: 'default/component/bg-hover', stroke: 'default/component/outline', strokeWeight: 1 },
+      'Pressed':          { fill: 'default/component/bg-pressed', stroke: 'default/component/outline', strokeWeight: 1 },
+      'Pressed (Themed)': { fill: { t3: 'container/bg' }, stroke: { t3: 'component/outline-default' }, strokeWeight: 1,
                             text: { t3: 'oncontainer-content/default' }, icon: { t3: 'oncontainer-content/default' } },
-      'focus':            { fill: 'default/component/bg', stroke: { t3: 'component/outline-default' }, strokeWeight: 2 },
-      'disabled':         { fill: 'default/component/bg', stroke: 'default/component/outline', strokeWeight: 1, componentOpacity: 0.3 }
+      'Focus':            { fill: 'default/component/bg', stroke: { t3: 'component/outline-default' }, strokeWeight: 2 },
+      'Disabled':         { fill: 'default/component/bg', stroke: 'default/component/outline', strokeWeight: 1, componentOpacity: 0.3 }
     }
   }
 };
@@ -1592,7 +1592,7 @@ async function generateComponentFromBlueprint(blueprint) {
   }
 
   var masterFrame = figma.createFrame();
-  masterFrame.name = 'Master/ Buttons/ ' + BP.name;
+  masterFrame.name = BP.name + ' / Masters';
   masterFrame.fills = [];
   masterFrame.resize(600, 80);
   masterFrame.clipsContent = false;
@@ -1607,7 +1607,7 @@ async function generateComponentFromBlueprint(blueprint) {
 
     /* Create master component */
     var master = figma.createComponent();
-    master.name = 'mc/' + masterName;
+    master.name = 'mc / ' + masterName;
     master.description = BP.description || '';
     master.resize(120, 32);
     master.layoutMode = 'HORIZONTAL';
@@ -1893,7 +1893,7 @@ async function generateComponentFromBlueprint(blueprint) {
   for (var mci = 0; mci < masterNames.length; mci++) {
     var mName = masterNames[mci];
     var masterComp = masterComponents[mName];
-    var setDisplayName = 'button/ ' + mName.toLowerCase();
+    var setDisplayName = BP.name + ' / ' + mName;
 
     var components = []; /* { component, type, state } */
 
@@ -2035,9 +2035,9 @@ async function generateComponentFromBlueprint(blueprint) {
 
       for (var rj = 0; rj < components.length; rj++) {
         if (components[rj].type !== rType) continue;
-        if (components[rj].state === 'default') defaultComp = components[rj].component;
-        if (components[rj].state === 'hover')   hoverComp = components[rj].component;
-        if (components[rj].state === 'pressed') pressedComp = components[rj].component;
+        if (components[rj].state === 'Default') defaultComp = components[rj].component;
+        if (components[rj].state === 'Hover')   hoverComp = components[rj].component;
+        if (components[rj].state === 'Pressed') pressedComp = components[rj].component;
       }
 
       if (defaultComp) {
