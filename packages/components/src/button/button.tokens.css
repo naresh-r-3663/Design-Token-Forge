@@ -149,8 +149,8 @@
   /* Icon-only symmetric edge padding (used for both L and R in icon-only buttons) */
   --btn-icon-pad-micro: var(--spacing-3);
   --btn-icon-pad-tiny: var(--spacing-4);
-  --btn-icon-pad-small: var(--spacing-5);
-  --btn-icon-pad-base: var(--spacing-6);
+  --btn-icon-pad-small: var(--spacing-6);
+  --btn-icon-pad-base: var(--spacing-8);
   --btn-icon-pad-medium: var(--spacing-8);
   --btn-icon-pad-large: var(--spacing-8);
   --btn-icon-pad-big: var(--spacing-10);

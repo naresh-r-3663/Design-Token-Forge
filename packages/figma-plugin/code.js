@@ -972,7 +972,7 @@ async function generateComponentFromBlueprint(blueprint) {
   var requiredVars = [
     { name: 'button/icon wrapper padding L', defaultVal: 8 },
     { name: 'button/icon wrapper padding R', defaultVal: 8 },
-    { name: 'button/icon pad', defaultVal: 6 }
+    { name: 'button/icon pad', defaultVal: 8 }
   ];
 
   var allCols = await figma.variables.getLocalVariableCollectionsAsync();
@@ -1789,19 +1789,19 @@ async function generateComponentFromBlueprint(blueprint) {
 
     masterFrame.appendChild(master);
     /* Position inside invisible frame (for Figma component panel) */
-    master.x = mi * 240;
+    master.x = mi * 320;
     master.y = 0;
 
     /* Simple label for this master — positioned directly above it */
     var masterLabel = createLabel(masterName, 13, true, COLOR_HEADING);
     masterSec.section.appendChild(masterLabel);
-    masterLabel.x = masterSec.innerX + mi * 240;
+    masterLabel.x = masterSec.innerX + mi * 320;
     masterLabel.y = masterSec.innerY + mHeaderBar.height + 24;
     tryBindFill(masterLabel, t2Vars['default/content/strong']);
 
     var masterSlotBadge = createBadge(masterCfg.slots.join(' + '), COLOR_CM_BG, COLOR_DIMMED);
     masterSec.section.appendChild(masterSlotBadge);
-    masterSlotBadge.x = masterSec.innerX + mi * 240 + masterLabel.width + 12;
+    masterSlotBadge.x = masterSec.innerX + mi * 320 + masterLabel.width + 12;
     masterSlotBadge.y = masterSec.innerY + mHeaderBar.height + 22;
     tryBindFill(masterSlotBadge, t2Vars['default/component/bg']);
     if (masterSlotBadge.children.length > 0) tryBindFill(masterSlotBadge.children[0], t2Vars['default/content/subtle']);
