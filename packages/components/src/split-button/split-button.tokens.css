@@ -114,17 +114,30 @@
   --split-btn-gap-mega:   var(--btn-icon-gap-mega);
   --split-btn-gap-ultra:  var(--btn-icon-gap-ultra);
 
-  /* Trigger zone padding-x — chevron is icon-only, use button's symmetric icon-pad */
-  --split-btn-trigger-padding-x-micro:  var(--btn-icon-pad-micro);
-  --split-btn-trigger-padding-x-tiny:   var(--btn-icon-pad-tiny);
-  --split-btn-trigger-padding-x-small:  var(--btn-icon-pad-small);
-  --split-btn-trigger-padding-x-base:   var(--btn-icon-pad-base);
-  --split-btn-trigger-padding-x-medium: var(--btn-icon-pad-medium);
-  --split-btn-trigger-padding-x-large:  var(--btn-icon-pad-large);
-  --split-btn-trigger-padding-x-big:    var(--btn-icon-pad-big);
-  --split-btn-trigger-padding-x-huge:   var(--btn-icon-pad-huge);
-  --split-btn-trigger-padding-x-mega:   var(--btn-icon-pad-mega);
-  --split-btn-trigger-padding-x-ultra:  var(--btn-icon-pad-ultra);
+  /* Trigger zone padding-x — STRUCTURAL (split-button-owned per Q6).
+     Chevron is a tighter, narrower zone than the action label. Mapped
+     to ~50–65% of action padding-x for visual hierarchy:
+        size    action  trigger
+        micro     4       2
+        tiny      6       4
+        small     8       4
+        base     10       6
+        medium   10       6
+        large    12       8
+        big      14       8
+        huge     14      10
+        mega     16      10
+        ultra    20      12 */
+  --split-btn-trigger-padding-x-micro:  var(--spacing-2);
+  --split-btn-trigger-padding-x-tiny:   var(--spacing-4);
+  --split-btn-trigger-padding-x-small:  var(--spacing-4);
+  --split-btn-trigger-padding-x-base:   var(--spacing-6);
+  --split-btn-trigger-padding-x-medium: var(--spacing-6);
+  --split-btn-trigger-padding-x-large:  var(--spacing-8);
+  --split-btn-trigger-padding-x-big:    var(--spacing-8);
+  --split-btn-trigger-padding-x-huge:   var(--spacing-10);
+  --split-btn-trigger-padding-x-mega:   var(--spacing-10);
+  --split-btn-trigger-padding-x-ultra:  var(--spacing-12);
 
   /* Width model */
   --split-btn-max-width: none;
