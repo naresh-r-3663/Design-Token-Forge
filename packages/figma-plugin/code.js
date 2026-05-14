@@ -6,7 +6,7 @@
 
 figma.showUI(__html__, { width: 480, height: 560 });
 
-var CODE_VERSION = '2026-05-13-v27';
+var CODE_VERSION = '2026-05-14-v31';
 log('code.js loaded — version ' + CODE_VERSION);
 
 /* ── URL migration via clientStorage (reliable, not blocked like localStorage) ── */
@@ -1846,61 +1846,101 @@ async function generateComponentFromBlueprint(blueprint) {
     log('Created icon placeholder component: ' + iconPlaceholder.id);
   }
 
-  /* ── Chevron icon component (split-button only) ──
-     A real chevron-down vector for the trigger zone. Replaces the generic
-     star placeholder so designers see a real menu indicator and can
-     visually verify alignment (especially in pill/rounded variants).
-     Reuses if present from a prior run. */
+  /* ── Chevron icon component set (split-button only) ──
+     A 4-direction chevron icon set: Down (default), Up, Left, Right.
+     Designers can swap direction via the variant property — useful
+     for split-button menus that flip the chevron when the menu is
+     open (Down → Up), or RTL/right-aligned menus (Right → Left).
+     Reuses if present from a prior run.
+
+     Returns: chevronIcon = the Down variant COMPONENT (for backward
+     compatibility with downstream consumers that need a single
+     COMPONENT id), and chevronIconSet = the parent COMPONENT_SET. */
   var chevronIcon = null;
+  var chevronIconSet = null;
   if (BP.kind === 'wrapper-with-button-instance') {
-    chevronIcon = page.findOne(function(n) {
-      return n.type === 'COMPONENT' && n.name === 'Icon/Chevron Down';
+    /* Look for an existing set first; if not, look for a stale
+       single Chevron Down component from older plugin versions. */
+    chevronIconSet = page.findOne(function(n) {
+      return n.type === 'COMPONENT_SET' && n.name === 'Icon/Chevron';
     });
-    if (!chevronIcon) {
-      chevronIcon = figma.createComponent();
-      chevronIcon.name = 'Icon/Chevron Down';
-      chevronIcon.description = 'Default chevron-down icon used by Split Button triggers. Swap via the "Chevron icon" property.';
-      chevronIcon.resize(20, 20);
-      chevronIcon.clipsContent = true;
-      chevronIcon.fills = [];
-      /* Vector chevron: V-shape pointing down, centered in 20×20.
-         Drawn as a stroked polyline with rounded caps. */
-      try {
-        var chev = figma.createVector();
-        chev.name = 'Vector';
-        chev.x = 0; chev.y = 0;
-        chev.resize(20, 20);
-        chev.constraints = { horizontal: 'SCALE', vertical: 'SCALE' };
-        chev.vectorPaths = [{
-          windingRule: 'NONE',
-          /* Chevron-down V, nudged 1px LEFT of geometric centre.
-             Compensates for the optical illusion in rounded variants
-             where the trigger zone is a D-shape (flat-left, curved-right).
-             Curved corners shift the visual mass leftward; centring the
-             vector geometrically makes it read too far right. */
-          data: 'M 4 7.5 L 9 12.5 L 14 7.5'
-        }];
-        chev.strokes = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 } }];
-        chev.strokeWeight = 1.75;
-        chev.strokeCap = 'ROUND';
-        chev.strokeJoin = 'ROUND';
-        chev.fills = [];
-        var chevColorVar = t2Vars[BP.masterContentColor];
-        if (chevColorVar) {
-          setPaintBoundToVariable(chev, 'strokes', chevColorVar);
-          stats.bindings++;
-        }
-        chevronIcon.appendChild(chev);
-      } catch (cve) {
-        log('Chevron vector creation failed, falling back to star: ' + cve.message);
-        chevronIcon = null; /* generator will fall back to iconPlaceholder */
-      }
-      if (chevronIcon) log('Created chevron icon component: ' + chevronIcon.id);
+    if (chevronIconSet) {
+      chevronIcon = chevronIconSet.children.find(function(c) {
+        return c.type === 'COMPONENT' && c.variantProperties && c.variantProperties.Direction === 'Down';
+      }) || chevronIconSet.children[0];
+      log('Reusing existing chevron icon set: ' + chevronIconSet.id);
     } else {
-      log('Reusing existing chevron icon: ' + chevronIcon.id);
+      /* Path data for each direction. Apex centred at x=9 / y=9
+         (1px LEFT/UP nudge from geometric centre 10) so that swapping
+         Down ↔ Up keeps the apex in the same horizontal position —
+         critical for visual stability when split-button trigger flips
+         from closed to open state.
+         Down/Up share x=9 apex; Left/Right share y=9 apex. */
+      var chevronPaths = {
+        Down:  'M 4 7.5 L 9 12.5 L 14 7.5',
+        Up:    'M 4 12.5 L 9 7.5 L 14 12.5',
+        Left:  'M 12.5 4 L 7.5 9 L 12.5 14',
+        Right: 'M 7.5 4 L 12.5 9 L 7.5 14'
+      };
+      var chevronVariants = [];
+      var chevronDirections = ['Down', 'Up', 'Left', 'Right'];
+      for (var cdi = 0; cdi < chevronDirections.length; cdi++) {
+        var dir = chevronDirections[cdi];
+        var compNode = figma.createComponent();
+        compNode.name = 'Direction=' + dir;
+        compNode.resize(20, 20);
+        compNode.clipsContent = true;
+        compNode.fills = [];
+        try {
+          var chevVec = figma.createVector();
+          chevVec.name = 'Vector';
+          chevVec.x = 0; chevVec.y = 0;
+          chevVec.resize(20, 20);
+          chevVec.constraints = { horizontal: 'SCALE', vertical: 'SCALE' };
+          chevVec.vectorPaths = [{ windingRule: 'NONE', data: chevronPaths[dir] }];
+          chevVec.strokes = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 } }];
+          chevVec.strokeWeight = 1.75;
+          chevVec.strokeCap = 'ROUND';
+          chevVec.strokeJoin = 'ROUND';
+          chevVec.fills = [];
+          var chevColorVar = t2Vars[BP.masterContentColor];
+          if (chevColorVar) {
+            setPaintBoundToVariable(chevVec, 'strokes', chevColorVar);
+            stats.bindings++;
+          }
+          compNode.appendChild(chevVec);
+        } catch (cve) {
+          log('Chevron ' + dir + ' vector creation failed: ' + cve.message);
+        }
+        chevronVariants.push(compNode);
+      }
+      try {
+        chevronIconSet = figma.combineAsVariants(chevronVariants, page);
+        chevronIconSet.name = 'Icon/Chevron';
+        chevronIconSet.description = 'Directional chevron icon (Down / Up / Left / Right). Default = Down. Used by Split Button triggers; flip to Up for active/open state.';
+        /* Auto-layout the variant grid so it presents cleanly. */
+        try {
+          chevronIconSet.layoutMode = 'HORIZONTAL';
+          chevronIconSet.itemSpacing = 16;
+          chevronIconSet.paddingLeft = 16; chevronIconSet.paddingRight = 16;
+          chevronIconSet.paddingTop = 16; chevronIconSet.paddingBottom = 16;
+        } catch (e) { /* combineAsVariants may already auto-layout */ }
+        chevronIcon = chevronVariants[0]; /* Down */
+        log('Created chevron icon set with 4 directions: ' + chevronIconSet.id);
+      } catch (cse) {
+        log('Chevron combineAsVariants failed: ' + cse.message);
+        /* Fall back to single Down component if combine fails */
+        chevronIcon = chevronVariants[0];
+        chevronIcon.name = 'Icon/Chevron Down';
+        for (var cvi = 1; cvi < chevronVariants.length; cvi++) {
+          try { chevronVariants[cvi].remove(); } catch (e) {}
+        }
+        chevronIconSet = null;
+      }
     }
   }
-  /* Resolve which icon to use as the trigger's default child. */
+  /* Resolve which icon to use as the trigger's default child.
+     Always the Down chevron variant (or fallback placeholder). */
   var triggerIconComp = chevronIcon || iconPlaceholder;
 
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2109,13 +2149,21 @@ async function generateComponentFromBlueprint(blueprint) {
   icPreview.appendChild(iconPlaceholder);
   iconPlaceholder.x = 22; iconPlaceholder.y = 22;
 
-  /* If chevron is a separate component (split-button generation), place it
-     beside the placeholder so it has a home and is visible to designers. */
-  if (chevronIcon && chevronIcon !== iconPlaceholder) {
+  /* If a chevron icon set was created (split-button generation), place it
+     beside the placeholder so designers see all 4 directions and can
+     visually verify alignment + the variant property mechanism. */
+  if (chevronIconSet) {
+    icPreview.appendChild(chevronIconSet);
+    chevronIconSet.x = 22 + 20 + 24; /* placeholder right edge + gap */
+    chevronIconSet.y = 22;
+    /* Widen preview to fit placeholder + 4-direction chevron set.
+       Set width grows with auto-layout; rough estimate: 4×20 + 3×16 + 2×16 = 160 */
+    try { icPreview.resize(22 + 20 + 24 + chevronIconSet.width + 22, Math.max(icPreview.height, chevronIconSet.height + 44)); } catch (e) {}
+  } else if (chevronIcon && chevronIcon !== iconPlaceholder) {
+    /* Fallback path when combineAsVariants failed — single chevron component */
     icPreview.appendChild(chevronIcon);
-    chevronIcon.x = 22 + 20 + 24; /* placeholder right edge + gap */
+    chevronIcon.x = 22 + 20 + 24;
     chevronIcon.y = 22;
-    /* Widen preview to fit both icons */
     try { icPreview.resize(20 + 24 + 20 + 22 * 2, icPreview.height); } catch (e) {}
   }
 
@@ -2888,6 +2936,28 @@ async function generateComponentFromBlueprint(blueprint) {
             await applyZoneOverrides(actionChild,  actionOv);
             await applyZoneOverrides(triggerChild, triggerOv);
 
+            /* ── Chevron direction flip on "open" states ──
+               When the trigger is pressed (menu open) or the split-button is
+               in Selected state, flip the chevron from Down → Up so the icon
+               communicates the menu's open state. Apex is preserved across
+               the swap (both Down and Up have apex at x=9, see chevron set
+               creation), so there's no visual jitter.
+               Idempotent: only acts when the chevron icon is the variant set
+               (chevronIconSet present); silently no-ops when fallback single
+               chevron is in use. */
+            if (triggerChild && chevronIconSet && (stateName === 'Trigger Pressed' || stateName === 'Selected')) {
+              try {
+                var chevInst = triggerChild.findOne(function(n) {
+                  return n.type === 'INSTANCE' && n.name === 'Chevron';
+                });
+                if (chevInst && chevInst.componentProperties && chevInst.componentProperties.Direction) {
+                  chevInst.setProperties({ Direction: 'Up' });
+                }
+              } catch (cfe) {
+                log('Chevron flip skipped (' + familyName + '/' + typeName + '/' + stateName + '): ' + cfe.message);
+              }
+            }
+
             /* Divider colour: rebind trigger's left-stroke to track the
                variant's context.
 
@@ -3314,6 +3384,147 @@ var COMPONENT_BLUEPRINTS = {
   'split-button': SPLIT_BUTTON_BLUEPRINT
 };
 
+/* ── Auto-wire prototype interactions on every COMPONENT_SET on the
+   current page. Idempotent — re-running overwrites prior reactions.
+
+   For each set:
+     1. Group child variants by every variant prop EXCEPT 'State'.
+     2. In each group, find Default and wire ON_HOVER → Hover (150ms)
+        and ON_PRESS → Pressed (50ms) sibling variants.
+     3. Sub-zone pass: if Default contains a top-level INSTANCE with
+        named children (e.g. split-button Action/Trigger), wire those
+        children to sibling variants named "<Zone> Hover" / "<Zone> Pressed".
+
+   Returns: { sets, defaults, reactions, subzones, skipped, errors[] } */
+async function wireReactionsForCurrentPage() {
+  /* State → reaction mapping. Order in this map determines wiring priority
+     when multiple states exist (top entries win the trigger slot if
+     conflicting). Triggers explained:
+       Hover    → ON_HOVER       auto-reverts on mouse-out
+       Pressed  → ON_PRESS       auto-reverts on mouse-up
+       Selected → ON_CLICK       persists (toggle-style)
+       Loading  → AFTER_TIMEOUT  used to simulate async transitions
+     Focus / Disabled are intentionally NOT mapped — Figma has no
+     :focus-visible trigger and Disabled is a terminal state. */
+  var stateMap = {
+    'Hover':    { trigger: 'ON_HOVER',       duration: 0.15 },
+    'Pressed':  { trigger: 'ON_PRESS',       duration: 0.05 },
+    'Selected': { trigger: 'ON_CLICK',       duration: 0.10 },
+    'Loading':  { trigger: 'AFTER_TIMEOUT',  duration: 0.20, timeout: 1.0 }
+  };
+  var stats = { sets: 0, defaults: 0, reactions: 0, subzones: 0, skipped: 0, errors: [] };
+
+  function buildRx(destId, duration, triggerType, opts) {
+    var triggerObj = { type: triggerType };
+    /* AFTER_TIMEOUT requires a `timeout` field (seconds). */
+    if (triggerType === 'AFTER_TIMEOUT' && opts && opts.timeout !== undefined) {
+      triggerObj.timeout = opts.timeout;
+    }
+    return {
+      trigger: triggerObj,
+      actions: [{
+        type: 'NODE',
+        destinationId: destId,
+        navigation: 'CHANGE_TO',
+        transition: { type: 'DISSOLVE', duration: duration, easing: { type: 'EASE_IN_AND_OUT' } }
+      }]
+    };
+  }
+
+  var sets = figma.currentPage.findAllWithCriteria({ types: ['COMPONENT_SET'] });
+
+  for (var si = 0; si < sets.length; si++) {
+    var cs = sets[si];
+    stats.sets++;
+
+    /* Group child variants by every variant property EXCEPT State */
+    var groups = {};
+    for (var ci = 0; ci < cs.children.length; ci++) {
+      var v = cs.children[ci];
+      if (v.type !== 'COMPONENT') continue;
+      var vp = v.variantProperties || {};
+      if (!vp.State) continue;  /* set has no State axis — skip silently */
+      var keyParts = [];
+      var keys = Object.keys(vp).sort();
+      for (var ki = 0; ki < keys.length; ki++) {
+        if (keys[ki] === 'State') continue;
+        keyParts.push(keys[ki] + '=' + vp[keys[ki]]);
+      }
+      var groupKey = keyParts.join('|') || '_default';
+      if (!groups[groupKey]) groups[groupKey] = {};
+      groups[groupKey][vp.State] = v;
+    }
+
+    var groupKeys = Object.keys(groups);
+    if (groupKeys.length === 0) {
+      stats.skipped++;
+      continue;
+    }
+
+    for (var gi = 0; gi < groupKeys.length; gi++) {
+      var byState = groups[groupKeys[gi]];
+      var defaultV = byState['Default'];
+      if (!defaultV) {
+        var stateNames = Object.keys(byState);
+        if (stateNames.length === 0) continue;
+        defaultV = byState[stateNames[0]];
+      }
+
+      /* ── Top-level reactions on the Default variant ── */
+      var rx = [];
+      var stateNamesAll = Object.keys(stateMap);
+      for (var sni = 0; sni < stateNamesAll.length; sni++) {
+        var sName = stateNamesAll[sni];
+        var dest = byState[sName];
+        if (!dest || dest.id === defaultV.id) continue;
+        rx.push(buildRx(dest.id, stateMap[sName].duration, stateMap[sName].trigger, stateMap[sName]));
+      }
+
+      if (rx.length > 0) {
+        try {
+          await defaultV.setReactionsAsync(rx);
+          stats.defaults++;
+          stats.reactions += rx.length;
+        } catch (re) {
+          stats.errors.push(cs.name + ' / ' + groupKeys[gi] + ': ' + re.message);
+        }
+      }
+
+      /* ── Sub-zone reactions (e.g. split-button Action / Trigger) ── */
+      var hostInst = defaultV.findOne(function(n) { return n.type === 'INSTANCE'; });
+      if (!hostInst || hostInst.children.length === 0) continue;
+
+      for (var zi = 0; zi < hostInst.children.length; zi++) {
+        var zone = hostInst.children[zi];
+        if (!zone.name) continue;
+        var zoneRx = [];
+        for (var sji = 0; sji < stateNamesAll.length; sji++) {
+          var zSName = stateNamesAll[sji];
+          var zoneStateName = zone.name + ' ' + zSName;
+          var zoneDestVariant = byState[zoneStateName];
+          if (!zoneDestVariant) continue;
+          var zoneDestInst = zoneDestVariant.findOne(function(n) { return n.type === 'INSTANCE'; });
+          if (!zoneDestInst) continue;
+          var destZone = zoneDestInst.findOne(function(n) { return n.name === zone.name; });
+          if (!destZone) continue;
+          zoneRx.push(buildRx(zoneDestVariant.id, stateMap[zSName].duration, stateMap[zSName].trigger, stateMap[zSName]));
+        }
+        if (zoneRx.length > 0) {
+          try {
+            await zone.setReactionsAsync(zoneRx);
+            stats.subzones++;
+            stats.reactions += zoneRx.length;
+          } catch (re) {
+            stats.errors.push(cs.name + ' / zone ' + zone.name + ': ' + re.message);
+          }
+        }
+      }
+    }
+  }
+
+  return stats;
+}
+
 /* ── Message handler ─────────────────────────────────────── */
 
 figma.ui.onmessage = async function(msg) {
@@ -3452,6 +3663,25 @@ figma.ui.onmessage = async function(msg) {
         }
       }
 
+      /* Auto-wire any component sets on the page that don't already have
+         hover/press reactions. Idempotent — safe to call after every
+         generation. Catches sets where state-name conventions weren't
+         covered by the per-blueprint wiring loop. */
+      figma.ui.postMessage({ type: 'gen-progress', text: 'Auto-wiring prototype interactions…' });
+      try {
+        var wireStats = await wireReactionsForCurrentPage();
+        allStats.reactions += wireStats.reactions;
+        for (var wei = 0; wei < wireStats.errors.length; wei++) {
+          allStats.errors.push('Wire: ' + wireStats.errors[wei]);
+        }
+        log('Auto-wired ' + wireStats.reactions + ' reactions across ' +
+          wireStats.sets + ' sets (' + wireStats.defaults + ' defaults, ' +
+          wireStats.subzones + ' sub-zones)');
+      } catch (we) {
+        log('Auto-wire pass failed: ' + we.message);
+        allStats.errors.push('Auto-wire: ' + we.message);
+      }
+
       figma.ui.postMessage({ type: 'gen-done', stats: allStats });
       figma.notify(
         'DTF: Generated ' + allStats.components + ' component variants, ' +
@@ -3464,6 +3694,12 @@ figma.ui.onmessage = async function(msg) {
       log('Component gen error: ' + e.message);
     }
   }
+
+  /* ── Auto-wire Prototype Interactions ────────────────────
+     Defined as a module-level helper (wireReactionsForCurrentPage)
+     and invoked automatically at the end of every component-generation
+     pass — see the 'generate-components' handler above. No manual
+     trigger needed. */
 
   /* Check prerequisite status for component generation */
   if (msg.type === 'check-gen-prereqs') {
