@@ -7,26 +7,6 @@
 /* ── Light Theme (default) ────────────────────────────── */
 :root {
 
-  /* ── BRAND (aliased to PRIMARY — set distinct hexes here to override) ── */
-  --brand-content-default:           var(--primary-content-default);
-  --brand-content-strong:            var(--primary-content-strong);
-  --brand-content-subtle:            var(--primary-content-subtle);
-  --brand-content-faint:             var(--primary-content-faint);
-  --brand-component-bg-default:      var(--primary-component-bg-default);
-  --brand-component-bg-hover:        var(--primary-component-bg-hover);
-  --brand-component-bg-pressed:      var(--primary-component-bg-pressed);
-  --brand-component-outline-default: var(--primary-component-outline-default);
-  --brand-component-outline-hover:   var(--primary-component-outline-hover);
-  --brand-component-outline-pressed: var(--primary-component-outline-pressed);
-  --brand-component-separator:       var(--primary-component-separator);
-  --brand-container-bg:              var(--primary-container-bg);
-  --brand-container-hover:           var(--primary-container-hover);
-  --brand-container-pressed:         var(--primary-container-pressed);
-  --brand-container-outline:         var(--primary-container-outline);
-  --brand-container-separator:       var(--primary-container-separator);
-  --brand-on-component:              var(--primary-on-component);
-  --brand-on-container:              var(--primary-on-container);
-
   /* ── DANGER ─────────────────────────────────── */
   --danger-content-default: #C90314;
   --danger-content-strong: #B3010F;
@@ -231,26 +211,6 @@
   --success-container-separator: #044C12;
   --success-on-component: #FFFFFF;
   --success-on-container: #A9F3AB;
-
-  /* ── BRAND (dark — aliased to PRIMARY) ─────── */
-  --brand-content-default:           var(--primary-content-default);
-  --brand-content-strong:            var(--primary-content-strong);
-  --brand-content-subtle:            var(--primary-content-subtle);
-  --brand-content-faint:             var(--primary-content-faint);
-  --brand-component-bg-default:      var(--primary-component-bg-default);
-  --brand-component-bg-hover:        var(--primary-component-bg-hover);
-  --brand-component-bg-pressed:      var(--primary-component-bg-pressed);
-  --brand-component-outline-default: var(--primary-component-outline-default);
-  --brand-component-outline-hover:   var(--primary-component-outline-hover);
-  --brand-component-outline-pressed: var(--primary-component-outline-pressed);
-  --brand-component-separator:       var(--primary-component-separator);
-  --brand-container-bg:              var(--primary-container-bg);
-  --brand-container-hover:           var(--primary-container-hover);
-  --brand-container-pressed:         var(--primary-container-pressed);
-  --brand-container-outline:         var(--primary-container-outline);
-  --brand-container-separator:       var(--primary-container-separator);
-  --brand-on-component:              var(--primary-on-component);
-  --brand-on-container:              var(--primary-on-container);
 
   /* ── PRIMARY (dark) ─────────────────────────── */
   --primary-content-default: #B8CFFF;
