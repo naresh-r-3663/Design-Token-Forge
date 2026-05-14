@@ -6,7 +6,7 @@
 
 figma.showUI(__html__, { width: 480, height: 560 });
 
-var CODE_VERSION = '2026-05-14-v33';
+var CODE_VERSION = '2026-05-14-v34';
 log('code.js loaded — version ' + CODE_VERSION);
 
 /* ── URL migration via clientStorage (reliable, not blocked like localStorage) ── */
@@ -1873,10 +1873,39 @@ async function generateComponentFromBlueprint(blueprint) {
     chevronIconSet = page.findOne(function(n) {
       return n.type === 'COMPONENT_SET' && n.name === 'Icon/Chevron';
     });
+    /* Detect a broken / zero-size / wrong-arity set from a prior run and
+       force recreation. Without this, a stale empty set keeps getting
+       reused and the showcase preview keeps showing nothing. */
+    if (chevronIconSet) {
+      var brokenChev = (chevronIconSet.children.length !== 4) ||
+                       (chevronIconSet.width < 1) || (chevronIconSet.height < 1);
+      if (brokenChev) {
+        log('Stale Icon/Chevron set detected (children=' + chevronIconSet.children.length + ' size=' + chevronIconSet.width + 'x' + chevronIconSet.height + '); recreating.');
+        try { chevronIconSet.remove(); } catch (e) {}
+        chevronIconSet = null;
+      }
+    }
     if (chevronIconSet) {
       chevronIcon = chevronIconSet.children.find(function(c) {
         return c.type === 'COMPONENT' && c.variantProperties && c.variantProperties.Direction === 'Down';
       }) || chevronIconSet.children[0];
+      /* Repair layout in case the set was created by an older plugin
+         version without auto-layout, or got squished to 0×0 by a prior
+         resize attempt. Without this, the showcase preview shows an
+         empty selection box. */
+      try {
+        chevronIconSet.layoutMode = 'HORIZONTAL';
+        chevronIconSet.itemSpacing = 16;
+        chevronIconSet.paddingLeft = 16; chevronIconSet.paddingRight = 16;
+        chevronIconSet.paddingTop = 16; chevronIconSet.paddingBottom = 16;
+        chevronIconSet.primaryAxisSizingMode = 'AUTO';
+        chevronIconSet.counterAxisSizingMode = 'AUTO';
+        for (var rci = 0; rci < chevronIconSet.children.length; rci++) {
+          var rc = chevronIconSet.children[rci];
+          try { rc.layoutSizingHorizontal = 'FIXED'; rc.layoutSizingVertical = 'FIXED'; } catch (e) {}
+          try { if (rc.width < 16 || rc.height < 16) rc.resize(20, 20); } catch (e) {}
+        }
+      } catch (e) { log('Chevron set layout repair skipped: ' + e.message); }
       log('Reusing existing chevron icon set: ' + chevronIconSet.id);
     } else {
       /* Path data for each direction. Apex centred at x=9 / y=9
@@ -1933,9 +1962,17 @@ async function generateComponentFromBlueprint(blueprint) {
           chevronIconSet.itemSpacing = 16;
           chevronIconSet.paddingLeft = 16; chevronIconSet.paddingRight = 16;
           chevronIconSet.paddingTop = 16; chevronIconSet.paddingBottom = 16;
+          chevronIconSet.primaryAxisSizingMode = 'AUTO';
+          chevronIconSet.counterAxisSizingMode = 'AUTO';
+          for (var ncv = 0; ncv < chevronIconSet.children.length; ncv++) {
+            try {
+              chevronIconSet.children[ncv].layoutSizingHorizontal = 'FIXED';
+              chevronIconSet.children[ncv].layoutSizingVertical = 'FIXED';
+            } catch (e) {}
+          }
         } catch (e) { /* combineAsVariants may already auto-layout */ }
         chevronIcon = chevronVariants[0]; /* Down */
-        log('Created chevron icon set with 4 directions: ' + chevronIconSet.id);
+        log('Created chevron icon set with 4 directions: ' + chevronIconSet.id + ' size=' + chevronIconSet.width + 'x' + chevronIconSet.height);
       } catch (cse) {
         log('Chevron combineAsVariants failed: ' + cse.message);
         /* Fall back to single Down component if combine fails */
