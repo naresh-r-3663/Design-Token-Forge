@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="../packages/components/src/toggle/toggle.css">
 <link rel="stylesheet" href="../packages/components/src/checkbox/checkbox.tokens.css">
 <link rel="stylesheet" href="../packages/components/src/checkbox/checkbox.css">
-<link rel="stylesheet" href="shared.css?v=20260514j">
+<link rel="stylesheet" href="shared.css?v=20260514k">
 <style id="dynamicTokens"></style>
 <style>
 /* ════════════════════════════════════════════════════════════
@@ -932,6 +932,9 @@ function initRoles() {
   // Restore custom roles from config (handles both slug IDs and legacy custom-N IDs)
   if (projectConfig && projectConfig.customRoles) {
     projectConfig.customRoles.forEach(function(cr) {
+      // Migrate legacy id/label: primary→brand, secondary→neutral
+      if (cr.id === 'primary')   { cr.id = 'brand';   if (cr.label === 'Primary')   cr.label = 'Brand'; }
+      if (cr.id === 'secondary') { cr.id = 'neutral'; if (cr.label === 'Secondary') cr.label = 'Neutral'; }
       var id = cr.id;
       // Migrate legacy custom-N IDs to label-based slugs
       if (/^custom-\d+$/.test(id) && cr.label) {
@@ -2160,6 +2163,23 @@ function buildSaveableConfig() {
 }
 
 function migrateCustomIds(rolesList, surfPalSrc) {
+  // Migrate legacy role IDs/labels: primary→brand, secondary→neutral
+  // (canonical naming per Figma plugin). Runs before custom-N migration.
+  var LEGACY_ROLE_RENAMES = { primary: 'brand', secondary: 'neutral' };
+  var LEGACY_LABEL_RENAMES = { Primary: 'Brand', Secondary: 'Neutral' };
+  rolesList.forEach(function(r) {
+    if (LEGACY_ROLE_RENAMES[r.id]) {
+      var oldId = r.id;
+      var newId = LEGACY_ROLE_RENAMES[r.id];
+      r.id = newId;
+      if (surfPalSrc) {
+        SURF_NAMES.forEach(function(sn) {
+          if (surfPalSrc[sn] === oldId) surfPalSrc[sn] = newId;
+        });
+      }
+    }
+    if (LEGACY_LABEL_RENAMES[r.label]) r.label = LEGACY_LABEL_RENAMES[r.label];
+  });
   // Force-migrate any custom-N IDs → label slugs everywhere
   rolesList.forEach(function(r) {
     if (r.type === 'custom' && /^custom-\d+$/.test(r.id) && r.label) {
