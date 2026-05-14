@@ -6,7 +6,7 @@
 
 figma.showUI(__html__, { width: 480, height: 560 });
 
-var CODE_VERSION = '2026-05-14-v41';
+var CODE_VERSION = '2026-05-14-v42';
 log('code.js loaded — version ' + CODE_VERSION);
 
 /* ── URL migration via clientStorage (reliable, not blocked like localStorage) ── */
@@ -1465,6 +1465,24 @@ async function generateComponentFromBlueprint(blueprint) {
   }
   await figma.setCurrentPageAsync(page);
 
+  /* ── Owner stamp helpers ─────────────────────────────────
+     Every node we create gets stamped with pluginData. Cleanup only
+     removes nodes carrying our own stamp — protects user-built nodes
+     that happen to share a name prefix with our blueprint (e.g. a
+     hand-built "Button" component-set or a "Button Library" section). */
+  function ownedByThisBP(node) {
+    if (!node || !node.getPluginData) return false;
+    return node.getPluginData('dtf-owner') === BP.name;
+  }
+  function stampOwner(node) {
+    if (node && node.setPluginData) {
+      node.setPluginData('dtf-owner', BP.name);
+      node.setPluginData('dtf-generated', '1');
+    }
+  }
+  /* Expose for the rest of generateComponentFromBlueprint */
+  BP.__stampOwner = stampOwner;
+
   /* ── Step 4: Clean up existing ───────────────────────────
      IMPORTANT: only remove things specific to the CURRENT blueprint.
      For wrapper-with-button-instance kinds (split-button), do NOT touch
@@ -1498,9 +1516,11 @@ async function generateComponentFromBlueprint(blueprint) {
       var legacyName = (child.name === 'Tier 1 \u2014 Masters' ||
                         child.name === 'Tier 2 \u2014 Variants' ||
                         child.name === 'Icon Primitive');
-      var matchesBP = (child.name.indexOf(BP.name) === 0) ||
-                      (child.name.indexOf('DTF / ' + BP.name) === 0) ||
-                      (!isWrapperKind && child.name.indexOf('DTF /') === 0) ||
+      /* SAFE removal rule: must carry our stamp OR be a legacy-named
+         section that demonstrably contains one of OUR masters.
+         The bare BP-name prefix match (which used to nuke any user
+         section starting with "Button…") is removed. */
+      var matchesBP = ownedByThisBP(child) ||
                       (legacyName && sectionOwnedByThisBP(child));
       if (matchesBP) {
         child.remove();
@@ -1512,22 +1532,23 @@ async function generateComponentFromBlueprint(blueprint) {
     if (child.name === 'Master/ Buttons/ ' + BP.name) {
       child.remove(); continue;
     }
-    if (child.type === 'COMPONENT_SET' && child.name.indexOf(BP.name + ' /') === 0) {
+    if (child.type === 'COMPONENT_SET' && ownedByThisBP(child)) {
       child.remove(); continue;
     }
     /* Icon placeholder is OWNED by button. Only the button generator
-       (non-wrapper kind) is allowed to remove it. */
-    if (!isWrapperKind && child.type === 'COMPONENT' && (child.name === 'Icon/Placeholder' || child.name === 'DTF/Icon/Placeholder')) {
+       (non-wrapper kind) is allowed to remove it, and only if WE created it. */
+    if (!isWrapperKind && child.type === 'COMPONENT' &&
+        (child.name === 'Icon/Placeholder' || child.name === 'DTF/Icon/Placeholder') &&
+        (ownedByThisBP(child) || child.getPluginData('dtf-generated') === '1')) {
       child.remove(); continue;
     }
-    /* Chevron icon is OWNED by split-button. Only the split-button
-       generator (wrapper kind) is allowed to remove it — keep it across
-       button re-runs so split-button doesn't re-create the same component
-       with a new ID. */
-    if (isWrapperKind && child.type === 'COMPONENT' && child.name === 'Icon/Chevron Down') {
+    /* Chevron icon is OWNED by split-button. */
+    if (isWrapperKind && child.type === 'COMPONENT' && child.name === 'Icon/Chevron Down' &&
+        (ownedByThisBP(child) || child.getPluginData('dtf-generated') === '1')) {
       child.remove(); continue;
     }
-    if (child.type === 'TEXT' && (child.name.indexOf('MASTER ') === 0 || child.name.indexOf('VARIANT ') === 0 || child.name === 'Icon Primitive' || child.name.indexOf('DTF-') === 0)) {
+    if (child.type === 'TEXT' && (child.name.indexOf('MASTER ') === 0 || child.name.indexOf('VARIANT ') === 0 || child.name === 'Icon Primitive' || child.name.indexOf('DTF-') === 0) &&
+        (ownedByThisBP(child) || child.getPluginData('dtf-generated') === '1')) {
       child.remove(); continue;
     }
   }
@@ -1800,6 +1821,9 @@ async function generateComponentFromBlueprint(blueprint) {
       try { frame.setExplicitVariableModeForCollection(t2Col, brightModeId); } catch (e) {}
     }
 
+    /* Stamp owner so cleanup on next run can safely remove this. */
+    stampOwner(frame);
+
     return { section: frame, innerX: 40, innerY: 40 };
   }
 
@@ -1861,6 +1885,7 @@ async function generateComponentFromBlueprint(blueprint) {
   if (!iconPlaceholder) {
     iconPlaceholder = figma.createComponent();
     iconPlaceholder.name = 'Icon/Placeholder';
+    stampOwner(iconPlaceholder);
     iconPlaceholder.description =
       'Default icon placeholder used by every Button master as the INSTANCE_SWAP target.\n\n' +
       'REPLACE THIS with your own icon component (e.g. from Lucide, Phosphor, Material Symbols, ' +
@@ -1992,6 +2017,7 @@ async function generateComponentFromBlueprint(blueprint) {
       try {
         chevronIconSet = figma.combineAsVariants(chevronVariants, page);
         chevronIconSet.name = 'Icon/Chevron';
+        stampOwner(chevronIconSet);
         chevronIconSet.description = 'Directional chevron icon (Down / Up / Left / Right). Default = Down. Used by Split Button triggers; flip to Up for active/open state.';
         /* Auto-layout the variant grid so it presents cleanly. */
         try {
@@ -2374,6 +2400,7 @@ async function generateComponentFromBlueprint(blueprint) {
       /* Create wrapper master */
       var sbMaster = figma.createComponent();
       sbMaster.name = 'mc / ' + masterName;
+      stampOwner(sbMaster);
       sbMaster.description = BP.description || '';
       sbMaster.resize(140, 32);
       sbMaster.layoutMode = 'HORIZONTAL';
@@ -2519,6 +2546,7 @@ async function generateComponentFromBlueprint(blueprint) {
     /* Create master component */
     var master = figma.createComponent();
     master.name = 'mc / ' + masterName;
+    stampOwner(master);
     master.description = BP.description || '';
     master.resize(120, 32);
     master.layoutMode = 'HORIZONTAL';
@@ -3192,6 +3220,7 @@ async function generateComponentFromBlueprint(blueprint) {
       }
       var componentSet = figma.combineAsVariants(allComps, page);
       componentSet.name = setDisplayName;
+      stampOwner(componentSet);
       componentSet.description = (BP.description || '') + ' Family: ' + familyName + '.';
 
       /* Grid layout: types as rows, states as columns. Rounded=False set
