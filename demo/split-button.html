@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Design Token Forge — SplitButton Explorer</title>
-<link rel="stylesheet" href="../packages/tokens/src/index.css?v=20260514h">
+<link rel="stylesheet" href="../packages/tokens/src/index.css?v=20260514i">
 <!-- split-button inherits comp-sizes from button — load button tokens first -->
-<link rel="stylesheet" href="../packages/components/src/button/button.tokens.css?v=20260514h">
-<link rel="stylesheet" href="../packages/components/src/split-button/split-button.tokens.css?v=20260514h">
-<link rel="stylesheet" href="../packages/components/src/split-button/split-button.css?v=20260514h">
-<link rel="stylesheet" href="shared.css?v=20260514h">
+<link rel="stylesheet" href="../packages/components/src/button/button.tokens.css?v=20260514i">
+<link rel="stylesheet" href="../packages/components/src/split-button/split-button.tokens.css?v=20260514i">
+<link rel="stylesheet" href="../packages/components/src/split-button/split-button.css?v=20260514i">
+<link rel="stylesheet" href="shared.css?v=20260514i">
 </head>
 <body>
 
@@ -56,11 +56,10 @@
   <div class="control-group">
     <label>Role</label>
     <div class="pill-bar" id="roleBar" role="radiogroup" aria-label="Role selector">
-      <button class="pill" role="radio" aria-pressed="true" data-ctrl-role="brand" type="button">Primary</button>
+      <button class="pill" role="radio" aria-pressed="true" data-ctrl-role="brand" type="button">Brand</button>
       <button class="pill" role="radio" aria-pressed="false" data-ctrl-role="danger" type="button">Danger</button>
       <button class="pill" role="radio" aria-pressed="false" data-ctrl-role="success" type="button">Success</button>
       <button class="pill" role="radio" aria-pressed="false" data-ctrl-role="warning" type="button">Warning</button>
-      <button class="pill" role="radio" aria-pressed="false" data-ctrl-role="brand" type="button">Brand</button>
       <button class="pill" role="radio" aria-pressed="false" data-ctrl-role="info" type="button">Info</button>
       <button class="pill" role="radio" aria-pressed="false" data-ctrl-role="neutral" type="button">Neutral</button>
     </div>
@@ -218,7 +217,7 @@
             <div class="pg-ctrl"><label>Role</label><select data-pg-role="A"><option value="brand" selected>Brand</option><option value="danger">Danger</option><option value="success">Success</option><option value="warning">Warning</option><option value="info">Info</option></select></div>
           </div>
           <div class="pg-card-body" id="pgBodyA">
-            <div class="pg-variant-row"><span class="pg-variant-label">Primary</span>
+            <div class="pg-variant-row"><span class="pg-variant-label">Brand</span>
               <div class="split-btn pg-sb" data-variant="brand" data-size="base">
                 <button class="split-btn__action" type="button"><span class="split-btn__label">Save</span></button>
                 <span class="split-btn__divider"></span>
@@ -260,10 +259,10 @@
           <div class="pg-card-head">
             <span class="pg-card-label">Card B</span>
             <div class="pg-ctrl"><label>Surface</label><select data-pg-surface="B"><option value="base">Base</option><option value="bright">Bright</option><option value="deep" selected>Deep</option><option value="accent">Accent</option><option value="dim">Dim</option><option value="container">Container</option><option value="over-container">Over-container</option><option value="float">Float</option></select></div>
-            <div class="pg-ctrl"><label>Role</label><select data-pg-role="B"><option value="brand">Brand</option><option value="danger" selected>Danger</option><option value="success">Success</option><option value="warning">Warning</option><option value="info">Info</option></select></div>
+            <div class="pg-ctrl"><label>Role</label><select data-pg-role="B"><option value="danger" selected>Danger</option><option value="success">Success</option><option value="warning">Warning</option><option value="info">Info</option></select></div>
           </div>
           <div class="pg-card-body" id="pgBodyB">
-            <div class="pg-variant-row"><span class="pg-variant-label">Primary</span>
+            <div class="pg-variant-row"><span class="pg-variant-label">Brand</span>
               <div class="split-btn pg-sb" data-variant="brand" data-size="base">
                 <button class="split-btn__action" type="button"><span class="split-btn__label">Delete</span></button>
                 <span class="split-btn__divider"></span>
