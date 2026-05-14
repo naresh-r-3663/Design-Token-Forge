@@ -4,7 +4,7 @@
   "description": "Default project \u2014 the original DTF token set for the Desktop PDF Editor product.",
   "created": "2026-04-08",
   "paletteKeys": {
-    "monochromatic": "#286CE5",
+    "brand": "#286CE5",
     "danger": "#DC2626",
     "warning": "#D97706",
     "info": "#0EA5E9",

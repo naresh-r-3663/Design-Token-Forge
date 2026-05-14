@@ -880,7 +880,7 @@ var DEFAULT_CUSTOM_COLORS = ['#7C3AED','#EC4899','#F97316','#06B6D4','#8B5CF6','
 var CUSTOM_NAMES = ['Secondary','Tertiary','Accent','Extra'];
 
 // Reserved role IDs — slug must not collide with these
-var RESERVED_IDS = new Set(['brand','danger','warning','info','success','greyscale','desaturated','monochromatic']);
+var RESERVED_IDS = new Set(['brand','danger','warning','info','success','greyscale','desaturated']);
 function slugifyLabel(label) {
   return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'custom';
 }
@@ -911,7 +911,7 @@ var DEFAULT_ROLES = [
 
 // Map config.json palette key names → role IDs
 var PALETTE_KEY_TO_ROLE = {
-  monochromatic:'brand', danger:'danger', warning:'warning',
+  brand:'brand', danger:'danger', warning:'warning',
   info:'info', success:'success', greyscale:'greyscale', desaturated:'desaturated'
 };
 var ROLE_TO_PALETTE_KEY = {};
@@ -1308,12 +1308,6 @@ function injectAllTokens() {
     // T0 primitives (--prim-{role}-{step})
     for (var s = 0; s < steps.length; s++) {
       root.setProperty('--prim-' + roleId + '-' + steps[s].name, steps[s].hex);
-    }
-    // Also inject --prim-monochromatic-* for primary (backwards compat)
-    if (roleId === 'brand') {
-      for (var s2 = 0; s2 < steps.length; s2++) {
-        root.setProperty('--prim-monochromatic-' + steps[s2].name, steps[s2].hex);
-      }
     }
 
     // T1 semantic (light)
@@ -2102,12 +2096,6 @@ function buildSaveableCSS() {
     for (var s = 0; s < pal.steps.length; s++) {
       css += '  --prim-' + prefix + '-' + pal.steps[s].name + ': ' + pal.steps[s].hex + ';\n';
     }
-    // Backwards compat for primary->monochromatic
-    if (r.id === 'brand') {
-      for (var s2 = 0; s2 < pal.steps.length; s2++) {
-        css += '  --prim-monochromatic-' + pal.steps[s2].name + ': ' + pal.steps[s2].hex + ';\n';
-      }
-    }
     // T1 semantic tokens for known roles
     if (TOKEN_ROLES.indexOf(r.id) >= 0) {
       var lkeys = Object.keys(LIGHT_MAP);
@@ -2771,7 +2759,7 @@ function buildPrimitivesFileCSS() {
   lines.push(':root {');
   lines.push('');
   // Map role IDs to primitive prefix names
-  var PRIM_PREFIX = { brand:'monochromatic', danger:'danger', warning:'warning', info:'info', success:'success', greyscale:'greyscale', desaturated:'desaturated' };
+  var PRIM_PREFIX = { brand:'brand', danger:'danger', warning:'warning', info:'info', success:'success', greyscale:'greyscale', desaturated:'desaturated' };
   // Emit ALL default role palettes + custom roles
   var allRoles = DEFAULT_ROLES.map(function(dr) {
     var active = getRoleById(dr.id);
@@ -2909,7 +2897,7 @@ function buildSemanticFileCSS() {
 }
 
 function rolePrefix(r) {
-  var PRIM_PREFIX = { brand:'monochromatic', danger:'danger', warning:'warning', info:'info', success:'success', greyscale:'greyscale', desaturated:'desaturated' };
+  var PRIM_PREFIX = { brand:'brand', danger:'danger', warning:'warning', info:'info', success:'success', greyscale:'greyscale', desaturated:'desaturated' };
   return PRIM_PREFIX[r.id] || r.id;
 }
 
@@ -3590,7 +3578,7 @@ projCreateBtn.addEventListener('click', function() {
     description: desc,
     created: new Date().toISOString().split('T')[0],
     paletteKeys: {
-      monochromatic: '#286CE5',
+      brand: '#286CE5',
       brand: '#E53F28',
       danger: '#DC2626',
       warning: '#D97706',

@@ -1,5 +1,5 @@
 {
-  "description": "Figma variable renames — old path → new path. Applied ONCE on next plugin sync to preserve variable IDs and component bindings. Remove entries after confirming sync success.",
+  "description": "Figma variable renames \u2014 old path \u2192 new path. Applied ONCE on next plugin sync to preserve variable IDs and component bindings. Remove entries after confirming sync success.",
   "renames": {
     "surface/bright/hover": "surface/bright/subtle",
     "surface/bright/pressed": "surface/bright/strong",
@@ -54,6 +54,28 @@
     "prim/custom-1/900": "prim/secondary/900",
     "prim/custom-1/black": "prim/secondary/black",
     "split-button/trigger/padding-x": "split-button/chevron/padding",
-    "split-button/chevron/padding-x": "split-button/chevron/padding"
+    "split-button/chevron/padding-x": "split-button/chevron/padding",
+    "prim/monochromatic/white": "prim/brand/white",
+    "prim/monochromatic/25": "prim/brand/25",
+    "prim/monochromatic/50": "prim/brand/50",
+    "prim/monochromatic/75": "prim/brand/75",
+    "prim/monochromatic/100": "prim/brand/100",
+    "prim/monochromatic/150": "prim/brand/150",
+    "prim/monochromatic/175": "prim/brand/175",
+    "prim/monochromatic/200": "prim/brand/200",
+    "prim/monochromatic/250": "prim/brand/250",
+    "prim/monochromatic/300": "prim/brand/300",
+    "prim/monochromatic/350": "prim/brand/350",
+    "prim/monochromatic/400": "prim/brand/400",
+    "prim/monochromatic/450": "prim/brand/450",
+    "prim/monochromatic/500": "prim/brand/500",
+    "prim/monochromatic/550": "prim/brand/550",
+    "prim/monochromatic/600": "prim/brand/600",
+    "prim/monochromatic/700": "prim/brand/700",
+    "prim/monochromatic/750": "prim/brand/750",
+    "prim/monochromatic/800": "prim/brand/800",
+    "prim/monochromatic/850": "prim/brand/850",
+    "prim/monochromatic/900": "prim/brand/900",
+    "prim/monochromatic/black": "prim/brand/black"
   }
 }

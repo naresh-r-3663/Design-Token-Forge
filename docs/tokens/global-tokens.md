@@ -43,7 +43,7 @@ T3  COMPONENT SIZES    Size + density tokens for 13 component groups.
 ```
 Palettes:
   brand           → Product brand identity (e.g., #E53F28)
-  monochromatic   → Primary UI actions (e.g., #286CE5)
+  brand   → Primary UI actions (e.g., #286CE5)
   desaturated     → Neutral-cool tones for structure
   greyscale       → Pure neutrals for text, borders, backgrounds
   danger          → Error / destructive (red family)
@@ -64,7 +64,7 @@ Naming convention:
 
 /* Examples: */
 --prim-brand-500: #E53F28;
---prim-monochromatic-500: #286CE5;
+--prim-brand-500: #286CE5;
 --prim-greyscale-Color400: #5C5C5C;
 --prim-danger-Color600: #BA181C;
 ```

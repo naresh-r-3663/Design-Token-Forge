@@ -62,7 +62,7 @@ The system uses these for all token generation.
 ```json
 {
   "paletteKeys": {
-    "monochromatic": "#286CE5",  ← Primary color
+    "brand": "#286CE5",  ← Primary color
     "brand": "#E53F28",          ← Brand/accent
     "danger": "#DC2626",         ← Error states
     "warning": "#D97706",        ← Warning states

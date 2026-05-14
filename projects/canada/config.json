@@ -5,7 +5,7 @@
   "description": "Design tokens for Canada",
   "created": "2026-05-07",
   "paletteKeys": {
-    "monochromatic": "#0B9D9B",
+    "brand": "#0B9D9B",
     "danger": "#DC2626",
     "warning": "#D97706",
     "info": "#0EA5E9",
@@ -60,7 +60,7 @@
     "base": "greyscale",
     "dim": "greyscale",
     "deep": "greyscale",
-    "accent": "monochromatic",
+    "accent": "brand",
     "container": "greyscale",
     "over-container": "greyscale",
     "float": "greyscale",

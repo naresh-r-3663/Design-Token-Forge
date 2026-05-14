@@ -132,7 +132,7 @@ html[data-theme="dark"] .ci-note-box code{background:rgba(255,255,255,.1)}
       <div class="arch-level">
         <span class="arch-label">T0 Primitives</span>
         <div class="arch-tokens">
-          <span class="arch-token t0">--prim-monochromatic-500</span>
+          <span class="arch-token t0">--prim-brand-500</span>
           <span class="arch-token t0">--prim-danger-300</span>
           <span class="arch-token t0">--prim-warning-600</span>
         </div>
@@ -172,7 +172,7 @@ html[data-theme="dark"] .ci-note-box code{background:rgba(255,255,255,.1)}
        ══════════════════════════════════════════════════════ -->
   <section class="ci-section" id="t0">
     <h2><span class="tier-badge t0">T0</span> Primitives — Raw Palette Values</h2>
-    <p>176 raw color swatches across 7 palettes (monochromatic, danger, warning, success, info, desaturated, brand).
+    <p>176 raw color swatches across 7 palettes (brand, danger, warning, success, info, desaturated, brand).
       These are the source-of-truth hex values. <strong>Avoid using T0 tokens directly in production code</strong> — use T1/T2 instead for theme support.</p>
 
     <div class="ci-warn-box">
@@ -185,7 +185,7 @@ html[data-theme="dark"] .ci-note-box code{background:rgba(255,255,255,.1)}
       <div class="code-header"><span class="code-lang">Pattern</span></div>
       <pre class="code-body"><span class="cm">/* --prim-{palette}-{step} */</span>
 
-<span class="kw">--prim-monochromatic-500</span>   <span class="cm">/* Primary palette, step 500 */</span>
+<span class="kw">--prim-brand-500</span>   <span class="cm">/* Primary palette, step 500 */</span>
 <span class="kw">--prim-danger-300</span>          <span class="cm">/* Danger palette, step 300 */</span>
 <span class="kw">--prim-warning-white</span>       <span class="cm">/* Warning palette, lightest */</span>
 <span class="kw">--prim-desaturated-700</span>     <span class="cm">/* Neutral/desaturated, step 700 */</span>
@@ -210,13 +210,13 @@ html[data-theme="dark"] .ci-note-box code{background:rgba(255,255,255,.1)}
 
 <span class="cm">/* Direct primitive use — does NOT auto-switch in dark mode */</span>
 .debug-swatch {
-  background: <span class="fn">var</span>(<span class="kw">--prim-monochromatic-500</span>);
-  color: <span class="fn">var</span>(<span class="kw">--prim-monochromatic-white</span>);
+  background: <span class="fn">var</span>(<span class="kw">--prim-brand-500</span>);
+  color: <span class="fn">var</span>(<span class="kw">--prim-brand-white</span>);
 }
 
 <span class="cm">/* Palette visualization */</span>
 .palette-strip--primary [data-step=<span class="str">"300"</span>] {
-  background: <span class="fn">var</span>(<span class="kw">--prim-monochromatic-300</span>);
+  background: <span class="fn">var</span>(<span class="kw">--prim-brand-300</span>);
 }
 .palette-strip--danger [data-step=<span class="str">"500"</span>] {
   background: <span class="fn">var</span>(<span class="kw">--prim-danger-500</span>);
@@ -233,7 +233,7 @@ html[data-theme="dark"] .ci-note-box code{background:rgba(255,255,255,.1)}
 
 <span class="cm">/** Render a single palette step — purely for visualization */</span>
 <span class="kw">export function</span> <span class="fn">PaletteSwatch</span>({ palette, step }: {
-  palette: <span class="kw">string</span>;  <span class="cm">// 'monochromatic' | 'danger' | 'warning' | …</span>
+  palette: <span class="kw">string</span>;  <span class="cm">// 'brand' | 'danger' | 'warning' | …</span>
   step: <span class="kw">string</span>;     <span class="cm">// '500' | 'white' | 'black' | …</span>
 }) {
   <span class="kw">return</span> (
@@ -256,7 +256,7 @@ html[data-theme="dark"] .ci-note-box code{background:rgba(255,255,255,.1)}
           <div class="code-header"><span class="code-lang">Vue 3 SFC</span><span class="code-file">PaletteSwatch.vue</span><button class="code-copy" data-target="t0vue" type="button">Copy</button></div>
           <pre class="code-body" id="t0vue">&lt;<span class="tag">script</span> setup lang=<span class="str">"ts"</span>&gt;
 <span class="kw">const</span> props = <span class="fn">defineProps</span>&lt;{
-  palette: <span class="kw">string</span>  <span class="cm">// 'monochromatic' | 'danger' | …</span>
+  palette: <span class="kw">string</span>  <span class="cm">// 'brand' | 'danger' | …</span>
   step: <span class="kw">string</span>     <span class="cm">// '500' | 'white' | …</span>
 }&gt;()
 &lt;/<span class="tag">script</span>&gt;
@@ -1048,7 +1048,7 @@ h1, h2, h3 {
         <tr><td class="td-use">Card on a page</td><td><span class="tier-badge t2">T2</span> Surface</td><td><code>--surface-container-bg</code></td></tr>
         <tr><td class="td-use">Dropdown/popover</td><td><span class="tier-badge t2">T2</span> Surface</td><td><code>--surface-float-bg</code></td></tr>
         <tr><td class="td-use">Same component, different status per context</td><td><span class="tier-badge t3">T3</span> Status</td><td><code>[data-status="danger"]</code></td></tr>
-        <tr><td class="td-use">Palette visualizer, debug tools</td><td><span class="tier-badge t0">T0</span> Primitive</td><td><code>--prim-monochromatic-500</code></td></tr>
+        <tr><td class="td-use">Palette visualizer, debug tools</td><td><span class="tier-badge t0">T0</span> Primitive</td><td><code>--prim-brand-500</code></td></tr>
       </tbody>
     </table>
 

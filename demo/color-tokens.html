@@ -387,7 +387,7 @@ var STEPS=['white','25','50','75','100','150','175','200','250','300','350','400
 
 var PALETTES=[
   {name:'Brand',       prefix:'prim-brand',        key:'#E53F28'},
-  {name:'Monochromatic',prefix:'prim-monochromatic',key:'#286CE5'},
+  {name:'Monochromatic',prefix:'prim-brand',key:'#286CE5'},
   {name:'Desaturated', prefix:'prim-desaturated',   key:'#64748B'},
   {name:'Greyscale',   prefix:'prim-greyscale',     key:'#737373'},
   {name:'Danger',      prefix:'prim-danger',        key:'#DC2626'},
@@ -397,7 +397,7 @@ var PALETTES=[
 ];
 
 var ROLES=['brand','danger','success','warning','info'];
-var ROLE_SOURCE={brand:'monochromatic',danger:'danger',success:'success',warning:'warning',info:'info'};
+var ROLE_SOURCE={brand:'brand',danger:'danger',success:'success',warning:'warning',info:'info'};
 
 var ROLE_TOKENS=[
   {group:'Content',tokens:['content-default','content-strong','content-subtle','content-faint']},
@@ -419,13 +419,13 @@ var UTILITY_TOKENS=[
 /* ── Light-theme semantic→primitive mapping (for annotations) ── */
 var LIGHT_MAP={
   brand:{
-    'content-default':'monochromatic-600','content-strong':'monochromatic-700','content-subtle':'monochromatic-400','content-faint':'monochromatic-200',
-    'component-bg-default':'monochromatic-500','component-bg-hover':'monochromatic-600','component-bg-pressed':'monochromatic-700',
-    'component-outline-default':'monochromatic-300','component-outline-hover':'monochromatic-400','component-outline-pressed':'monochromatic-500',
-    'component-separator':'monochromatic-100',
-    'container-bg':'monochromatic-50','container-hover':'monochromatic-75','container-pressed':'monochromatic-100',
-    'container-outline':'monochromatic-200','container-separator':'monochromatic-100',
-    'on-component':'white','on-container':'monochromatic-700'
+    'content-default':'brand-600','content-strong':'brand-700','content-subtle':'brand-400','content-faint':'brand-200',
+    'component-bg-default':'brand-500','component-bg-hover':'brand-600','component-bg-pressed':'brand-700',
+    'component-outline-default':'brand-300','component-outline-hover':'brand-400','component-outline-pressed':'brand-500',
+    'component-separator':'brand-100',
+    'container-bg':'brand-50','container-hover':'brand-75','container-pressed':'brand-100',
+    'container-outline':'brand-200','container-separator':'brand-100',
+    'on-component':'white','on-container':'brand-700'
   },
   brand:{
     'content-default':'brand-600','content-strong':'brand-700','content-subtle':'brand-400','content-faint':'brand-200',
@@ -476,13 +476,13 @@ var LIGHT_MAP={
 
 var DARK_MAP={
   brand:{
-    'content-default':'monochromatic-150','content-strong':'monochromatic-100','content-subtle':'monochromatic-200','content-faint':'monochromatic-400',
-    'component-bg-default':'monochromatic-400','component-bg-hover':'monochromatic-300','component-bg-pressed':'monochromatic-250',
-    'component-outline-default':'monochromatic-500','component-outline-hover':'monochromatic-400','component-outline-pressed':'monochromatic-300',
-    'component-separator':'monochromatic-800',
-    'container-bg':'monochromatic-850','container-hover':'monochromatic-800','container-pressed':'monochromatic-750',
-    'container-outline':'monochromatic-600','container-separator':'monochromatic-800',
-    'on-component':'white','on-container':'monochromatic-100'
+    'content-default':'brand-150','content-strong':'brand-100','content-subtle':'brand-200','content-faint':'brand-400',
+    'component-bg-default':'brand-400','component-bg-hover':'brand-300','component-bg-pressed':'brand-250',
+    'component-outline-default':'brand-500','component-outline-hover':'brand-400','component-outline-pressed':'brand-300',
+    'component-separator':'brand-800',
+    'container-bg':'brand-850','container-hover':'brand-800','container-pressed':'brand-750',
+    'container-outline':'brand-600','container-separator':'brand-800',
+    'on-component':'white','on-container':'brand-100'
   },
   brand:{
     'content-default':'brand-150','content-strong':'brand-100','content-subtle':'brand-200','content-faint':'brand-400',
@@ -834,7 +834,7 @@ function _readThemeVals(role,theme){
 
 /* Active palettes & roles derived from the current project's config */
 /* Maps role IDs to palette prefix names (includes non-semantic palette sources for T0 derivation) */
-var ROLE_TO_PALETTE={brand:'monochromatic',danger:'danger',warning:'warning',info:'info',success:'success',greyscale:'greyscale',desaturated:'desaturated'};
+var ROLE_TO_PALETTE={brand:'brand',danger:'danger',warning:'warning',info:'info',success:'success',greyscale:'greyscale',desaturated:'desaturated'};
 
 function _readProjectConfig(){
   var activeId=localStorage.getItem('dtf-active-project')||'';
@@ -871,7 +871,7 @@ var activePalettes=(_projKeys)?PALETTES.filter(function(p){
 
 var activeRoles=(_projKeys)?ROLES.filter(function(role){
   var src=ROLE_SOURCE[role];
-  return src==='monochromatic'||_projKeys.indexOf(src)!==-1;
+  return src==='brand'||_projKeys.indexOf(src)!==-1;
 }):ROLES.slice();
 
 /* Surface palette source map: which palette drives each surface context */
@@ -893,7 +893,7 @@ function refreshProjectState(){
     });
     activeRoles=ROLES.filter(function(role){
       var src=ROLE_SOURCE[role];
-      return src==='monochromatic'||keys.indexOf(src)!==-1;
+      return src==='brand'||keys.indexOf(src)!==-1;
     });
   }else{
     activePalettes=PALETTES.slice();

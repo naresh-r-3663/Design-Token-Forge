@@ -107,7 +107,7 @@ This reads the 4 CSS token files and produces `dtf-figma-tokens.json`.
 DTF / Primitives
   ├ prim/
   │  ├ brand/     (white, 25, 50, … 950, black)
-  │  ├ monochromatic/
+  │  ├ brand/
   │  ├ desaturated/
   │  └ ...
   ├ color/        (white, black, fixed-white, …)

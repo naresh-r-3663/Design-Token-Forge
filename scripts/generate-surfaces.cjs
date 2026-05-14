@@ -9,7 +9,7 @@
  *   Neutral surfaces (bright, base, dim, deep, container, over-container, float, inverse)
  *     → use greyscale palette steps
  *   Accent surface
- *     → uses monochromatic (primary) palette steps
+ *     → uses brand (primary) palette steps
  *
  * SURFACE STEP MAP:
  *   Each surface property maps to a palette step name (e.g., "25", "900", "white").
@@ -46,7 +46,7 @@ function parsePrimitives() {
 // Each surface definition maps 16 property slots to palette step names.
 
 // Light greyscale surfaces: brightest → deepest
-// "g" prefix = greyscale palette. "m" prefix = monochromatic palette.
+// "g" prefix = greyscale palette. "m" prefix = brand palette.
 
 const LIGHT_SURFACE_MAP = {
   // Surface-bright: whitest surface
@@ -352,7 +352,7 @@ const DARK_SURFACE_MAP = {
   },
 };
 
-// Accent surface uses monochromatic (primary) palette
+// Accent surface uses brand (primary) palette
 const LIGHT_ACCENT_MAP = {
   bg:                   '25',
   hover:                '50',
@@ -415,7 +415,7 @@ function generateSurface(name, stepMap, palette, indent) {
 function generate() {
   const palettes = parsePrimitives();
   const grey = palettes.greyscale;
-  const mono = palettes.monochromatic;
+  const mono = palettes.brand;
 
   if (!grey) throw new Error('Greyscale palette not found in primitives.css');
   if (!mono) throw new Error('Monochromatic palette not found in primitives.css');
@@ -486,5 +486,5 @@ const css = generate();
 const outPath = path.join(TOKENS_DIR, 'surfaces.css');
 fs.writeFileSync(outPath, css, 'utf-8');
 console.log(`✅ Generated surfaces.css (${css.split('\n').length} lines)`);
-console.log(`   Source: greyscale + monochromatic palette steps from primitives.css`);
+console.log(`   Source: greyscale + brand palette steps from primitives.css`);
 console.log(`   Every hex value maps to an existing primitive → 100% alias coverage`);

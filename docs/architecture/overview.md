@@ -132,7 +132,7 @@ LAYER 0: SYSTEM DEFAULTS
 /* Tokn T0 primitives on :root */
 :root {
   --prim-brand-500: #E53F28;
-  --prim-monochromatic-500: #286CE5;
+  --prim-brand-500: #286CE5;
   --spacing-4: 4px;
   --radius-md: 6px;
   /* ... ~775 global tokens (Tokn + DTF extras) */

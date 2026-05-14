@@ -14,21 +14,21 @@ import { generatePalette, STEP_NAMES } from '../generator/src/palette-engine.js'
 // ── Constants (must match color-system.html) ──────────────────
 //
 // Note: 'primary' was renamed to 'brand' across the system in May 2026.
-// 'brand' is now the canonical name for the project's main UI color and
-// derives from the monochromatic palette. The standalone 'brand' palette
-// key was dropped — projects only define one source palette ('monochromatic')
-// and the brand role inherits from it. See docs/decisions/adrs.md.
+// 'brand' is the canonical name for the project's main UI color, both as
+// a role and as a primitive palette key. The legacy 'monochromatic'
+// palette name was renamed to 'brand' in the same pass so the role and
+// palette key match 1:1. See docs/decisions/adrs.md.
 
 const TOKEN_ROLES = ['brand', 'danger', 'warning', 'info', 'success'];
 
 const ROLE_TO_PALETTE_KEY = {
-  brand: 'monochromatic', danger: 'danger',
+  brand: 'brand', danger: 'danger',
   warning: 'warning', info: 'info', success: 'success',
   greyscale: 'greyscale', desaturated: 'desaturated'
 };
 
 const PALETTE_KEY_TO_ROLE = {
-  monochromatic: 'brand', danger: 'danger',
+  brand: 'brand', danger: 'danger',
   warning: 'warning', info: 'info', success: 'success',
   greyscale: 'greyscale', desaturated: 'desaturated'
 };
@@ -111,9 +111,6 @@ function normalizeSemanticMap(map) {
 function buildPalettes(paletteKeys) {
   const palettes = {};
   for (const [key, hex] of Object.entries(paletteKeys)) {
-    // Drop legacy standalone 'brand' palette key — the brand role is
-    // now derived from the monochromatic palette via ROLE_TO_PALETTE_KEY.
-    if (key === 'brand') continue;
     palettes[key] = generatePalette(hex);
   }
   return palettes;
@@ -132,7 +129,7 @@ function stepLookup(palette) {
 
 /**
  * Generate primitive color tokens from palettes.
- * Returns { light: { 'prim-monochromatic-white': '#FFFFFF', ... } }
+ * Returns { light: { 'prim-brand-white': '#FFFFFF', ... } }
  * (primitives have no dark block — all values are in :root)
  */
 function generatePrimitiveTokens(palettes) {
@@ -194,12 +191,12 @@ function generateSemanticTokens(semanticMap, palettes, customRoles) {
  *           paletteSrc: { 'surface-bright-bg': 'desaturated', ... } }
  */
 function generateSurfaceTokens(surfaceMap, palettes, surfacePaletteSrc) {
-  const monoPal = palettes.monochromatic;
+  const monoPal = palettes.brand;
   if (!monoPal) return null;
 
-  // Default palette source: accent → monochromatic, all others → greyscale
+  // Default palette source: accent → brand, all others → greyscale
   const defaultSrc = {};
-  for (const sn of SURFACE_NAMES) defaultSrc[sn] = sn === 'accent' ? 'monochromatic' : 'greyscale';
+  for (const sn of SURFACE_NAMES) defaultSrc[sn] = sn === 'accent' ? 'brand' : 'greyscale';
   const srcMap = { ...defaultSrc, ...(surfacePaletteSrc || {}) };
 
   // Map role names used in color-system editor to actual palette keys

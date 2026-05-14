@@ -27,7 +27,7 @@ T0 Primitives ──→ T1 Semantic Roles ──→ T2 Surface Contexts ──�
 | Palette        | Key Color (500) | CSS Prefix            | Purpose                        |
 |----------------|:---------------:|-----------------------|--------------------------------|
 | Brand          | `#E53F28`      | `--prim-brand-*`       | Primary brand expression       |
-| Monochromatic  | `#286CE5`      | `--prim-monochromatic-*` | UI primary / interactive     |
+| Monochromatic  | `#286CE5`      | `--prim-brand-*` | UI primary / interactive     |
 | Desaturated    | `#64748B`      | `--prim-desaturated-*` | Muted / slate tones            |
 | Greyscale      | `#737373`      | `--prim-greyscale-*`   | True neutral greys             |
 | Danger         | `#DC2626`      | `--prim-danger-*`      | Error / destructive            |

@@ -286,14 +286,14 @@
   let repoVerified = false;
 
   const defaultColors = {
-    monochromatic: '#286CE5',
+    brand: '#286CE5',
     danger: '#DC2626',
     warning: '#D97706',
     info: '#0EA5E9',
     success: '#16A34A'
   };
   const colorLabels = {
-    monochromatic: 'Brand',
+    brand: 'Brand',
     danger: 'Danger / Error',
     warning: 'Warning',
     info: 'Info',
@@ -574,7 +574,7 @@
         },
         surfacePaletteSrc: {
           bright:'greyscale',base:'greyscale',dim:'greyscale',deep:'greyscale',
-          accent:'monochromatic',container:'greyscale','over-container':'greyscale',
+          accent:'brand',container:'greyscale','over-container':'greyscale',
           float:'greyscale',inverse:'greyscale'
         }
       };
@@ -657,7 +657,7 @@
          (CDN won't have the config.json yet since deploy hasn't completed) */
       const localConfig = JSON.stringify({
         roles: [
-          {id:'brand',  label:'Brand',  keyHex: colors.monochromatic.toUpperCase(), type:'fixed', derive:null},
+          {id:'brand',  label:'Brand',  keyHex: colors.brand.toUpperCase(), type:'fixed', derive:null},
           {id:'danger',   label:'Danger',   keyHex: colors.danger.toUpperCase(), type:'fixed', derive:null},
           {id:'warning',  label:'Warning',  keyHex: colors.warning.toUpperCase(), type:'fixed', derive:null},
           {id:'info',     label:'Info',     keyHex: colors.info.toUpperCase(), type:'fixed', derive:null},

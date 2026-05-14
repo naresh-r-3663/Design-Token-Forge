@@ -27,7 +27,7 @@ The existing 21-step scale has deliberate characteristics:
 2. **Key at 500** — The named brand/key color always sits at step 500.
 3. **White/Black anchors** — Every palette starts at `#FFFFFF` and ends at `#000000`.
 4. **Perceptual spacing** — The perceived lightness difference between adjacent steps is approximately even (not the mathematical distance in hex).
-5. **Hue preservation vs. shift** — Some palettes maintain hue throughout (monochromatic), while others allow natural hue shifts at extremes (e.g., brand red shifts toward deeper burgundy in darks).
+5. **Hue preservation vs. shift** — Some palettes maintain hue throughout (brand), while others allow natural hue shifts at extremes (e.g., brand red shifts toward deeper burgundy in darks).
 6. **Saturation curves** — Saturation isn't constant; it typically peaks around the key color and drops at both extremes (tints become pastel, shades become muted).
 
 ### Current Step Names
