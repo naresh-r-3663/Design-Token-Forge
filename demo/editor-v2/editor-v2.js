@@ -532,6 +532,7 @@
 
   /* ── T1 Roles ────────────────────────────────────────── */
   function renderT1() {
+    var prevScroll = $body ? $body.scrollTop : 0;
     var role = ROLES.find(function (r) { return r.id === State.activeRole; });
     if (!role) return;
     var t1 = State.t1[role.id];
@@ -615,6 +616,7 @@
       + '</div>';
 
     bindT1();
+    if ($body && prevScroll) $body.scrollTop = prevScroll;
   }
 
   function slotsTableHTML(roleId) {

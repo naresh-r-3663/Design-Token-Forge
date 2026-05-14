@@ -124,7 +124,7 @@
         var shows = s.getAttribute('data-pv-shows');
         var on = !!(lever && shows === lever);
         s.setAttribute('data-active', String(on));
-        if (on) match = s;
+        if (on && !match) match = s; // first match wins for scroll target
       });
       if (match && d.scroll) {
         match.scrollIntoView({ behavior: 'smooth', block: 'start' });
