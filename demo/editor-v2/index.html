@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design Token Forge — Editor v2</title>
+
+  <!-- Token foundations: same chain as every component demo page -->
+  <link rel="stylesheet" href="../../packages/tokens/src/primitives.css">
+  <link rel="stylesheet" href="../../packages/tokens/src/semantic.css">
+  <link rel="stylesheet" href="../../packages/tokens/src/surfaces.css">
+  <link rel="stylesheet" href="../../packages/tokens/src/extras.css">
+
+  <!-- Shared chrome (nav, theme tokens, pill bars) -->
+  <link rel="stylesheet" href="../shared.css">
+
+  <!-- Editor v2 specific layout -->
+  <link rel="stylesheet" href="./editor-v2.css">
+</head>
+<body>
+
+  <!-- ─── Top bar ───────────────────────────────────────── -->
+  <header class="ev2-topbar">
+    <div class="ev2-topbar-l">
+      <a href="../index.html" class="ev2-back" aria-label="Back to demos">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg>
+      </a>
+      <div class="ev2-title">
+        <span class="ev2-title-main">Token Editor</span>
+        <span class="ev2-title-sub">v2 · preview</span>
+      </div>
+      <div class="ev2-project" id="projectSlot" aria-label="Active project"></div>
+    </div>
+
+    <div class="ev2-topbar-c">
+      <div class="ev2-mode-toggle" role="radiogroup" aria-label="Editing mode">
+        <button class="ev2-mode" data-mode="light" aria-checked="true" role="radio">Light</button>
+        <button class="ev2-mode" data-mode="dark" aria-checked="false" role="radio">Dark</button>
+      </div>
+    </div>
+
+    <div class="ev2-topbar-r">
+      <label class="ev2-css-toggle">
+        <input type="checkbox" id="showCssNames">
+        <span>Show CSS names</span>
+      </label>
+      <button class="ev2-deploy" id="deployBtn" disabled>
+        <span class="ev2-deploy-label">Deploy to Figma</span>
+        <span class="ev2-deploy-count" hidden>0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ─── Main 3-pane workspace ─────────────────────────── -->
+  <main class="ev2-workspace">
+
+    <!-- LEFT: Tier rail -->
+    <aside class="ev2-rail" aria-label="Token tiers">
+      <nav class="ev2-rail-nav">
+        <button class="ev2-tier" data-tier="t0" aria-current="true">
+          <span class="ev2-tier-badge">T0</span>
+          <span class="ev2-tier-text">
+            <span class="ev2-tier-name">Palette</span>
+            <span class="ev2-tier-desc">Raw key colors</span>
+          </span>
+        </button>
+        <button class="ev2-tier" data-tier="t1">
+          <span class="ev2-tier-badge">T1</span>
+          <span class="ev2-tier-text">
+            <span class="ev2-tier-name">Roles</span>
+            <span class="ev2-tier-desc">Brand, danger…</span>
+          </span>
+        </button>
+        <button class="ev2-tier" data-tier="t2">
+          <span class="ev2-tier-badge">T2</span>
+          <span class="ev2-tier-text">
+            <span class="ev2-tier-name">Surfaces</span>
+            <span class="ev2-tier-desc">Page backgrounds</span>
+          </span>
+        </button>
+        <button class="ev2-tier" data-tier="t3">
+          <span class="ev2-tier-badge">T3</span>
+          <span class="ev2-tier-text">
+            <span class="ev2-tier-name">Components</span>
+            <span class="ev2-tier-desc">Sizes, spacing</span>
+          </span>
+        </button>
+      </nav>
+
+      <div class="ev2-rail-foot">
+        <div class="ev2-draft-status" id="draftStatus">
+          <span class="ev2-draft-dot"></span>
+          <span class="ev2-draft-text">Loading draft…</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER: Token list (grouped) -->
+    <section class="ev2-list" aria-label="Tokens">
+      <header class="ev2-list-head">
+        <h2 class="ev2-list-title" id="listTitle">Palette</h2>
+        <p class="ev2-list-sub" id="listSub">Your foundation colors. Editing here cascades to roles, surfaces, and every component.</p>
+        <input class="ev2-search" type="search" placeholder="Filter tokens (name, role, value…)" id="tokenSearch" aria-label="Filter tokens">
+      </header>
+
+      <div class="ev2-list-body" id="tokenListBody">
+        <!-- Step 2 will render token groups here. Step 1 shows a placeholder. -->
+        <div class="ev2-empty">
+          <div class="ev2-empty-icon" aria-hidden="true">◌</div>
+          <div class="ev2-empty-title">Token list will mount here</div>
+          <div class="ev2-empty-sub">Step 2 wires up the loader, grouping, and friendly labels.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Live preview -->
+    <section class="ev2-preview" aria-label="Live preview">
+      <header class="ev2-preview-head">
+        <label class="ev2-preview-pick">
+          <span>Component</span>
+          <select id="previewComponent">
+            <option value="button">Button</option>
+            <option value="input">Input</option>
+            <option value="checkbox">Checkbox</option>
+            <option value="toggle">Toggle</option>
+            <option value="badge">Badge</option>
+            <option value="toast">Toast</option>
+            <option value="alert">Alert</option>
+            <option value="split-button">Split Button</option>
+          </select>
+        </label>
+        <div class="ev2-preview-pills" id="previewPills">
+          <!-- pill bars (variant/size/role/state) will mount in Step 4 -->
+        </div>
+      </header>
+
+      <div class="ev2-preview-stage" id="previewStage">
+        <iframe class="ev2-preview-frame" id="previewFrame" title="Live component preview" sandbox="allow-same-origin"></iframe>
+      </div>
+
+      <footer class="ev2-savebar" id="savebar">
+        <div class="ev2-savebar-l">
+          <span class="ev2-changes" id="changeCount">0 changes</span>
+          <span class="ev2-savebar-sep">·</span>
+          <span class="ev2-autosave" id="autosaveStatus">No draft yet</span>
+        </div>
+        <div class="ev2-savebar-r">
+          <button class="ev2-discard" id="discardBtn" disabled>Discard</button>
+        </div>
+      </footer>
+    </section>
+
+  </main>
+
+  <!-- Toast slot -->
+  <div class="ev2-toast" id="ev2Toast" role="status" aria-live="polite"></div>
+
+  <script src="../nav.js" defer></script>
+  <script src="./editor-v2.js" defer></script>
+</body>
+</html>
