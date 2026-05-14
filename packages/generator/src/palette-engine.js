@@ -180,7 +180,11 @@ export function generatePalette(keyHex) {
   // Anchor: rescale tone curve so KEY_INDEX lands on key's actual L*.
   // Light side lerps tone 100..keyTone, dark side lerps keyTone..0,
   // preserving monotonicity for any input hex.
-  const keyTone = hexToLstar(keyHex);
+  const keyToneActual = hexToLstar(keyHex);
+  // Clamp tone for remap math so extreme inputs (near-black/near-white)
+  // don't collapse the opposite-side ladder. Step 500 still outputs the
+  // exact input hex; only the neighbor-step interpolation uses the clamp.
+  const keyTone = Math.max(20, Math.min(80, keyToneActual));
   const baseKeyTone = TONE_SCALE[KEY_INDEX];
 
   const steps = TONE_SCALE.map((tone, i) => {
@@ -193,7 +197,7 @@ export function generatePalette(keyHex) {
     // Anchor the key step to the exact input hex — input colors must round-trip
     // at step 500 so brand-component-bg-default === designer-supplied brand hex.
     if (i === KEY_INDEX) {
-      return { name, hex: keyHex.toUpperCase(), tone: keyTone, contrast: wcagContrast(keyHex, '#FFFFFF') };
+      return { name, hex: keyHex.toUpperCase(), tone: keyToneActual, contrast: wcagContrast(keyHex, '#FFFFFF') };
     }
 
     // Remap fixed tone onto input's effective scale (monotonic).
