@@ -349,6 +349,10 @@
   --split-btn-icon-size-mega:   var(--btn-icon-size-mega);
   --split-btn-icon-size-ultra:  var(--btn-icon-size-ultra);
 
+  /* Detail tier — mirrors button (active only on base/medium/large via CSS guards) */
+  --split-btn-icon-size-detail-default: var(--btn-icon-size-detail-default);
+  --split-btn-icon-size-detail-high:    var(--btn-icon-size-detail-high);
+
   /* Chevron size — TRIGGER zone (split-btn STRUCTURAL, ~65–75% of icon).
      A smaller chevron preserves the visual hierarchy: action label is
      primary; chevron is a secondary affordance. Without this, large

@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Design Token Forge — SplitButton Explorer</title>
-<link rel="stylesheet" href="../packages/tokens/src/index.css?v=20260513d">
+<link rel="stylesheet" href="../packages/tokens/src/index.css?v=20260514e">
 <!-- split-button inherits comp-sizes from button — load button tokens first -->
-<link rel="stylesheet" href="../packages/components/src/button/button.tokens.css?v=20260513d">
-<link rel="stylesheet" href="../packages/components/src/split-button/split-button.tokens.css?v=20260513d">
-<link rel="stylesheet" href="../packages/components/src/split-button/split-button.css?v=20260513d">
-<link rel="stylesheet" href="shared.css?v=20260514d">
+<link rel="stylesheet" href="../packages/components/src/button/button.tokens.css?v=20260514e">
+<link rel="stylesheet" href="../packages/components/src/split-button/split-button.tokens.css?v=20260514e">
+<link rel="stylesheet" href="../packages/components/src/split-button/split-button.css?v=20260514e">
+<link rel="stylesheet" href="shared.css?v=20260514e">
 </head>
 <body>
 
@@ -87,6 +87,14 @@
     <div class="pill-bar" id="roundedBar" role="radiogroup" aria-label="Rounded toggle">
       <button class="pill" role="radio" aria-pressed="true" data-ctrl-rounded="false" type="button">Default</button>
       <button class="pill" role="radio" aria-pressed="false" data-ctrl-rounded="true" type="button">Rounded</button>
+    </div>
+  </div>
+  <div class="control-divider"></div>
+  <div class="control-group">
+    <label>Icon Detail</label>
+    <div class="pill-bar" id="iconDetailBar" role="radiogroup" aria-label="Icon detail toggle">
+      <button class="pill" role="radio" aria-pressed="true" data-ctrl-icon-detail="default" type="button">Default · 16</button>
+      <button class="pill" role="radio" aria-pressed="false" data-ctrl-icon-detail="high" type="button">High · 20</button>
     </div>
   </div>
 </nav>
@@ -473,7 +481,7 @@
     neutral:{filled:'Dismiss',outlined:'Close',soft:'Options',ghost:'More'}
   };
 
-  var curStruct='filled',curRole='brand',curS='base',curRounded=false;
+  var curStruct='filled',curRole='brand',curS='base',curRounded=false,curIconDetail='default';
 
   function makeSB(struct,role,s,label,o){
     o=o||{};
@@ -484,6 +492,7 @@
     if(role&&role!=='brand'||struct==='ghost')w.dataset.role=role||'brand';
     w.dataset.size=s;
     if(curRounded&&!o.noRounded) w.dataset.rounded='';
+    if(curIconDetail==='high'&&!o.noIconDetail) w.dataset.iconDetail='high';
     if(o.disabled) w.dataset.disabled='';
 
     var act=document.createElement('button');
@@ -647,12 +656,14 @@
       if(curRole!=='brand'||curStruct==='ghost'){hb.dataset.role=curRole}else{delete hb.dataset.role}
       hb.dataset.size=curS;
       if(curRounded)hb.dataset.rounded='';else delete hb.dataset.rounded;
+      if(curIconDetail==='high')hb.dataset.iconDetail='high';else delete hb.dataset.iconDetail;
     }
     document.querySelectorAll('.a11y-grid .synced-btn').forEach(function(w){
       w.dataset.variant=curStruct;
       if(curRole!=='brand'||curStruct==='ghost'){w.dataset.role=curRole}else{delete w.dataset.role}
       w.dataset.size=curS;
       if(curRounded)w.dataset.rounded='';else delete w.dataset.rounded;
+      if(curIconDetail==='high')w.dataset.iconDetail='high';else delete w.dataset.iconDetail;
     });
     renderStructGallery();renderRoleGallery();renderDensity();renderStates();
     renderSlots();renderSurface();renderRadius();renderRounded();renderShadows();renderMotion();
@@ -671,6 +682,7 @@
   wirePill('roleBar','ctrlRole',function(v){curRole=v;applyGlobals()});
   wirePill('sizeBar','ctrlSize',function(v){curS=v;applyGlobals()});
   wirePill('roundedBar','ctrlRounded',function(v){curRounded=v==='true';applyGlobals()});
+  wirePill('iconDetailBar','ctrlIconDetail',function(v){curIconDetail=v;applyGlobals()});
 
   window.DTF.onThemeChange=updateInspector;
   applyGlobals();
