@@ -6,7 +6,7 @@
 
 figma.showUI(__html__, { width: 480, height: 560 });
 
-var CODE_VERSION = '2026-05-14-v38';
+var CODE_VERSION = '2026-05-14-v39';
 log('code.js loaded — version ' + CODE_VERSION);
 
 /* ── URL migration via clientStorage (reliable, not blocked like localStorage) ── */
@@ -981,8 +981,13 @@ var SPLIT_BUTTON_BLUEPRINT = {
           rest:     { fill: 'default/component/bg-default' },
           hover:    { fill: 'default/component/bg-hover' },
           pressed:  { fill: 'default/component/bg-pressed' },
+          /* Selected on a Filled button = "stuck pressed" in brand-mode.
+             Don't tint with container/bg — that visually weakens an already
+             solid-coloured button and makes white-on-tint text invisible.
+             Use brand component/bg-pressed for the fill, brand on-component
+             text, plus a brand outline ring as the selection cue. */
           selected: { t3Mode: 'brand',
-                      fill: { t3: 'container/bg' }, text: { t3: 'oncontainer-content/default' }, icon: { t3: 'oncontainer-content/default' },
+                      fill: { t3: 'component/bg-pressed' }, text: { t3: 'oncomponent-content/default' }, icon: { t3: 'oncomponent-content/default' },
                       wrapper: { stroke: { t3: 'component/outline-default' }, strokeWeight: 2 } },
           focus:    { fill: 'default/component/bg-default',
                       wrapper: { stroke: { t3: 'component/outline-default' }, strokeWeight: 2 } },
@@ -1014,8 +1019,12 @@ var SPLIT_BUTTON_BLUEPRINT = {
           rest:     { fill: 'default/component/bg-default' },
           hover:    { fill: 'default/component/bg-hover' },
           pressed:  { fill: 'default/component/bg-pressed' },
+          /* Selected on Fill&Outline = same logic as Filled: solid-coloured
+             baseline, so use brand bg-pressed + on-component text + brand
+             outline ring (the wrapperBase outline is replaced by the
+             stronger 2px brand ring for the duration of Selected). */
           selected: { t3Mode: 'brand',
-                      fill: { t3: 'container/bg' }, text: { t3: 'oncontainer-content/default' }, icon: { t3: 'oncontainer-content/default' },
+                      fill: { t3: 'component/bg-pressed' }, text: { t3: 'oncomponent-content/default' }, icon: { t3: 'oncomponent-content/default' },
                       wrapper: { stroke: { t3: 'component/outline-default' }, strokeWeight: 2 } },
           focus:    { fill: 'default/component/bg-default',
                       wrapper: { stroke: { t3: 'component/outline-default' }, strokeWeight: 2 } },
