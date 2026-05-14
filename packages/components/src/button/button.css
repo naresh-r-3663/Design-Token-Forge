@@ -208,20 +208,27 @@
    ────────────────────────────────────────────────────────────────
    16px icons leave little drawing scope for filters, branded marks,
    or multi-stroke icons. data-icon-detail="high" bumps the icon to
-   20px in sizes ≥ base, while keeping label rhythm intact.
+   20px ONLY in the base/medium/large range where 16px is the standard.
 
-   Suppressed on micro/tiny/small (would crowd to <4px breathing room).
+   Suppressed on:
+     • micro/tiny/small  → would crowd to <4px breathing room
+     • big/huge/mega/ultra → standard icon (24–32px) is already larger
+                             than 20px; "high" would visually shrink it
    For per-instance bumps outside this scale, set --btn-icon-size on
    the element directly.
    ════════════════════════════════════════════════════════════════ */
 .btn[data-icon-detail="high"] {
   --_btn-icon-size: var(--btn-icon-size-detail-high);
 }
-.btn[data-size="micro"][data-icon-detail="high"],
-.btn[data-size="tiny"][data-icon-detail="high"],
-.btn[data-size="small"][data-icon-detail="high"] {
-  --_btn-icon-size: var(--btn-icon-size-detail-default);
-}
+/* Suppress on sizes outside the base/medium/large sweet spot —
+   restore the per-density standard so "high" never makes the icon smaller. */
+.btn[data-size="micro"][data-icon-detail="high"]  { --_btn-icon-size: var(--btn-icon-size, var(--btn-icon-size-micro)); }
+.btn[data-size="tiny"][data-icon-detail="high"]   { --_btn-icon-size: var(--btn-icon-size, var(--btn-icon-size-tiny)); }
+.btn[data-size="small"][data-icon-detail="high"]  { --_btn-icon-size: var(--btn-icon-size, var(--btn-icon-size-small)); }
+.btn[data-size="big"][data-icon-detail="high"]    { --_btn-icon-size: var(--btn-icon-size, var(--btn-icon-size-big)); }
+.btn[data-size="huge"][data-icon-detail="high"]   { --_btn-icon-size: var(--btn-icon-size, var(--btn-icon-size-huge)); }
+.btn[data-size="mega"][data-icon-detail="high"]   { --_btn-icon-size: var(--btn-icon-size, var(--btn-icon-size-mega)); }
+.btn[data-size="ultra"][data-icon-detail="high"]  { --_btn-icon-size: var(--btn-icon-size, var(--btn-icon-size-ultra)); }
 
 /* ════════════════════════════════════════════════════════════════
    ASYMMETRIC ICON PADDING — tighter on the icon side
