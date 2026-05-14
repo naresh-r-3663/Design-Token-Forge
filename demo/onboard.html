@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Create Project — Design Token Forge</title>
 <link rel="stylesheet" href="../packages/tokens/src/index.css">
-<link rel="stylesheet" href="shared.css?v=20260514i">
+<link rel="stylesheet" href="shared.css?v=20260514j">
 <style>
 /* ── Wizard Layout ────────────────────────────────── */
 .wizard-container {
@@ -100,7 +100,7 @@
   font-weight: 600; cursor: pointer; border: none;
   transition: all 150ms; font-family: inherit;
 }
-.btn-primary {
+.btn-brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral{
   background: var(--brand-component-bg-default, #286CE5); color: #fff;
 }
 .btn-primary:hover { opacity: 0.9; }
@@ -180,7 +180,7 @@
 
   <div class="wizard-header">
     <h1 id="wizardTitle">🚀 Start Your Own Project</h1>
-    <p id="wizardDesc">Add your project to Design Token Forge. Configure your brand colors & connect GitHub — your tokens will deploy automatically.</p>
+    <p id="wizardDesc">Add your project to Design Token Forge. Configure yourbrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralcolors & connect GitHub — your tokens will deploy automatically.</p>
   </div>
 
   <!-- Steps indicator -->
@@ -268,7 +268,7 @@
     var kp = JSON.parse(localStorage.getItem('dtf-known-projects') || '[]');
     if (kp.length > 0) {
       document.getElementById('wizardTitle').textContent = '\ud83d\ude80 Create Project';
-      document.getElementById('wizardDesc').textContent = 'Add another project to Design Token Forge. Configure your brand colors & connect GitHub \u2014 your tokens will deploy automatically.';
+      document.getElementById('wizardDesc').textContent = 'Add another project to Design Token Forge. Configure yourbrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralcolors & connect GitHub \u2014 your tokens will deploy automatically.';
     }
   } catch(e) {}
 

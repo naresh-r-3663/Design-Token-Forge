@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+echo "Running naming audit..."
+node scripts/audit-naming.cjs || {
+  echo ""
+  echo "❌ Commit blocked: legacy naming detected. Fix violations or use 'git commit --no-verify' to bypass."
+  exit 1
+}

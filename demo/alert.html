@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="../packages/tokens/src/index.css">
 <link rel="stylesheet" href="../packages/components/src/alert/alert.tokens.css">
 <link rel="stylesheet" href="../packages/components/src/alert/alert.css">
-<link rel="stylesheet" href="shared.css?v=20260514i">
+<link rel="stylesheet" href="shared.css?v=20260514j">
 <style>.alert-stack{display:flex;flex-direction:column;gap:16px;width:100%}</style>
 </head>
 <body>
@@ -233,7 +233,7 @@
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;div
   className="alert"
-  data-role={role}           {/* primary | info | success | warning | danger | neutral */}
+  data-role={role}           {/* brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral */}
   data-variant={variant}     {/* filled | outline | soft (omit for default) */}
   data-size={size}           {/* small | base | large */}
   role={['danger','warning'].includes(role) ? 'alert' : 'status'}
@@ -390,7 +390,7 @@
   /* Role → semantic upstream token (per-role, default/container layer) */
   var ROLE_UPSTREAM = {
     brand: '--brand-', info: '--info-', success: '--success-',
-    warning: '--warning-', danger: '--danger-', neutral: '--surface-base-'
+    warning: '--warning-', danger: '--danger-',brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral: '--surface-base-'
   };
 
   /* Per-role icons */
@@ -400,17 +400,17 @@
     success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
     warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
     danger:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>',
-    neutral: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>'
+   brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>'
   };
   var CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>';
-  var TITLES = { brand:'Information', info:'Info', success:'Success', warning:'Warning', danger:'Error', neutral:'Notice' };
+  var TITLES = { brand:'Information', info:'Info', success:'Success', warning:'Warning', danger:'Error',brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral:'Notice' };
   var BODIES = {
     brand: 'This is an informational message to help guide the user.',
     info:    'Here are some additional details you might find useful.',
     success: 'Your changes have been saved successfully.',
     warning: 'Please review the settings before proceeding.',
     danger:  'Something went wrong. Please try again or contact support.',
-    neutral: 'This is a neutral notification for general context.'
+   brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral: 'This is abrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral notification for general context.'
   };
 
   /* ══════════════════════════════════════════════════════

@@ -107,25 +107,25 @@
   --brand-on-component: #FFFFFF;
   --brand-on-container: #204ED1;
 
-  /* ── SECONDARY ─────────────────────────────────── */
-  --secondary-content-default: #616C76;
-  --secondary-content-strong: #566069;
-  --secondary-content-subtle: #858F99;
-  --secondary-content-faint: #ACB5BD;
-  --secondary-component-bg-default: #6B7680;
-  --secondary-component-bg-hover: #616C76;
-  --secondary-component-bg-pressed: #566069;
-  --secondary-component-outline-default: #909AA3;
-  --secondary-component-outline-hover: #909AA3;
-  --secondary-component-outline-pressed: #858F99;
-  --secondary-component-separator: #D6DEE5;
-  --secondary-container-bg: #EBF2F8;
-  --secondary-container-hover: #E2E9F0;
-  --secondary-container-pressed: #D6DEE5;
-  --secondary-container-outline: #ACB5BD;
-  --secondary-container-separator: #D6DEE5;
-  --secondary-on-component: #FFFFFF;
-  --secondary-on-container: #566069;
+  /* ── NEUTRAL ─────────────────────────────────── */
+  --neutral-content-default: #616C76;
+  --neutral-content-strong: #566069;
+  --neutral-content-subtle: #858F99;
+  --neutral-content-faint: #ACB5BD;
+  --neutral-component-bg-default: #6B7680;
+  --neutral-component-bg-hover: #616C76;
+  --neutral-component-bg-pressed: #566069;
+  --neutral-component-outline-default: #909AA3;
+  --neutral-component-outline-hover: #909AA3;
+  --neutral-component-outline-pressed: #858F99;
+  --neutral-component-separator: #D6DEE5;
+  --neutral-container-bg: #EBF2F8;
+  --neutral-container-hover: #E2E9F0;
+  --neutral-container-pressed: #D6DEE5;
+  --neutral-container-outline: #ACB5BD;
+  --neutral-container-separator: #D6DEE5;
+  --neutral-on-component: #FFFFFF;
+  --neutral-on-container: #566069;
 
 }
 
@@ -232,24 +232,24 @@
   --brand-on-component: #FFFFFF;
   --brand-on-container: #CDDDFF;
 
-  /* ── SECONDARY (dark) ─────────────────────────── */
-  --secondary-content-default: #C8D0D8;
-  --secondary-content-strong: #D6DEE5;
-  --secondary-content-subtle: #ACB5BD;
-  --secondary-content-faint: #858F99;
-  --secondary-component-bg-default: #737E88;
-  --secondary-component-bg-hover: #858F99;
-  --secondary-component-bg-pressed: #909AA3;
-  --secondary-component-outline-default: #737E88;
-  --secondary-component-outline-hover: #858F99;
-  --secondary-component-outline-pressed: #858F99;
-  --secondary-component-separator: #858F99;
-  --secondary-container-bg: #272F37;
-  --secondary-container-hover: #363F47;
-  --secondary-container-pressed: #454F58;
-  --secondary-container-outline: #616C76;
-  --secondary-container-separator: #363F47;
-  --secondary-on-component: #FFFFFF;
-  --secondary-on-container: #D6DEE5;
+  /* ── NEUTRAL (dark) ─────────────────────────── */
+  --neutral-content-default: #C8D0D8;
+  --neutral-content-strong: #D6DEE5;
+  --neutral-content-subtle: #ACB5BD;
+  --neutral-content-faint: #858F99;
+  --neutral-component-bg-default: #737E88;
+  --neutral-component-bg-hover: #858F99;
+  --neutral-component-bg-pressed: #909AA3;
+  --neutral-component-outline-default: #737E88;
+  --neutral-component-outline-hover: #858F99;
+  --neutral-component-outline-pressed: #858F99;
+  --neutral-component-separator: #858F99;
+  --neutral-container-bg: #272F37;
+  --neutral-container-hover: #363F47;
+  --neutral-container-pressed: #454F58;
+  --neutral-container-outline: #616C76;
+  --neutral-container-separator: #363F47;
+  --neutral-on-component: #FFFFFF;
+  --neutral-on-container: #D6DEE5;
 
 }

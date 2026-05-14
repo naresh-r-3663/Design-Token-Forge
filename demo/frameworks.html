@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="../packages/components/src/input/input.css">
 <link rel="stylesheet" href="../packages/components/src/select/select.tokens.css">
 <link rel="stylesheet" href="../packages/components/src/select/select.css">
-<link rel="stylesheet" href="shared.css?v=20260514i">
+<link rel="stylesheet" href="shared.css?v=20260514j">
 <style>
 .fw-header{padding:40px 40px 32px;max-width:1100px;width:100%;margin:0 auto;border-bottom:1px solid var(--demo-border)}
 .fw-header h1{font-size:var(--font-size-28,28px);font-weight:800;color:var(--demo-fg-strong);letter-spacing:-0.02em}
@@ -209,7 +209,7 @@ pre.code-body .tag{color:var(--danger-content-default,#dc2626)}
           <td><code>variant="brand"</code></td>
           <td><code>data-variant="brand"</code></td>
           <td><code>[data-variant="brand"]</code></td>
-          <td>Applies primary surface colors</td>
+          <td>Applies brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralsurface colors</td>
         </tr>
         <tr>
           <td><code>size="large"</code></td>
@@ -569,7 +569,7 @@ customElements.<span class="fn">define</span>(<span class="str">'dtf-button'</sp
 
 <span class="cm">/* Instance override — inline on one element */</span>
 &lt;button class=<span class="str">"btn"</span> data-variant=<span class="str">"brand"</span>
-  style=<span class="str">"--btn-primary-bg: #8B5CF6"</span>&gt;
+  style=<span class="str">"--btn-filled-bg: #8B5CF6"</span>&gt;
   Custom Purple
 &lt;/button&gt;</pre>
     </div>
@@ -579,7 +579,7 @@ customElements.<span class="fn">define</span>(<span class="str">'dtf-button'</sp
       <span class="live-label">Live — Token Override Demo</span>
       <div class="live-row">
         <button class="btn" data-variant="brand" data-size="base"><span class="btn__label">Default Primary</span></button>
-        <button class="btn" data-variant="brand" data-size="base" style="--btn-primary-bg:#8B5CF6;--btn-primary-bg-hover:#7C3AED"><span class="btn__label">Purple Override</span></button>
+        <button class="btn" data-variant="brand" data-size="base" style="--btn-filled-bg:#8B5CF6;--btn-filled-bg-hover:#7C3AED"><span class="btn__label">Purple Override</span></button>
         <button class="btn" data-variant="brand" data-size="base" style="--btn-radius-base:var(--radius-full)"><span class="btn__label">Pill Shape</span></button>
       </div>
       <div class="live-row" style="--btn-height-base:var(--spacing-28);--btn-font-size-base:var(--font-size-10)">

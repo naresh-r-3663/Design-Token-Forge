@@ -7,6 +7,8 @@
     "build": "cp src/socket.js dist/socket.js",
     "start": "node dist/socket.js",
     "dev": "node src/socket.js",
+    "audit:naming": "node scripts/audit-naming.cjs",
+    "audit": "pnpm audit:naming",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

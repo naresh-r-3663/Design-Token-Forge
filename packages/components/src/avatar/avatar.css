@@ -54,7 +54,7 @@
   --_av-icon-size: var(--avatar-icon-size-base);
   --_av-group-offset: var(--avatar-group-offset-base);
 
-  /* Surface active vars (default neutral) */
+  /* Surface active vars (defaultbrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral) */
   --_av-bg: var(--avatar-bg);
   --_av-fg: var(--avatar-fg);
 

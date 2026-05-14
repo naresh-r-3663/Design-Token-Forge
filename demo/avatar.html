@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="../packages/tokens/src/index.css">
 <link rel="stylesheet" href="../packages/components/src/avatar/avatar.tokens.css">
 <link rel="stylesheet" href="../packages/components/src/avatar/avatar.css">
-<link rel="stylesheet" href="shared.css?v=20260514i">
+<link rel="stylesheet" href="shared.css?v=20260514j">
 <style>
   .avatar-stage{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-end;justify-content:center;padding:24px}
   .av-card{display:flex;flex-direction:column;align-items:center;gap:8px}
@@ -128,7 +128,7 @@
   <!-- ─── 5. ROLE COLORS ──────────────────────────────── -->
   <section class="section" id="sec-roles">
     <div class="section-header"><h2>Role Colors</h2><span class="section-tag">6 Roles</span></div>
-    <p class="section-desc">Default neutral + 5 semantic roles. Applied via <code>data-role</code>, affects initials/icon background.</p>
+    <p class="section-desc">Defaultbrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral + 5 semantic roles. Applied via <code>data-role</code>, affects initials/icon background.</p>
     <div class="section-body"><div class="avatar-stage" id="roleGallery"></div></div>
   </section>
 
@@ -220,7 +220,7 @@
   className="avatar"
   data-size={size}           {/* micro … ultra */}
   data-shape={shape}         {/* circle | squircle | rounded-square */}
-  data-role={role}           {/* primary | brand | danger | success | warning */}
+  data-role={role}           {/* brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral*/}
   data-disabled={disabled ? '' : undefined}
   role="img"
   aria-label={name}
@@ -280,8 +280,8 @@
 --avatar-group-offset-{size}    /* overlap offset for groups (-25% of size) */
 
 /* ── Surface ── */
---avatar-bg / -bg-hover / -fg   /* neutral fallback */
---avatar-{role}-bg / -fg        /* primary, brand, danger, success, warning */
+--avatar-bg / -bg-hover / -fg   /*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral fallback */
+--avatar-{role}-bg / -fg        /* primary, brand, danger, success,brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral*/
 --avatar-ring-width / -color / -offset
 
 /* ── Typography ── */

@@ -79,7 +79,7 @@
   --_ts-filled-fg:      var(--toast-info-filled-fg);
   --_ts-outline-border: var(--toast-info-outline-border);
 
-  /* — variant active vars (default = neutral surface) — */
+  /* — variant active vars (default =brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral surface) — */
   --_ts-bg:           var(--toast-bg);
   --_ts-fg:           var(--toast-fg);
   --_ts-border-color: var(--toast-border-color);
@@ -136,7 +136,7 @@
 /* ────────────────────────────────────────────────────────────────
    4.  ROLE SELECTORS
    ──────────────────────────────────────────────────────────────── */
-/* primary = alias for info (default) — consistency with other components */
+/* brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral= alias forbrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral(default) — consistency with other components */
 .toast[data-role="brand"] {
   --_ts-accent:         var(--toast-info-accent);
   --_ts-icon-color:     var(--toast-info-icon-color);

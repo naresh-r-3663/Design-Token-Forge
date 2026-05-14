@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="../packages/tokens/src/index.css">
 <link rel="stylesheet" href="../packages/components/src/button/button.tokens.css">
 <link rel="stylesheet" href="../packages/components/src/button/button.css">
-<link rel="stylesheet" href="shared.css?v=20260514i">
+<link rel="stylesheet" href="shared.css?v=20260514j">
 <style>
 /* ════════════════════════════════════════════════════════════
    Color System Integration — Framework Usage for Every Tier
@@ -160,8 +160,8 @@ html[data-theme="dark"] .ci-note-box code{background:rgba(255,255,255,.1)}
         <span class="arch-label">T3 Status</span>
         <div class="arch-tokens">
           <span class="arch-token t3">T1 tokens re-mapped per</span>
-          <span class="arch-token t3">primary · brand · success</span>
-          <span class="arch-token t3">warning · danger · info</span>
+          <span class="arch-token t3">brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral·brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral· success</span>
+          <span class="arch-token t3">warning ·brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral· info</span>
         </div>
       </div>
     </div>
@@ -215,7 +215,7 @@ html[data-theme="dark"] .ci-note-box code{background:rgba(255,255,255,.1)}
 }
 
 <span class="cm">/* Palette visualization */</span>
-.palette-strip--primary [data-step=<span class="str">"300"</span>] {
+.palette-strip--brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral[data-step=<span class="str">"300"</span>] {
   background: <span class="fn">var</span>(<span class="kw">--prim-monochromatic-300</span>);
 }
 .palette-strip--danger [data-step=<span class="str">"500"</span>] {
@@ -318,14 +318,14 @@ html[data-theme="dark"] .ci-note-box code{background:rgba(255,255,255,.1)}
 <span class="kw">--brand-on-component</span>   <span class="cm">/* white text on filled button */</span>
 <span class="kw">--brand-on-container</span>   <span class="cm">/* dark text on tinted container */</span>
 
-<span class="cm">/* Replace "brand" with any role: danger, warning, success, info */</span></pre>
+<span class="cm">/* Replace "brand" with any role: danger, warning, success,brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral*/</span></pre>
     </div>
 
     <h3>Role Reference</h3>
     <table class="token-table">
       <thead><tr><th>Role</th><th>Use For</th><th>Example Tokens</th></tr></thead>
       <tbody>
-        <tr><td><strong>primary</strong></td><td class="td-use">Main actions, links, active indicators, brand accent</td><td><code>--brand-component-bg-default</code></td></tr>
+        <tr><td><strong>primary</strong></td><td class="td-use">Main actions, links, active indicators,brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralaccent</td><td><code>--brand-component-bg-default</code></td></tr>
         <tr><td><strong>danger</strong></td><td class="td-use">Destructive actions, errors, validation failures</td><td><code>--danger-content-default</code></td></tr>
         <tr><td><strong>warning</strong></td><td class="td-use">Caution states, pending actions, amber alerts</td><td><code>--warning-container-bg</code></td></tr>
         <tr><td><strong>success</strong></td><td class="td-use">Confirmations, completed states, positive feedback</td><td><code>--success-on-container</code></td></tr>
@@ -583,12 +583,12 @@ html[data-theme="dark"] .ci-note-box code{background:rgba(255,255,255,.1)}
 <span class="kw">--surface-bright-ct-faint</span>      <span class="cm">/* placeholders, disabled */</span>
 
 <span class="cm">/* Component (interactive elements) on this surface */</span>
-<span class="kw">--surface-bright-cm-bg</span>              <span class="cm">/* neutral fill */</span>
-<span class="kw">--surface-bright-cm-bg-hover</span>        <span class="cm">/* neutral fill hover */</span>
-<span class="kw">--surface-bright-cm-bg-pressed</span>      <span class="cm">/* neutral fill pressed */</span>
-<span class="kw">--surface-bright-cm-outline</span>         <span class="cm">/* neutral border */</span>
-<span class="kw">--surface-bright-cm-outline-hover</span>   <span class="cm">/* neutral border hover */</span>
-<span class="kw">--surface-bright-cm-outline-pressed</span> <span class="cm">/* neutral border pressed */</span>
+<span class="kw">--surface-bright-cm-bg</span>              <span class="cm">/*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral fill */</span>
+<span class="kw">--surface-bright-cm-bg-hover</span>        <span class="cm">/*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral fill hover */</span>
+<span class="kw">--surface-bright-cm-bg-pressed</span>      <span class="cm">/*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral fill pressed */</span>
+<span class="kw">--surface-bright-cm-outline</span>         <span class="cm">/*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral border */</span>
+<span class="kw">--surface-bright-cm-outline-hover</span>   <span class="cm">/*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral border hover */</span>
+<span class="kw">--surface-bright-cm-outline-pressed</span> <span class="cm">/*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral border pressed */</span>
 <span class="kw">--surface-bright-cm-separator</span>       <span class="cm">/* divider inside component */</span></pre>
     </div>
 
@@ -926,7 +926,7 @@ h1, h2, h3 {
 
 <span class="cm">/* Now use it: */</span>
 &lt;<span class="tag">div</span> data-status=<span class="str">"danger"</span>&gt;
-  <span class="cm">&lt;!-- All children using --brand-* render in danger colors --&gt;</span>
+  <span class="cm">&lt;!-- All children using --brand-* render inbrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralcolors --&gt;</span>
   &lt;<span class="tag">button</span> class=<span class="str">"btn"</span> data-variant=<span class="str">"brand"</span>&gt;Delete Account&lt;/<span class="tag">button</span>&gt;
 &lt;/<span class="tag">div</span>&gt;
 
@@ -947,7 +947,7 @@ h1, h2, h3 {
 
 <span class="kw">type</span> Status = <span class="str">'brand'</span> | <span class="str">'danger'</span> | <span class="str">'warning'</span> | <span class="str">'success'</span> | <span class="str">'info'</span>;
 
-<span class="cm">/** Wrap any content to remap primary tokens to a status role */</span>
+<span class="cm">/** Wrap any content to remap brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutraltokens to a status role */</span>
 <span class="kw">export function</span> <span class="fn">StatusContext</span>({ status, children }: {
   status: Status;
   children: React.ReactNode;
@@ -1053,7 +1053,7 @@ h1, h2, h3 {
     </table>
 
     <div class="ci-note-box" style="margin-top:12px">
-      <strong>Rule of thumb:</strong> Use T2 for layout structure (backgrounds, text, neutral elements),
+      <strong>Rule of thumb:</strong> Use T2 for layout structure (backgrounds, text,brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral elements),
       T1 for branded/semantic meaning (actions, alerts, status), and T3 for contextual role switching.
       Only reach for T0 in tools that visualize the palette itself.
     </div>

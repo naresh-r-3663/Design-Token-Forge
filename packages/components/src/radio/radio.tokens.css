@@ -67,7 +67,7 @@
   --radio-opacity-disabled: 0.5;
 
   /* ── Danger / Error (shared across variants) ── */
-  /* danger — canonical name */
+  /*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral— canonical name */
   --radio-circle-border-color-danger: var(--danger-component-outline-default);
   --radio-circle-border-color-danger-hover: var(--danger-component-outline-hover);
   --radio-circle-bg-on-danger: var(--danger-component-bg-default);
