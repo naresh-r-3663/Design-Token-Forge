@@ -189,7 +189,7 @@
    4.  VARIANT SELECTORS — structural surface treatment
    ════════════════════════════════════════════════════════════════ */
 
-/* Filled (default) — colored fill on mutedbrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral track */
+/* Filled (default) — colored fill on muted neutral track */
 .progress-bar:not([data-variant]),
 .progress-bar[data-variant="filled"] {
   --_pg-track-bg: var(--progress-track-bg);

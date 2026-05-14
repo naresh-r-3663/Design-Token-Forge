@@ -281,7 +281,7 @@
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;button
   className="icon-btn"
   data-variant={variant}   {/* filled | outlined | soft | ghost */}
-  data-role={role}          {/* brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral */}
+  data-role={role}          {/* primary | danger | success | warning | brand | info | neutral */}
   data-size={size}
   data-shape={shape}       {/* square | circle */}
   data-rounded={rounded || undefined}
@@ -367,7 +367,7 @@
     warning:{filled:'Alert',outlined:'Warn',soft:'Caution',ghost:'Skip'},
     brand:{filled:'Start',outlined:'Learn',soft:'Try',ghost:'Skip'},
     info:{filled:'Info',outlined:'Details',soft:'Help',ghost:'Tip'},
-   brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral:{filled:'Menu',outlined:'Close',soft:'Options',ghost:'More'}
+    neutral:{filled:'Menu',outlined:'Close',soft:'Options',ghost:'More'}
   };
 
   var curStruct='filled',curRole='brand',curS='base',curRounded=false;
@@ -592,14 +592,14 @@
     var isN=(r==='neutral'),rp=isN?'surface-'+s:r;
     var rows=[
       {sec:'Filled ('+r+')'},
-      {label:'BG',token:'--icon-btn-filled-bg',via:'--'+rp+(isN?'-cm-bg':'-component-bg-default')},
-      {label:'FG',token:'--icon-btn-filled-fg',via:'--'+rp+(isN?'-ct-default':'-on-component')},
+      {label:'BG',token:'--icon-btn-primary-bg',via:'--'+rp+(isN?'-cm-bg':'-component-bg-default')},
+      {label:'FG',token:'--icon-btn-primary-fg',via:'--'+rp+(isN?'-ct-default':'-on-component')},
       {sec:'Outlined ('+r+')'},
-      {label:'BG Hover',token:'--icon-btn-outlined-bg-hover',via:'--'+rp+(isN?'-subtle':'-container-bg')},
-      {label:'FG',token:'--icon-btn-outlined-fg',via:'--'+rp+(isN?'-ct-default':'-content-default')},
+      {label:'BG Hover',token:'--icon-btn-secondary-bg-hover',via:'--'+rp+(isN?'-subtle':'-container-bg')},
+      {label:'FG',token:'--icon-btn-secondary-fg',via:'--'+rp+(isN?'-ct-default':'-content-default')},
       {sec:'Soft ('+r+')'},
-      {label:'BG',token:'--icon-btn-soft-bg',via:'--'+rp+(isN?'-subtle':'-container-bg')},
-      {label:'FG',token:'--icon-btn-soft-fg',via:'--'+rp+(isN?'-ct-default':'-content-default')},
+      {label:'BG',token:'--icon-btn-tertiary-bg',via:'--'+rp+(isN?'-subtle':'-container-bg')},
+      {label:'FG',token:'--icon-btn-tertiary-fg',via:'--'+rp+(isN?'-ct-default':'-content-default')},
       {sec:'Ghost ('+r+')'},
       {label:'BG Hover',token:'--icon-btn-ghost-bg-hover',via:isN?'--surface-'+s+'-subtle':'--'+r+'-container-bg'},
       {label:'FG',token:'--icon-btn-ghost-fg',via:isN?'--surface-'+s+'-ct-default':'--'+r+'-content-default'}

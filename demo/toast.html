@@ -96,7 +96,7 @@
   <!-- ─── 2. VARIANT GALLERY ──────────────────────────── -->
   <section class="section" id="sec-variants">
     <div class="section-header"><h2>Variant Gallery</h2><span class="section-tag">4 × 4</span></div>
-    <p class="section-desc">Every variant crossed with every role. Default =brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral surface + role accent. Soft = tinted role bg. Filled = solid role bg. Outline = transparent + role border.</p>
+    <p class="section-desc">Every variant crossed with every role. Default = neutral surface + role accent. Soft = tinted role bg. Filled = solid role bg. Outline = transparent + role border.</p>
     <div class="section-body" id="variantGallery"></div>
   </section>
 
@@ -199,7 +199,7 @@
     &lt;div
       key={t.id}
       className="toast"
-      data-role={t.role}           {/* brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral*/}
+      data-role={t.role}           {/* primary | success | warning | danger */}
       data-size={t.size}           {/* small | base | large */}
       data-variant={t.variant}     {/* soft | filled | outline */}
       data-state={t.state}
@@ -282,7 +282,7 @@
 --toast-close-size-{size}    /* close button dimensions */
 
 /* ── Surface ── */
---toast-bg / -fg / -shadow   /* defaultbrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral surface */
+--toast-bg / -fg / -shadow   /* default neutral surface */
 --toast-{role}-accent / -icon-color / -title-color
 --toast-{role}-soft-bg       /* soft variant tinted bg */
 --toast-{role}-filled-bg / -filled-fg

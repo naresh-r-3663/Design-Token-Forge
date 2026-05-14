@@ -15,15 +15,15 @@
    ORTHOGONAL VARIANT MODEL
    ────────────────────────
    Structure (data-variant): filled | outlined | soft | ghost
-   Role (data-role):         brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral
+   Role (data-role):         primary | danger | success | warning | brand | info | neutral
 
    Token groups below use legacy names for backward compatibility:
-     brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral ≡ filled   (solid background, role-colored)
+     primary  ≡ filled   (solid background, role-colored)
      secondary ≡ outlined (border emphasis, role-colored)
      tertiary ≡ soft     (tinted container, role-colored)
-     ghost    = ghost    (transparent,brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral by default)
+     ghost    = ghost    (transparent, neutral by default)
 
-  brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral/brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral/brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral/brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral / outline /brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralgroups are
+   danger / success / warning / neutral / outline / brand groups are
    LEGACY shortcuts (filled+role) for backward compatibility with
    data-variant="danger" syntax. They still INHERIT from --btn-*.
    ════════════════════════════════════════════════════════════════ */
@@ -296,7 +296,7 @@
      DIVIDER  (11 vars)  — STRUCTURAL, owned (no inheritance from button).
      Filled variants: 30% color-mix on the role's fg (= on-component
      color). Theme-immune, follows the role, never hardcodes white.
-     Outlined / ghost:brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral outline tokens.
+     Outlined / ghost: neutral outline tokens.
      ──────────────────────────────────────────────────────────── */
   --split-btn-divider-width: 1px;
   --split-btn-divider-color-filled:   color-mix(in srgb, var(--split-btn-filled-fg) 30%, transparent);

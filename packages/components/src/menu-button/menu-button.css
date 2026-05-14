@@ -357,7 +357,7 @@
   --_mb-shadow-active: var(--menu-btn-shadow-active);
 }
 
-/* ── BRAND (filled,brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralpalette) ───────────────────────────── */
+/* ── BRAND (filled, brand palette) ───────────────────────────── */
 .menu-btn[data-variant="brand"] {
   --_mb-bg: var(--menu-btn-brand-bg);
   --_mb-bg-hover: var(--menu-btn-brand-bg-hover);
@@ -376,7 +376,7 @@
    STRUCTURAL VARIANT ALIASES
    Canonical structural names that map to the existing token groups.
    These work identically to their legacy counterparts:
-     filled   ≡ brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral  (solid background)
+     filled   ≡ primary   (solid background)
      outlined ≡ secondary  (border emphasis)
      soft     ≡ tertiary   (tinted container)
      ghost    — already exists above
@@ -436,19 +436,19 @@
            data-variant="ghost"    data-role="brand"
 
    Structural variants: filled | outlined | soft | ghost
-   Semantic roles:      brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral
+   Semantic roles:      primary | danger | success | warning | brand | info | neutral
 
    HOW IT WORKS:
    • Structural variants (filled/outlined/soft) read from --brand-* semantic palette.
    • Role selectors remap --brand-* to the chosen role palette at the element level.
    • This composes automatically — any structure × any role without per-combo selectors.
-   • Ghost defaults tobrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral (surface tokens). Role selectors override ghost tokens too.
+   • Ghost defaults to neutral (surface tokens). Role selectors override ghost tokens too.
    • Legacy single-value names (danger, success, etc.) keep working unchanged above.
    ════════════════════════════════════════════════════════════════ */
 
 /* ── data-role="brand" ────────────────────────────────────── */
 /* Filled/outlined/soft already read --brand-* by default.
-   Only ghost needs explicit brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutraloverride (default ghost =brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral). */
+   Only ghost needs explicit primary override (default ghost = neutral). */
 .menu-btn[data-role="brand"] {
   --menu-btn-ghost-bg-hover: var(--brand-container-bg);
   --menu-btn-ghost-bg-active: var(--brand-container-pressed);
@@ -563,8 +563,8 @@
 }
 
 /* ── data-role="neutral" ────────────────────────────────────── */
-/* Remaps brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralpalette → surface-context tokens so structural
-   variants automatically getbrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral/surface treatment. */
+/* Remaps primary palette → surface-context tokens so structural
+   variants automatically get neutral/surface treatment. */
 .menu-btn[data-role="neutral"] {
   --brand-component-bg-default: var(--surface-base-cm-bg);
   --brand-component-bg-hover: var(--surface-base-cm-bg-hover);

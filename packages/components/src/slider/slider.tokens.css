@@ -3,7 +3,7 @@
    Layer 0: System defaults for slider variables.
    All values reference global tokens — zero hardcoded visuals.
    Structural variants: filled (default) | soft
-   Semantic roles:      brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral(default) |brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral
+   Semantic roles:      primary (default) | danger | success | warning | neutral
    ════════════════════════════════════════════════════════════════ */
 
 .slider {
@@ -123,7 +123,7 @@
      Reads from --brand-* palette; role selectors remap automatically.
      ──────────────────────────────────────────────────────────── */
 
-  /* ── Track (unfilled rail) —brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral, not role-colored ── */
+  /* ── Track (unfilled rail) — neutral, not role-colored ── */
   --slider-track-bg: var(--surface-base-cm-outline-hover);
   --slider-track-bg-hover: var(--surface-base-cm-outline-pressed, var(--surface-base-cm-outline-hover));
   --slider-track-bg-disabled: var(--surface-base-cm-outline);

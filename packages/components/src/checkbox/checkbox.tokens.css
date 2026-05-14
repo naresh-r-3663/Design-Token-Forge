@@ -95,7 +95,7 @@
   /* ────────────────────────────────────────────────────────────
      🎨 SURFACE — DANGER / ERROR  (8 vars, shared across variants)
      ────────────────────────────────────────────────────────── */
-  /*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral— canonical name */
+  /* danger — canonical name */
   --checkbox-box-border-color-danger: var(--danger-component-outline-default);
   --checkbox-box-border-color-danger-hover: var(--danger-component-outline-hover);
   --checkbox-box-bg-on-danger: var(--danger-component-bg-default);

@@ -282,7 +282,7 @@
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;button
   className="btn"
   data-variant={variant}   {/* filled | outlined | soft | ghost */}
-  data-role={role}          {/* brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral */}
+  data-role={role}          {/* primary | danger | success | warning | brand | info | neutral */}
   data-size={size}          {/* micro &#8230; ultra */}
   data-rounded={rounded || undefined}
   data-loading={loading || undefined}
@@ -330,9 +330,9 @@
 --btn-gap-{size}              /* icon-label gap */
 
 /* Surface (structural groups; role remaps via --brand-* cascade) */
---btn-filled-*     (= filled tokens)
---btn-outlined-*   (= outlined tokens)
---btn-soft-*    (= soft tokens)
+--btn-primary-*     (= filled tokens)
+--btn-secondary-*   (= outlined tokens)
+--btn-tertiary-*    (= soft tokens)
 --btn-ghost-*       (ghost tokens)
 
 /* Typography */
@@ -383,7 +383,7 @@
     warning: {filled:'Proceed',outlined:'Override',soft:'Caution',ghost:'Skip'},
     brand:   {filled:'Get Started',outlined:'Learn More',soft:'Features',ghost:'Skip'},
     info:    {filled:'Learn More',outlined:'View Docs',soft:'FAQ',ghost:'Info'},
-   brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral: {filled:'Dismiss',outlined:'Close',soft:'Options',ghost:'More'}
+    neutral: {filled:'Dismiss',outlined:'Close',soft:'Options',ghost:'More'}
   };
 
   var curStruct = 'filled', curRole = 'brand', curS = 'base', curRounded = false, curIconDetail = 'default';
@@ -643,16 +643,16 @@
     var isN=(r==='neutral'), rp=isN?'surface-'+s:r;
     var rows=[
       {sec:'Filled ('+r+')'},
-      {label:'BG',token:'--btn-filled-bg',via:'--'+rp+(isN?'-cm-bg':'-component-bg-default'),val:cs?cs.backgroundColor:''},
-      {label:'BG Hover',token:'--btn-filled-bg-hover',via:'--'+rp+(isN?'-cm-bg-hover':'-component-bg-hover')},
-      {label:'FG',token:'--btn-filled-fg',via:'--'+rp+(isN?'-ct-default':'-on-component'),val:cs?cs.color:''},
+      {label:'BG',token:'--btn-primary-bg',via:'--'+rp+(isN?'-cm-bg':'-component-bg-default'),val:cs?cs.backgroundColor:''},
+      {label:'BG Hover',token:'--btn-primary-bg-hover',via:'--'+rp+(isN?'-cm-bg-hover':'-component-bg-hover')},
+      {label:'FG',token:'--btn-primary-fg',via:'--'+rp+(isN?'-ct-default':'-on-component'),val:cs?cs.color:''},
       {sec:'Outlined ('+r+')'},
-      {label:'BG Hover',token:'--btn-outlined-bg-hover',via:'--'+rp+(isN?'-subtle':'-container-bg')},
-      {label:'FG',token:'--btn-outlined-fg',via:'--'+rp+(isN?'-ct-default':'-content-default'),val:cs2?cs2.color:''},
-      {label:'Border',token:'--btn-outlined-border-color',via:'--'+rp+(isN?'-outline':'-component-outline-default')},
+      {label:'BG Hover',token:'--btn-secondary-bg-hover',via:'--'+rp+(isN?'-subtle':'-container-bg')},
+      {label:'FG',token:'--btn-secondary-fg',via:'--'+rp+(isN?'-ct-default':'-content-default'),val:cs2?cs2.color:''},
+      {label:'Border',token:'--btn-secondary-border-color',via:'--'+rp+(isN?'-outline':'-component-outline-default')},
       {sec:'Soft ('+r+')'},
-      {label:'BG',token:'--btn-soft-bg',via:'--'+rp+(isN?'-subtle':'-container-bg')},
-      {label:'FG',token:'--btn-soft-fg',via:'--'+rp+(isN?'-ct-default':'-content-default')},
+      {label:'BG',token:'--btn-tertiary-bg',via:'--'+rp+(isN?'-subtle':'-container-bg')},
+      {label:'FG',token:'--btn-tertiary-fg',via:'--'+rp+(isN?'-ct-default':'-content-default')},
       {sec:'Ghost ('+r+')'},
       {label:'BG Hover',token:'--btn-ghost-bg-hover',via:isN?'--surface-'+s+'-subtle':'--'+r+'-container-bg'},
       {label:'FG',token:'--btn-ghost-fg',via:isN?'--surface-'+s+'-ct-default':'--'+r+'-content-default'},

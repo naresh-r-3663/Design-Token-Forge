@@ -6,13 +6,13 @@
    ORTHOGONAL MODEL
    ────────────────
    Structure (data-variant): filled | outlined | soft | ghost
-   Role (data-role):         brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral
+   Role (data-role):         primary | danger | success | warning | brand | info | neutral
 
    Token groups below use legacy names for backward compatibility:
-     brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral ≡ filled   (solid background, role-colored)
+     primary  ≡ filled   (solid background, role-colored)
      secondary ≡ outlined (border emphasis, role-colored)
      tertiary ≡ soft     (tinted container, role-colored)
-     ghost    = ghost    (transparent,brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral by default)
+     ghost    = ghost    (transparent, neutral by default)
 
    All primary/secondary/tertiary tokens reference --brand-* semantic palette.
    CSS role selectors remap --brand-* → --{role}-* at the element level,
@@ -179,7 +179,7 @@
   --menu-btn-ghost-border-color-disabled: transparent;
   --menu-btn-ghost-opacity-disabled: 0.5;
 
-  /* ── NEUTRAL (legacy: filled +brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral/surface context) ──────────────────── */
+  /* ── NEUTRAL (legacy: filled + neutral/surface context) ──────────────────── */
   --menu-btn-neutral-bg: var(--surface-base-cm-bg);
   --menu-btn-neutral-bg-hover: var(--surface-base-cm-bg-hover);
   --menu-btn-neutral-bg-active: var(--surface-base-cm-bg-pressed);
@@ -207,7 +207,7 @@
   --menu-btn-soft-border-color-disabled: transparent;
   --menu-btn-soft-opacity-disabled: 0.5;
 
-  /* ── DANGER (legacy: filled +brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralrole) ───────────────────────────────── */
+  /* ── DANGER (legacy: filled + danger role) ───────────────────────────────── */
   --menu-btn-danger-bg: var(--danger-component-bg-default);
   --menu-btn-danger-bg-hover: var(--danger-component-bg-hover);
   --menu-btn-danger-bg-active: var(--danger-component-bg-pressed);
@@ -221,7 +221,7 @@
   --menu-btn-danger-border-color-disabled: var(--danger-component-bg-default);
   --menu-btn-danger-opacity-disabled: 0.5;
 
-  /* ── SUCCESS (legacy: filled +brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralrole) ─────────────────────────────── */
+  /* ── SUCCESS (legacy: filled + success role) ─────────────────────────────── */
   --menu-btn-success-bg: var(--success-component-bg-default);
   --menu-btn-success-bg-hover: var(--success-component-bg-hover);
   --menu-btn-success-bg-active: var(--success-component-bg-pressed);
@@ -235,7 +235,7 @@
   --menu-btn-success-border-color-disabled: var(--success-component-bg-default);
   --menu-btn-success-opacity-disabled: 0.5;
 
-  /* ── WARNING (legacy: filled +brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralrole) ─────────────────────────────── */
+  /* ── WARNING (legacy: filled + warning role) ─────────────────────────────── */
   --menu-btn-warning-bg: var(--warning-component-bg-default);
   --menu-btn-warning-bg-hover: var(--warning-component-bg-hover);
   --menu-btn-warning-bg-active: var(--warning-component-bg-pressed);
@@ -249,7 +249,7 @@
   --menu-btn-warning-border-color-disabled: var(--warning-component-bg-default);
   --menu-btn-warning-opacity-disabled: 0.5;
 
-  /* ── OUTLINE (legacy: outlined +brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral/surface context) ───────── */
+  /* ── OUTLINE (legacy: outlined + neutral/surface context) ───────── */
   --menu-btn-outline-bg: transparent;
   --menu-btn-outline-bg-hover: var(--surface-base-subtle);
   --menu-btn-outline-bg-active: var(--surface-base-strong);
@@ -263,7 +263,7 @@
   --menu-btn-outline-border-color-disabled: var(--surface-base-outline);
   --menu-btn-outline-opacity-disabled: 0.5;
 
-  /* ── BRAND (legacy: filled +brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralrole) ───────────────────────── */
+  /* ── BRAND (legacy: filled + brand role) ───────────────────────── */
   --menu-btn-brand-bg: var(--brand-component-bg-default);
   --menu-btn-brand-bg-hover: var(--brand-component-bg-hover);
   --menu-btn-brand-bg-active: var(--brand-component-bg-pressed);

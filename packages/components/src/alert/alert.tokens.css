@@ -62,7 +62,7 @@
   /* ────────────────────────────────────────────────────────────
      4 · SURFACE — per-role default/soft  (5 roles × 8 = 40 vars)
      ────────────────────────────────────────────────────────── */
-  /* brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral— canonical name (matches other components) */
+  /* primary — canonical name (matches other components) */
   --alert-primary-bg:          var(--brand-container-bg);
   --alert-primary-fg:          var(--brand-content-default);
   --alert-primary-accent:      var(--brand-component-bg-default);
@@ -72,7 +72,7 @@
   --alert-primary-link-color:  var(--brand-content-default);
   --alert-primary-link-hover:  var(--brand-content-strong);
 
-  /*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral— dedicatedbrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralpalette (unique blue, distinct from primary) */
+  /* info — dedicated info palette (unique blue, distinct from primary) */
   --alert-info-bg:          var(--info-container-bg);
   --alert-info-fg:          var(--info-content-default);
   --alert-info-accent:      var(--info-component-bg-default);
@@ -109,7 +109,7 @@
   --alert-danger-link-color:  var(--danger-content-default);
   --alert-danger-link-hover:  var(--danger-content-strong);
 
-  /*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral — surface-context (no semantic color) */
+  /* neutral — surface-context (no semantic color) */
   --alert-neutral-bg:          var(--surface-base-cn-bg);
   --alert-neutral-fg:          var(--surface-base-ct-default);
   --alert-neutral-accent:      var(--surface-base-cm-outline);

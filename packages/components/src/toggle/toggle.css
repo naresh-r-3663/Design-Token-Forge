@@ -241,7 +241,7 @@
 
 /* ── data-role="brand" (no-op, already default) ─────────── */
 .switch[data-role="brand"] {
-  /* explicit brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral— no-op */
+  /* explicit primary — no-op */
 }
 
 /* ── data-role="danger" ─────────────────────────────────── */

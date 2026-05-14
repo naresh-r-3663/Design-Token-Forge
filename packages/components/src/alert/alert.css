@@ -31,7 +31,7 @@
   --_al-icon-size:   var(--alert-icon-size-base);
   --_al-close-size:  var(--alert-close-size-base);
 
-  /* — role active vars (brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutraldefault) — */
+  /* — role active vars (primary default) — */
   --_al-bg:             var(--alert-primary-bg);
   --_al-fg:             var(--alert-primary-fg);
   --_al-accent:         var(--alert-primary-accent);
@@ -94,7 +94,7 @@
 /* ────────────────────────────────────────────────────────────────
    3.  ROLE SELECTORS
    ──────────────────────────────────────────────────────────────── */
-/* brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral= default role — uses --brand-* palette */
+/* primary = default role — uses --brand-* palette */
 .alert[data-role="brand"] {
   --_al-bg:             var(--alert-primary-bg);
   --_al-fg:             var(--alert-primary-fg);
@@ -109,7 +109,7 @@
   --_al-outline-border: var(--alert-primary-outline-border);
   --_al-soft-bg:        var(--alert-primary-soft-bg);
 }
-/*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral— dedicatedbrand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutralpalette (distinct blue) */
+/* info — dedicated info palette (distinct blue) */
 .alert[data-role="info"] {
   --_al-bg:             var(--alert-info-bg);
   --_al-fg:             var(--alert-info-fg);

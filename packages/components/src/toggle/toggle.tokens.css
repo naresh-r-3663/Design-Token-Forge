@@ -104,7 +104,7 @@
      🎨 SURFACE — DANGER / ERROR  (10 vars) ─ 67 cumulative
      ──────────────────────────────────────────────────────────── */
 
-  /*brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral— canonical name */
+  /* danger — canonical name */
   --switch-track-bg-on-danger: var(--danger-component-bg-default);
   --switch-track-bg-on-danger-hover: var(--danger-component-bg-hover);
   --switch-track-border-color-on-danger: var(--danger-component-bg-default);

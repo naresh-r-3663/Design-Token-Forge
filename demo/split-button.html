@@ -377,7 +377,7 @@
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;div
   className="split-btn"
   data-variant={variant}   {/* filled | outlined | soft | ghost */}
-  data-role={role}          {/* brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral|brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral */}
+  data-role={role}          {/* primary | danger | success | warning | brand | info | neutral */}
   data-size={size}
   data-rounded={rounded || undefined}
   data-loading={loading || undefined}
@@ -477,7 +477,7 @@
     warning:{filled:'Proceed',outlined:'Override',soft:'Caution',ghost:'Skip'},
     brand:{filled:'Get Started',outlined:'Learn More',soft:'Features',ghost:'Skip'},
     info:{filled:'Learn More',outlined:'View Docs',soft:'FAQ',ghost:'Info'},
-   brand |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral| info |brand | danger | warning | info | success | neutral|brand | danger | warning | info | success | neutral:{filled:'Dismiss',outlined:'Close',soft:'Options',ghost:'More'}
+    neutral:{filled:'Dismiss',outlined:'Close',soft:'Options',ghost:'More'}
   };
 
   var curStruct='filled',curRole='brand',curS='base',curRounded=false,curIconDetail='default';
@@ -738,13 +738,13 @@
     var isN=(r==='neutral'),rp=isN?'surface-'+s:r;
     var rows=[
       {sec:'Filled ('+r+')'},
-      {label:'BG',token:'--split-btn-filled-bg',via:'--'+rp+(isN?'-cm-bg':'-component-bg-default')},
-      {label:'FG',token:'--split-btn-filled-fg',via:'--'+rp+(isN?'-ct-default':'-on-component')},
+      {label:'BG',token:'--split-btn-primary-bg',via:'--'+rp+(isN?'-cm-bg':'-component-bg-default')},
+      {label:'FG',token:'--split-btn-primary-fg',via:'--'+rp+(isN?'-ct-default':'-on-component')},
       {sec:'Outlined ('+r+')'},
-      {label:'Border',token:'--split-btn-outlined-border-color',via:'--'+rp+(isN?'-outline':'-component-outline-default')},
-      {label:'FG',token:'--split-btn-outlined-fg',via:'--'+rp+(isN?'-ct-default':'-content-default')},
+      {label:'Border',token:'--split-btn-secondary-border-color',via:'--'+rp+(isN?'-outline':'-component-outline-default')},
+      {label:'FG',token:'--split-btn-secondary-fg',via:'--'+rp+(isN?'-ct-default':'-content-default')},
       {sec:'Soft ('+r+')'},
-      {label:'BG',token:'--split-btn-soft-bg',via:'--'+rp+(isN?'-hover':'-container-bg')},
+      {label:'BG',token:'--split-btn-tertiary-bg',via:'--'+rp+(isN?'-hover':'-container-bg')},
       {sec:'Ghost ('+r+')'},
       {label:'FG',token:'--split-btn-ghost-fg',via:isN?'--surface-'+s+'-ct-default':'--'+r+'-content-default'}
     ];
