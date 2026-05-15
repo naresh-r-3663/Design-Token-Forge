@@ -822,21 +822,6 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   box-shadow:0 1px 2px rgba(0,0,0,.10), 0 0 0 2px var(--brand-component-bg-default,#3366f0);
 }
 .ev2-seg-btn:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px}
-.ev2-seg-btn[data-previewing="true"]{
-  background:rgba(51,102,240,.06);
-  box-shadow:inset 0 0 0 1px var(--brand-component-bg-default,#3366f0);
-}
-.ev2-seg-btn[data-previewing="true"]::before{
-  content:"Preview";
-  position:absolute;top:-8px;left:8px;
-  font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
-  padding:1px 5px;border-radius:3px;
-  background:var(--brand-component-bg-default,#3366f0);
-  color:var(--brand-on-component,#fff);
-  pointer-events:none;
-  z-index:2;
-  box-shadow:0 1px 2px rgba(0,0,0,.18);
-}
 .ev2-seg-preview{
   display:flex;align-items:center;justify-content:center;
   width:22px;height:22px;

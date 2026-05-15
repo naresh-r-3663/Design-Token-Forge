@@ -236,10 +236,6 @@
     // Keyed by 'tierId:discId' so each tier can have its own pattern.
     disclosure: { 't0:steps': false, 't0:affects': false, 't1:slots': false, 't1:affects': false },
     focusedLever: null,
-    // Hover-preview state: { roleId, mode, lever, value } captured on
-    // mouseenter so mouseleave can revert the temporary mutation.
-    // Always null while no preview is active.
-    previewBackup: null,
     lastSavedAt: null
   };
 
@@ -1151,10 +1147,6 @@
       b.addEventListener('click', function () {
         var lever = b.getAttribute('data-t1-lever');
         var value = b.getAttribute('data-t1-value');
-        // If we're committing the value we're currently previewing, the
-        // hover-preview already mutated State; just clear the backup so
-        // mouseleave doesn't try to revert what the user just chose.
-        State.previewBackup = null;
         t1For(State.activeRole)[lever] = value;
         pushPreview();
         refreshChangeBar();
@@ -1163,70 +1155,16 @@
         // Highlight + scroll matching preview section into view
         focusPreview(lever, true);
       });
-      // Hover preview: live-render the spotlight + WCAG bar + auto-paired
-      // text panel as if the user had picked this option, without
-      // committing. Lets designers compare options without click-undo
-      // churn. Restored on mouseleave.
-      b.addEventListener('mouseenter', function () {
-        var lever = b.getAttribute('data-t1-lever');
-        var value = b.getAttribute('data-t1-value');
-        var t = t1For(State.activeRole);
-        if (t[lever] === value) return;          // hovering the current pick
-        if (State.previewBackup) return;         // an earlier hover hasn't restored yet
-        State.previewBackup = { roleId: State.activeRole, mode: State.editingMode, lever: lever, value: t[lever] };
-        t[lever] = value;
-        pushPreview();
-        applyHoverPreviewDOM(b);
-      });
-      b.addEventListener('mouseleave', function () {
-        var bk = State.previewBackup;
-        if (!bk) return;
-        // Only restore if leaving the exact button that initiated the preview
-        if (b.getAttribute('data-t1-lever') !== bk.lever) return;
-        var t = State.t1[bk.mode][bk.roleId];
-        t[bk.lever] = bk.value;
-        State.previewBackup = null;
-        pushPreview();
-        applyHoverPreviewDOM(null);
-      });
     });
     var openSpread = document.getElementById('openSpreadDialog');
     if (openSpread) openSpread.addEventListener('click', function () { openSpreadDialog(); });
   }
 
-  /* Surgical re-render of just the auto-paired text panel.
-     Called by the hover-preview handler so we can show "what the
-     auto-paired text would become" without renderT1() (which would
-     tear down the radio under the cursor).
-     Note: we deliberately do NOT update the WCAG summary bar here.
-     The bar reflects the *committed* state, not hypothetical hover
-     picks — surfacing an Auto-fix banner from a hover would be
-     overwhelming and misleading (the user hasn't actually broken
-     anything yet). The per-option AA badge already tells them
-     whether the hovered pick passes; the Auto-fix button reappears
-     once they actually commit a failing preset. */
-  function applyHoverPreviewDOM(hoveredBtn) {
-    var role = ROLES.find(function (r) { return r.id === State.activeRole; });
-    if (!role) return;
-    var html = renderWcagPairsHTML(role, State.editingMode);
-    var pairs = document.querySelector('.ev2-pairs');
-    if (pairs) pairs.outerHTML = html.pairedHTML;
-    // Mark which option is currently being previewed so CSS can dress
-    // the button (subtle outline + scale) without losing the hover state.
-    document.querySelectorAll('[data-t1-lever][data-previewing]').forEach(function (b) {
-      b.removeAttribute('data-previewing');
-    });
-    if (hoveredBtn) hoveredBtn.setAttribute('data-previewing', 'true');
-  }
-
   /* Delegated handler for the Auto-fix-to-AA button. Bound once at
-     module init so it survives surgical re-renders of the WCAG bar
-     done by hover-preview. */
+     module init so it survives re-renders. */
   document.addEventListener('click', function (e) {
     var fix = e.target && e.target.closest && e.target.closest('#ev2WcagAutoFix');
     if (!fix) return;
-    // Cancel any in-flight hover preview before mutating
-    State.previewBackup = null;
     autoFixT1ToAA(State.activeRole);
     pushPreview();
     refreshChangeBar();
