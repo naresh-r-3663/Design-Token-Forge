@@ -48,18 +48,33 @@
     i = Math.max(0, Math.min(ALL_STEPS.length - 1, i + delta));
     return ALL_STEPS[i];
   }
-  // Two spread modes: how far apart the soft/standard/bold steps sit on the ladder.
-  // "subtle" = 1-step interval (gentle differences). "bold" = 2-step interval (clearly distinct).
+  // Per-spread, per-mode preset maps. Dark mode inverts the relationship:
+  // content drifts UP the ladder toward near-white steps, containers drift
+  // DOWN toward very dark steps. Defaults match the generated semantic.css.
   var T1_PRESETS_BY_SPREAD = {
     subtle: {
-      fill:      { soft: '400', standard: '500', bold: '600' },
-      content:   { subtle: '500', standard: '550', strong: '600' },
-      container: { whisper: '50',  light: '75', tinted: '100' }
+      light: {
+        fill:      { soft: '400', standard: '500', bold: '600' },
+        content:   { subtle: '500', standard: '550', strong: '600' },
+        container: { whisper: '50',  light: '75',  tinted: '100' }
+      },
+      dark: {
+        fill:      { soft: '500', standard: '450', bold: '400' },
+        content:   { subtle: '200', standard: '150', strong: '100' },
+        container: { whisper: '900', light: '850', tinted: '800' }
+      }
     },
     bold: {
-      fill:      { soft: '300', standard: '500', bold: '700' },
-      content:   { subtle: '400', standard: '550', strong: '700' },
-      container: { whisper: '25',  light: '75', tinted: '150' }
+      light: {
+        fill:      { soft: '300', standard: '500', bold: '700' },
+        content:   { subtle: '400', standard: '550', strong: '700' },
+        container: { whisper: '25',  light: '75',  tinted: '150' }
+      },
+      dark: {
+        fill:      { soft: '600', standard: '450', bold: '300' },
+        content:   { subtle: '250', standard: '150', strong: '50'  },
+        container: { whisper: '900', light: '800', tinted: '700' }
+      }
     }
   };
   var SPREAD_OPTIONS = [
@@ -69,7 +84,8 @@
   function presetsFor(roleId, mode) {
     mode = mode || State.editingMode;
     var s = (State.t1[mode][roleId] && State.t1[mode][roleId].spread) || T1_DEFAULT.spread;
-    return T1_PRESETS_BY_SPREAD[s] || T1_PRESETS_BY_SPREAD.subtle;
+    var family = T1_PRESETS_BY_SPREAD[s] || T1_PRESETS_BY_SPREAD.subtle;
+    return family[mode] || family.light;
   }
   function t1For(roleId, mode) { return State.t1[mode || State.editingMode][roleId]; }
   var T1_DEFAULT = { fill: 'standard', content: 'standard', container: 'light', spread: 'subtle' };
@@ -329,9 +345,10 @@
       if (!raw) return false;
       var d = JSON.parse(raw);
       if (!d || d.v !== 1 || !d.proposed) return false;
-      function adoptT1(target, src) {
+      function adoptT1(target, src, mode) {
         if (!src) return;
-        var P = T1_PRESETS_BY_SPREAD[src.spread] || T1_PRESETS_BY_SPREAD.subtle;
+        var family = T1_PRESETS_BY_SPREAD[src.spread] || T1_PRESETS_BY_SPREAD.subtle;
+        var P = family[mode] || family.light;
         if (P.fill[src.fill])           target.fill = src.fill;
         if (P.content[src.content])     target.content = src.content;
         if (P.container[src.container]) target.container = src.container;
@@ -340,15 +357,12 @@
       ROLES.forEach(function (r) {
         if (d.proposed[r.id]) State.proposed[r.id] = d.proposed[r.id];
         if (!d.t1) return;
-        // Back-compat: older draft format had a flat State.t1[role] structure.
-        // New format: State.t1.{light|dark}[role].
         if (d.t1.light || d.t1.dark) {
-          adoptT1(State.t1.light[r.id], d.t1.light && d.t1.light[r.id]);
-          adoptT1(State.t1.dark[r.id],  d.t1.dark  && d.t1.dark[r.id]);
+          adoptT1(State.t1.light[r.id], d.t1.light && d.t1.light[r.id], 'light');
+          adoptT1(State.t1.dark[r.id],  d.t1.dark  && d.t1.dark[r.id],  'dark');
         } else if (d.t1[r.id]) {
-          // legacy — apply same picks to both modes as a starting point
-          adoptT1(State.t1.light[r.id], d.t1[r.id]);
-          adoptT1(State.t1.dark[r.id],  d.t1[r.id]);
+          adoptT1(State.t1.light[r.id], d.t1[r.id], 'light');
+          adoptT1(State.t1.dark[r.id],  d.t1[r.id], 'dark');
         }
       });
       if (d.editingMode === 'light' || d.editingMode === 'dark') State.editingMode = d.editingMode;
@@ -617,12 +631,14 @@
 
     var currentSpread = t1.spread || T1_DEFAULT.spread;
     var spreadOpt = SPREAD_OPTIONS.find(function (o) { return o.id === currentSpread; }) || SPREAD_OPTIONS[0];
-    var spreadInfoTip = 'Step interval controls how far apart Soft, Standard and Bold sit on the palette ladder. Click Change to switch between Subtle (1 step) and Distinct (2 steps).';
-    var spreadHTML = '<div class="ev2-spread-info" title="' + spreadInfoTip + '">'
-      + '<span class="ev2-spread-info-label">Step interval</span>'
-      + '<span class="ev2-spread-info-value">' + spreadOpt.label + ' \u00b7 ' + spreadOpt.sub + '</span>'
-      + '<button class="ev2-spread-info-btn" type="button" id="openSpreadDialog">Change</button>'
-    + '</div>';
+    var spreadInfoTip = 'Step interval controls how far apart Soft, Standard and Bold sit on the palette ladder. Subtle = 1 step apart (gentle). Distinct = 2 steps apart (clearly different). Click Change to switch.';
+    var spreadHTML = '<p class="ev2-spread-line">'
+      + '<span class="ev2-spread-line-label">Step interval:</span> '
+      + '<span class="ev2-spread-line-value">' + spreadOpt.label + ' \u00b7 ' + spreadOpt.sub + '</span> '
+      + '<button type="button" class="ev2-spread-link" id="openSpreadDialog">Change</button>'
+      + '<span class="ev2-spread-sep" aria-hidden="true">\u00b7</span>'
+      + '<button type="button" class="ev2-spread-link ev2-spread-why" title="' + spreadInfoTip + '" aria-label="' + spreadInfoTip + '">Why is this for?</button>'
+    + '</p>';
 
     var modeBanner = '<div class="ev2-edit-scope" data-mode="' + mode + '" '
       + 'title="You are editing the ' + mode + ' theme. Use the Light\u2009/\u2009Dark toggle in the top bar to switch.">'
@@ -765,7 +781,8 @@
     if (!card) return;
     card.innerHTML = SPREAD_OPTIONS.map(function (opt) {
       var isSel = opt.id === current;
-      var P = T1_PRESETS_BY_SPREAD[opt.id];
+      var family = T1_PRESETS_BY_SPREAD[opt.id];
+      var P = (family && family[State.editingMode]) || family.light;
       var preview = ['soft','standard','bold'].map(function (k) {
         var hex = stepHexByName(role, P.fill[k]) || '#000';
         return '<span style="background:' + hex + '"></span>';

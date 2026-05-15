@@ -498,30 +498,26 @@ body{
   color:var(--surface-base-ct-subtle);
 }
 
-/* T1 Roles — compact step-interval info row + dialog */
-.ev2-spread-info{
-  display:flex;align-items:center;gap:10px;
-  padding:8px 12px;margin-bottom:14px;
-  border:1px solid var(--surface-base-outline);
-  border-radius:var(--radius-md,8px);
-  background:var(--surface-base-subtle);
+/* T1 Roles — inline step-interval line (plain text + links + dialog) */
+.ev2-spread-line{
+  margin:0 0 14px;
   font-size:12px;
-  cursor:help;
+  color:var(--surface-base-ct-default);
+  line-height:1.55;
 }
-.ev2-spread-info-label{font-weight:600;color:var(--surface-base-ct-strong)}
-.ev2-spread-info-value{flex:1;color:var(--surface-base-ct-default)}
-.ev2-spread-info-btn{
-  padding:4px 10px;
-  border:1px solid var(--surface-base-outline);
-  border-radius:999px;
-  background:var(--surface-base-bg);
-  font-size:11px;font-weight:600;
-  color:var(--brand-content-default,#3553ee);
+.ev2-spread-line-label{font-weight:600;color:var(--surface-base-ct-strong)}
+.ev2-spread-line-value{color:var(--surface-base-ct-strong)}
+.ev2-spread-link{
+  background:none;border:none;padding:0;
+  font:inherit;color:var(--brand-content-default,#3553ee);
+  text-decoration:underline;text-underline-offset:2px;
   cursor:pointer;
-  transition:background 140ms,border-color 140ms;
 }
-.ev2-spread-info-btn:hover{background:var(--brand-container-bg,#dfe8ff);border-color:var(--brand-component-bg-default,#3366f0)}
-.ev2-spread-info-btn:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px}
+.ev2-spread-link:hover{color:var(--brand-content-strong,#204ed1)}
+.ev2-spread-link:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px;border-radius:2px}
+.ev2-spread-sep{margin:0 6px;color:var(--surface-base-ct-subtle)}
+.ev2-spread-why{color:var(--surface-base-ct-subtle)}
+.ev2-spread-why:hover{color:var(--surface-base-ct-strong)}
 
 .ev2-spread-dialog{position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center}
 .ev2-spread-dialog[hidden]{display:none}
