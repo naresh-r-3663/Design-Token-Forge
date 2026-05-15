@@ -644,15 +644,10 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   color:var(--surface-base-ct-subtle);
 }
 
-/* T1 Roles — inline step-interval line (plain text + links + dialog) */
-.ev2-spread-line{
-  margin:0 0 14px;
-  font-size:12px;
-  color:var(--surface-base-ct-default);
-  line-height:1.55;
-}
-.ev2-spread-line-label{font-weight:600;color:var(--surface-base-ct-strong)}
-.ev2-spread-line-value{color:var(--surface-base-ct-strong)}
+/* T1 Roles — inline step-interval line removed (now picked directly
+   via the per-lever palette strip). The .ev2-spread-* link styles
+   below survive only as a thin link utility but are no longer
+   referenced by any markup; safe to keep until next sweep. */
 .ev2-spread-link{
   background:none;border:none;padding:0;
   font:inherit;color:var(--brand-content-default,#3553ee);
@@ -661,9 +656,6 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 }
 .ev2-spread-link:hover{color:var(--brand-content-strong,#204ed1)}
 .ev2-spread-link:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px;border-radius:2px}
-.ev2-spread-sep{margin:0 6px;color:var(--surface-base-ct-subtle)}
-.ev2-spread-why{color:var(--surface-base-ct-subtle)}
-.ev2-spread-why:hover{color:var(--surface-base-ct-strong)}
 
 /* WCAG contrast bar (above levers) */
 .ev2-wcag-bar{
@@ -698,8 +690,8 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-wcag-bar-fix:hover{background:var(--danger-component-bg-hover,#B83C3C)}
 .ev2-wcag-bar-fix:focus-visible{outline:2px solid var(--danger-component-bg-default,#D04A4A);outline-offset:2px}
 
-/* WCAG badge inside each segmented option button */
-.ev2-seg-btn{position:relative}
+/* WCAG badge — used inline in the lever-step header to score the
+   currently picked step. (Reused from the old segmented design.) */
 .ev2-seg-wcag{
   display:inline-flex;align-items:center;
   padding:1px 5px;
@@ -711,59 +703,6 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-seg-wcag[data-grade="aaa"]{background:#1F6B33;color:#fff}
 .ev2-seg-wcag[data-grade="aa"]{background:#2F8049;color:#fff}
 .ev2-seg-wcag[data-grade="fail"]{background:#C2392B;color:#fff}
-
-/* Warning banner inside spread dialog (when Distinct is pending) */
-.ev2-spread-warn{
-  display:flex;align-items:flex-start;gap:10px;
-  padding:10px 12px;
-  margin:0 0 12px;
-  border:1px solid var(--warning-component-outline-default,#E0B062);
-  border-radius:var(--radius-md,6px);
-  background:var(--warning-container-bg,#FFF6E6);
-  color:var(--warning-content-default,#704E10);
-  font-size:11.5px;line-height:1.45;
-}
-.ev2-spread-warn-icon{font-size:14px;line-height:1.2;flex:none}
-.ev2-spread-warn strong{font-weight:700}
-
-.ev2-spread-dialog{position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center}
-.ev2-spread-dialog[hidden]{display:none}
-.ev2-spread-dialog-card{
-  position:relative;z-index:1;
-  background:var(--surface-base-bg);
-  border:1px solid var(--surface-base-outline);
-  border-radius:var(--radius-lg,12px);
-  width:min(520px,calc(100% - 32px));
-  padding:20px;
-  box-shadow:0 24px 64px rgba(0,0,0,.18);
-}
-.ev2-spread-dialog-head{margin-bottom:16px}
-.ev2-spread-dialog-title{font-size:16px;font-weight:700;color:var(--surface-base-ct-strong);margin:0 0 4px}
-.ev2-spread-dialog-sub{font-size:12.5px;color:var(--surface-base-ct-subtle);line-height:1.5;margin:0}
-.ev2-spread-dialog-body{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
-.ev2-spread-dialog-actions{display:flex;justify-content:flex-end}
-.ev2-spread-card{
-  display:flex;flex-direction:column;gap:8px;text-align:left;
-  padding:12px 14px;
-  border:1.5px solid var(--surface-base-outline);
-  border-radius:var(--radius-md,8px);
-  background:var(--surface-base-bg);
-  cursor:pointer;
-  transition:border-color 140ms,background 140ms;
-}
-.ev2-spread-card:hover{border-color:var(--brand-component-bg-default,#3366f0);background:rgba(51,102,240,.04)}
-.ev2-spread-card[aria-pressed="true"]{
-  border-color:var(--brand-component-bg-default,#3366f0);
-  background:var(--brand-container-bg,#dfe8ff);
-}
-.ev2-spread-card:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px}
-.ev2-spread-card-head{display:flex;align-items:center;gap:12px}
-.ev2-spread-card-pv{display:inline-flex;gap:4px}
-.ev2-spread-card-pv span{display:inline-block;width:18px;height:18px;border-radius:4px;border:1px solid rgba(0,0,0,.08)}
-.ev2-spread-card-titles{display:flex;flex-direction:column}
-.ev2-spread-card-label{font-size:13px;font-weight:700;color:var(--surface-base-ct-strong)}
-.ev2-spread-card-meta{font-size:11px;color:var(--surface-base-ct-subtle)}
-.ev2-spread-card-desc{font-size:12px;color:var(--surface-base-ct-default);line-height:1.45;margin:0}
 
 /* Editing-mode scope banner (top of T1 panel) */
 .ev2-edit-scope{
@@ -795,61 +734,70 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   border-color:var(--brand-component-outline-default,#6593fe);
   box-shadow:0 0 0 3px rgba(99,147,254,.10);
 }
-.ev2-lever-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.ev2-lever-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .ev2-lever-title{font-size:12px;font-weight:700;color:var(--surface-base-ct-strong);letter-spacing:.01em;text-transform:uppercase}
-.ev2-lever-sub{font-size:11px;color:var(--surface-base-ct-faint);line-height:1.3}
-.ev2-seg{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:3px;
-  background:var(--surface-base-subtle);
-  padding:3px;border-radius:var(--radius-sm,6px);
-  border:1px solid var(--surface-base-outline);
+.ev2-lever-sub{font-size:11px;color:var(--surface-base-ct-faint);line-height:1.3;flex:1;min-width:120px}
+.ev2-lever-step{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;color:var(--surface-base-ct-default);
+  white-space:nowrap;
 }
-.ev2-seg-btn{
-  display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:8px;
-  padding:6px 8px;border:none;background:transparent;
-  font:inherit;font-size:12px;font-weight:600;
-  color:var(--surface-base-ct-subtle);
-  border-radius:calc(var(--radius-sm,6px) - 2px);
-  cursor:pointer;transition:all 120ms ease;
-  position:relative;text-align:left;min-height:32px;
-}
-.ev2-seg-btn:hover{color:var(--surface-base-ct-strong);background:rgba(0,0,0,.025)}
-.ev2-seg-btn[aria-checked="true"]{
-  background:var(--surface-base-bg);
-  color:var(--surface-base-ct-strong);
-  /* Stronger selected ring — 1px brand outline + soft drop shadow so the
-     committed pick is unmistakable next to the two unpicked siblings. */
-  box-shadow:0 1px 2px rgba(0,0,0,.10), 0 0 0 2px var(--brand-component-bg-default,#3366f0);
-}
-.ev2-seg-btn:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px}
-.ev2-seg-preview{
-  display:flex;align-items:center;justify-content:center;
-  width:22px;height:22px;
-}
-.ev2-pv-fill{
-  display:block;width:100%;height:100%;
-  border-radius:3px;
-  /* Stronger border so very pale fills (whisper / light steps) stay
-     visible on the seg-control's subtle background. */
+.ev2-lever-step strong{font-weight:700;color:var(--surface-base-ct-strong)}
+.ev2-lever-step-chip{
+  display:inline-block;width:14px;height:14px;border-radius:3px;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);
 }
-.ev2-pv-content{
-  font-family:var(--font-family-sans,system-ui);
-  font-size:13px;font-weight:700;letter-spacing:-.02em;line-height:1;
+
+/* 20-step palette strip — the lever picker. One swatch per ladder
+   step; click commits, the picked step gets the brand ring, AA
+   failures dim. */
+.ev2-pal{
+  display:grid;
+  grid-template-columns:repeat(20, 1fr);
+  gap:2px;
+  padding:3px;
+  border-radius:var(--radius-sm,6px);
+  border:1px solid var(--surface-base-outline);
+  background:var(--surface-base-subtle);
 }
-.ev2-pv-container{
-  display:block;width:100%;height:100%;
+.ev2-pal-sw{
+  position:relative;
+  height:36px;
+  border:none;
   border-radius:3px;
-  border:1px solid currentColor;
-  position:relative;opacity:.7;
+  padding:0;
+  cursor:pointer;
+  transition:transform 100ms ease, box-shadow 120ms ease, opacity 120ms ease;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.10);
+  overflow:hidden;
 }
-.ev2-seg-label{
-  display:flex;flex-direction:column;gap:1px;line-height:1.15;min-width:0;
+.ev2-pal-sw:hover{transform:translateY(-1px);box-shadow:inset 0 0 0 1px rgba(0,0,0,.18), 0 2px 4px rgba(0,0,0,.10)}
+.ev2-pal-sw:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px;z-index:2}
+.ev2-pal-sw[aria-checked="true"]{
+  /* Brand ring on the picked step — matches the strong selected ring
+     established in commit 2bd7b7d for the old segmented control. */
+  box-shadow:0 0 0 2px var(--brand-component-bg-default,#3366f0), 0 1px 3px rgba(0,0,0,.12);
+  z-index:1;
 }
-.ev2-seg-name{font-size:12px;font-weight:600;color:inherit}
-.ev2-seg-step{font-size:10px;font-weight:500;color:var(--surface-base-ct-faint);letter-spacing:.01em}
-.ev2-seg-css{display:none}
-.ev2-show-css .ev2-seg-css{display:block}
+.ev2-pal-sw[data-pass="false"]{opacity:.45}
+.ev2-pal-sw[data-pass="false"]::after{
+  content:"";
+  position:absolute;inset:auto 2px 2px auto;
+  width:6px;height:6px;border-radius:50%;
+  background:#C2392B;
+  box-shadow:0 0 0 1.5px #fff;
+}
+.ev2-pal-sw-step{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  font-size:9px;font-weight:700;
+  color:rgba(255,255,255,.0);
+  pointer-events:none;
+  text-shadow:0 1px 2px rgba(0,0,0,.45);
+  letter-spacing:.01em;
+}
+.ev2-pal-sw[aria-checked="true"] .ev2-pal-sw-step{color:#fff}
+.ev2-pal-sw:hover .ev2-pal-sw-step{color:#fff}
 .ev2-lever-css{
   display:none;
   margin-top:8px;

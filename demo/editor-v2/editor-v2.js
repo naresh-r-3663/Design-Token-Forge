@@ -39,165 +39,58 @@
   };
 
   /* ── T1 Roles intent ──────────────────────────────────
-     Each role has 3 "smart" levers. Each lever picks a palette
-     step that becomes the anchor of a slot family. Other slots
-     in the family derive by index-stepping along the ladder.   */
+     Each role has 3 levers (fill / content / container). Each lever
+     picks a single step from the 20-step palette ladder and that step
+     becomes the anchor of a slot family. Other slots in the family
+     derive by index-stepping along the ladder.
+
+     Step names are the only identifier the user sees. No "Soft /
+     Standard / Bold" preset vocabulary — just the same step numbers
+     that ship in the CSS output (`--brand-component-bg-default:
+     var(--prim-brand-550)`). One word, one meaning, end-to-end.   */
   var ALL_STEPS = ['25','50','75','100','150','175','200','250','300','350','400','450','500','550','600','700','750','800','850','900'];
   function stepRel(name, delta) {
     var i = ALL_STEPS.indexOf(name); if (i < 0) return name;
     i = Math.max(0, Math.min(ALL_STEPS.length - 1, i + delta));
     return ALL_STEPS[i];
   }
-  // Per-spread, per-mode preset maps. Dark mode inverts the relationship:
-  // Subtle = recommended/safe defaults (all picks pass WCAG AA for the
-  // intended pairing). Distinct = opt-in wider range that exposes more
-  // expressive picks — some may fail AA; the badges + warning surface that.
-  var T1_PRESETS_BY_SPREAD = {
-    subtle: {
-      light: {
-        fill:      { soft: '500', standard: '550', bold: '600' },
-        content:   { subtle: '500', standard: '550', strong: '600' },
-        container: { whisper: '50',  light: '75',  tinted: '100' }
-      },
-      dark: {
-        // Dark-mode aesthetic: lift fills to luminous mid-tones (the
-        // saturated-on-near-black "bruise" look is replaced with a
-        // softer glow). Soften content one step (cream-white instead
-        // of bone-white reduces eye strain) while keeping containers
-        // at the deep desaturated end of the ladder so alert
-        // backgrounds read as tinted dark surfaces, not saturated
-        // blocks. Auto-pair flips on-component to black for the
-        // brighter fills where white loses contrast.
-        fill:      { soft: '400', standard: '450', bold: '500' },
-        content:   { subtle: '250', standard: '200', strong: '150' },
-        container: { whisper: '900', light: '850', tinted: '800' }
-      }
+
+  /* Per-role per-mode default step picks. Hand-tuned so every role
+     ships AA-clean out of the box — derived from the prior preset
+     system's verified math, then frozen as plain step numbers.
+
+     Light-mode rationale:
+       brand / danger:  fill 550 vs white = 5.8+, content 550 vs container 75 = 4.5+
+       success:         fill 600 vs white = 6.07, container 50 keeps cohesion w/ Light
+       warning:         amber needs darker steps — fill 600, content 750 (9:1+ on white)
+       info:            container 50 lifts content/container to 4.5+
+
+     Dark-mode rationale: lift fills to luminous mid-tones (no
+     "saturated-on-near-black" bruise look); soften content to cream
+     instead of bone white; keep containers at the deep desaturated
+     end so alerts read as tinted dark surfaces. */
+  var T1_DEFAULT_STEPS = {
+    light: {
+      brand:   { fill: '550', content: '550', container: '75'  },
+      danger:  { fill: '550', content: '550', container: '75'  },
+      success: { fill: '600', content: '700', container: '50'  },
+      warning: { fill: '600', content: '750', container: '75'  },
+      info:    { fill: '550', content: '550', container: '50'  }
     },
-    bold: {
-      light: {
-        fill:      { soft: '400', standard: '500', bold: '700' },
-        content:   { subtle: '400', standard: '550', strong: '700' },
-        container: { whisper: '25',  light: '75',  tinted: '150' }
-      },
-      dark: {
-        fill:      { soft: '350', standard: '450', bold: '550' },
-        content:   { subtle: '300', standard: '200', strong: '100' },
-        container: { whisper: '900', light: '850', tinted: '800' }
-      }
+    dark: {
+      brand:   { fill: '450', content: '200', container: '850' },
+      danger:  { fill: '450', content: '200', container: '850' },
+      success: { fill: '500', content: '200', container: '850' },
+      warning: { fill: '550', content: '200', container: '850' },
+      info:    { fill: '450', content: '200', container: '850' }
     }
   };
-  var SPREAD_OPTIONS = [
-    { id: 'subtle', label: 'Subtle',  sub: '1-step interval' },
-    { id: 'bold',   label: 'Distinct', sub: '2-step interval' }
-  ];
-
-  /* Per-role preset overrides — some hues' step ladders don't sit in the
-     same WCAG / luminance band as brand. We override only the steps that
-     need it so every role ships with AA-pass defaults AND alert
-     containers across roles look like one cohesive family.
-
-     Verified math (Subtle, light mode):
-       brand:   fill 550 vs white = 5.80; content 550 vs container 75 = 4.5+
-       danger:  fill 550 vs white = 5.86; content 550 vs container 75 = 4.5+
-       warning: fill 550 vs white = 5.42; content 550 vs container 75 = 4.5+
-       success: needs fill 600 (4.32 -> 6.07) AND container 50 (cohesive with
-                Light by being one notch up to clear text-on-container)
-       info:    needs container 50 — content 550 vs 75 falls at 4.44 (just
-                under AA); 50 lifts it cleanly above 4.5 */
-  var T1_PRESET_OVERRIDES = {
-    success: {
-      subtle: {
-        light: {
-          fill:    { soft: '550', standard: '600', bold: '700' },
-          content: { subtle: '600', standard: '700', strong: '750' },
-          container: { whisper: '25', light: '50', tinted: '75' }
-        },
-        dark: {
-          // Lift success greens off near-black for the same reason as base —
-          // step 600 was visually heavy. 450/500/550 reads as a clear
-          // luminous green pill on dark.
-          fill: { soft: '450', standard: '500', bold: '550' }
-        }
-      },
-      bold: {
-        light: {
-          fill:    { soft: '500', standard: '600', bold: '750' },
-          content: { subtle: '550', standard: '700', strong: '800' },
-          container: { whisper: '25', light: '50', tinted: '100' }
-        },
-        dark: { fill: { soft: '400', standard: '500', bold: '600' } }
-      }
-    },
-    warning: {
-      subtle: {
-        light: {
-          fill:    { soft: '550', standard: '600', bold: '700' },
-          // Warning amber is the worst hue for AA on white — even step 600
-          // amber sits around 3.5:1. Push content to the dark-amber band
-          // (700+) so every default pick AA-passes both on page and on
-          // the warning container. Order kept monotonic.
-          content: { subtle: '700', standard: '750', strong: '800' }
-        },
-        // Warning's amber needs to stay on the darker side in dark mode
-        // (lighter amber → near-yellow, loses warning semantic). Keep
-        // close to the base lift (450/500/550) but shifted one cooler.
-        dark:  { fill: { soft: '500', standard: '550', bold: '600' } }
-      },
-      bold: {
-        light: {
-          fill:    { soft: '500', standard: '600', bold: '750' },
-          content: { subtle: '600', standard: '750', strong: '850' }
-        }
-      }
-    },
-    info: {
-      subtle: {
-        light: { container: { whisper: '25', light: '50', tinted: '75' } }
-      }
-    }
-  };
-
-  function presetsFor(roleId, mode) {
-    mode = mode || State.editingMode;
-    var s = (State.t1[mode][roleId] && State.t1[mode][roleId].spread) || T1_DEFAULT.spread;
-    var family = T1_PRESETS_BY_SPREAD[s] || T1_PRESETS_BY_SPREAD.subtle;
-    var base = family[mode] || family.light;
-    var ov = T1_PRESET_OVERRIDES[roleId] && T1_PRESET_OVERRIDES[roleId][s] && T1_PRESET_OVERRIDES[roleId][s][mode];
-    if (!ov) return base;
-    // Merge override layer onto base (non-destructive)
-    return {
-      fill:      Object.assign({}, base.fill,      ov.fill      || {}),
-      content:   Object.assign({}, base.content,   ov.content   || {}),
-      container: Object.assign({}, base.container, ov.container || {})
-    };
+  function defaultT1ForRole(roleId, mode) {
+    var src = (T1_DEFAULT_STEPS[mode] && T1_DEFAULT_STEPS[mode][roleId])
+           || T1_DEFAULT_STEPS.light.brand;
+    return { fill: src.fill, content: src.content, container: src.container };
   }
   function t1For(roleId, mode) { return State.t1[mode || State.editingMode][roleId]; }
-  var T1_DEFAULT = { fill: 'standard', content: 'standard', container: 'light', spread: 'subtle' };
-  var T1_LEVERS = [
-    { id: 'fill', label: 'Fill emphasis', sub: 'Solid component backgrounds (buttons, badges, fills)',
-      options: [
-        { id: 'soft',     label: 'Soft',     hint: 'Gentler, less assertive' },
-        { id: 'standard', label: 'Standard', hint: 'Recommended default' },
-        { id: 'bold',     label: 'Bold',     hint: 'Heavier, more presence' }
-      ]
-    },
-    { id: 'content', label: 'Content weight', sub: 'Text and icons rendered in this color',
-      options: [
-        { id: 'subtle',   label: 'Subtle',   hint: 'Lighter on white' },
-        { id: 'standard', label: 'Standard', hint: 'Comfortable everywhere' },
-        { id: 'strong',   label: 'Strong',   hint: 'High contrast' }
-      ]
-    },
-    { id: 'container', label: 'Container softness', sub: 'Soft tinted surfaces (alert bg, banners)',
-      options: [
-        { id: 'whisper',  label: 'Whisper',  hint: 'Barely tinted' },
-        { id: 'light',    label: 'Light',    hint: 'Gentle wash' },
-        { id: 'tinted',   label: 'Tinted',   hint: 'Clearly colored' }
-      ]
-    }
-  ];
-
-  function defaultT1() { return { fill:'standard', content:'standard', container:'light', spread:'subtle' }; }
   var State = {
     activeTier: 't0',
     activeRole: 'brand',
@@ -208,14 +101,23 @@
     cachedSteps:{},
     // T1 lever state per editing mode. Light and dark each get their
     // own snapshot so users can dial in different step picks per mode.
+    // Picks are step names from ALL_STEPS ('25'..'900'). The 5×2×3
+    // defaults seeded here come straight from T1_DEFAULT_STEPS — the
+    // exact same numbers that ship in the CSS output.
     t1: {
       light: {
-        brand:   defaultT1(), danger:  defaultT1(), success: defaultT1(),
-        warning: defaultT1(), info:    defaultT1()
+        brand:   defaultT1ForRole('brand',   'light'),
+        danger:  defaultT1ForRole('danger',  'light'),
+        success: defaultT1ForRole('success', 'light'),
+        warning: defaultT1ForRole('warning', 'light'),
+        info:    defaultT1ForRole('info',    'light')
       },
       dark: {
-        brand:   defaultT1(), danger:  defaultT1(), success: defaultT1(),
-        warning: defaultT1(), info:    defaultT1()
+        brand:   defaultT1ForRole('brand',   'dark'),
+        danger:  defaultT1ForRole('danger',  'dark'),
+        success: defaultT1ForRole('success', 'dark'),
+        warning: defaultT1ForRole('warning', 'dark'),
+        info:    defaultT1ForRole('info',    'dark')
       }
     },
     // Snapshot of t1 picks AFTER boot-time auto-AA-fix. This is the
@@ -224,12 +126,18 @@
     // legitimate AA shifts as user changes.
     t1Baseline: {
       light: {
-        brand:   defaultT1(), danger:  defaultT1(), success: defaultT1(),
-        warning: defaultT1(), info:    defaultT1()
+        brand:   defaultT1ForRole('brand',   'light'),
+        danger:  defaultT1ForRole('danger',  'light'),
+        success: defaultT1ForRole('success', 'light'),
+        warning: defaultT1ForRole('warning', 'light'),
+        info:    defaultT1ForRole('info',    'light')
       },
       dark: {
-        brand:   defaultT1(), danger:  defaultT1(), success: defaultT1(),
-        warning: defaultT1(), info:    defaultT1()
+        brand:   defaultT1ForRole('brand',   'dark'),
+        danger:  defaultT1ForRole('danger',  'dark'),
+        success: defaultT1ForRole('success', 'dark'),
+        warning: defaultT1ForRole('warning', 'dark'),
+        info:    defaultT1ForRole('info',    'dark')
       }
     },
     // Disclosure open-state persists across role / tier swaps.
@@ -239,7 +147,7 @@
     lastSavedAt: null
   };
 
-  var DRAFT_KEY = 'dtf-editor-v2-draft-v1';
+  var DRAFT_KEY = 'dtf-editor-v2-draft-v2';
   var UI_KEY    = 'dtf-editor-v2-ui-v1';
 
   /* ── UI state persistence (separate from draft — it survives Discard) ── */
@@ -287,14 +195,23 @@
     });
   }
 
+  /* Lever metadata — just label + sub. The picker UI renders the
+     full 20-step palette strip directly from ALL_STEPS; no preset
+     enumeration lives here. */
+  var T1_LEVERS = [
+    { id: 'fill',      label: 'Component fill', sub: 'Solid backgrounds (buttons, badges, fills)' },
+    { id: 'content',   label: 'Content',        sub: 'Text and icons rendered in this colour' },
+    { id: 'container', label: 'Container',      sub: 'Soft tinted surfaces (alert bg, banners)' }
+  ];
+
   function isChanged(roleId) {
     return State.proposed[roleId].toUpperCase() !== State.baseline[roleId].toUpperCase();
   }
   function isT1ChangedInMode(roleId, mode) {
     var t = State.t1[mode][roleId];
-    var b = (State.t1Baseline && State.t1Baseline[mode] && State.t1Baseline[mode][roleId]) || T1_DEFAULT;
-    return t.fill !== b.fill || t.content !== b.content ||
-           t.container !== b.container || (t.spread || T1_DEFAULT.spread) !== (b.spread || T1_DEFAULT.spread);
+    var b = (State.t1Baseline && State.t1Baseline[mode] && State.t1Baseline[mode][roleId])
+         || defaultT1ForRole(roleId, mode);
+    return t.fill !== b.fill || t.content !== b.content || t.container !== b.container;
   }
   function isT1Changed(roleId) {
     return isT1ChangedInMode(roleId, 'light') || isT1ChangedInMode(roleId, 'dark');
@@ -302,17 +219,16 @@
   function isRoleDirty(roleId) { return isChanged(roleId) || isT1Changed(roleId); }
 
   /* Diff every lever in both modes — returns
-     [{mode, lever, fromId, toId}, ...]. Used to populate the
+     [{mode, lever, fromStep, toStep}, ...]. Used to populate the
      per-role badge tooltip and the per-role count. */
   function summarizeRoleChanges(roleId) {
     var diffs = [];
     ['light','dark'].forEach(function (mode) {
       var t = State.t1[mode][roleId];
-      var b = (State.t1Baseline && State.t1Baseline[mode] && State.t1Baseline[mode][roleId]) || T1_DEFAULT;
-      ['fill','content','container','spread'].forEach(function (lever) {
-        var cur = t[lever] || (lever === 'spread' ? T1_DEFAULT.spread : null);
-        var base = b[lever] || (lever === 'spread' ? T1_DEFAULT.spread : null);
-        if (cur !== base) diffs.push({ mode: mode, lever: lever, fromId: base, toId: cur });
+      var b = (State.t1Baseline && State.t1Baseline[mode] && State.t1Baseline[mode][roleId])
+           || defaultT1ForRole(roleId, mode);
+      ['fill','content','container'].forEach(function (lever) {
+        if (t[lever] !== b[lever]) diffs.push({ mode: mode, lever: lever, fromStep: b[lever], toStep: t[lever] });
       });
     });
     return diffs;
@@ -320,10 +236,10 @@
   function badgeTipFor(roleId) {
     var diffs = summarizeRoleChanges(roleId);
     if (!diffs.length) return '';
-    var labels = { fill:'Fill', content:'Content', container:'Container', spread:'Spread' };
+    var labels = { fill:'Fill', content:'Content', container:'Container' };
     return diffs.map(function (d) {
       var modeLabel = d.mode === 'dark' ? 'Dark' : 'Light';
-      return modeLabel + ' · ' + labels[d.lever] + ': ' + d.fromId + ' → ' + d.toId;
+      return modeLabel + ' · ' + labels[d.lever] + ': step ' + d.fromStep + ' → step ' + d.toStep;
     }).join('   •   ');
   }
   function totalChanges() {
@@ -368,8 +284,7 @@
   function onComponentColor(roleId, mode) {
     if (!roleId) return '#FFFFFF'; // legacy callers (preserved for safety)
     var t = State.t1[mode || State.editingMode][roleId];
-    var P = presetsFor(roleId, mode || State.editingMode);
-    var fillHex = stepHexByName(roleId, P.fill[t.fill]) || '#000';
+    var fillHex = stepHexByName(roleId, t.fill) || '#000';
     return DTFSolver.deriveOnComponent(fillHex);
   }
   // Auto-pair: pick the ladder step (closest to the user's chosen
@@ -377,32 +292,29 @@
   function onContainerColor(roleId, mode) {
     mode = mode || State.editingMode;
     var t = State.t1[mode][roleId];
-    var P = presetsFor(roleId, mode);
     var ladder = ladderFor(roleId);
-    var containerHex = ladder[P.container[t.container]] || surfaceBgFor(mode);
-    return DTFSolver.deriveOnContainer(ladder, P.content[t.content], containerHex).hex;
+    var containerHex = ladder[t.container] || surfaceBgFor(mode);
+    return DTFSolver.deriveOnContainer(ladder, t.content, containerHex).hex;
   }
 
   /* Aggregate contrast for the 3 currently-picked levers of a role */
   function computeRoleContrast(roleId, mode) {
     mode = mode || State.editingMode;
     var t = State.t1[mode][roleId];
-    var P = presetsFor(roleId, mode);
-    var ev = DTFSolver.evaluate(ladderFor(roleId), t, P, mode);
+    var ev = DTFSolver.evaluateBySteps(ladderFor(roleId), t, mode);
     return { checks: ev.checks, onComp: ev.onComp, onCont: ev.onCont };
   }
 
-  /* Walk to the nearest in-options pick that satisfies AA for each lever.
-     Delegates to DTFSolver.autoFix; this shim writes back into State.t1
-     so existing call sites that rely on side-effects keep working. */
+  /* Walk each lever to the nearest AA-passing step (minimum disturbance).
+     Mutates State.t1 in place so existing callers' side-effects stay. */
   function autoFixT1ToAA(roleId) {
     var mode = State.editingMode;
     var t = State.t1[mode][roleId];
-    var P = presetsFor(roleId, mode);
-    var newPicks = DTFSolver.autoFix(ladderFor(roleId), t, P, mode, T1_LEVERS);
-    t.fill      = newPicks.fill;
-    t.content   = newPicks.content;
-    t.container = newPicks.container;
+    var ladder = ladderFor(roleId);
+    t.fill      = DTFSolver.snapStepToAA(ladder, 'fill',      t.fill,      t, mode);
+    t.content   = DTFSolver.snapStepToAA(ladder, 'content',   t.content,   t, mode);
+    // Container's AA depends on the (now-snapped) content step.
+    t.container = DTFSolver.snapStepToAA(ladder, 'container', t.container, t, mode);
   }
 
   /* Apply auto-AA fix across every role × mode where the picks fail.
@@ -422,10 +334,9 @@
   }
   function semanticVarsFor(roleId, mode) {
     var t = State.t1[mode][roleId];
-    var P = presetsFor(roleId, mode);
-    var fillStep      = P.fill[t.fill];
-    var contentStep   = P.content[t.content];
-    var containerStep = P.container[t.container];
+    var fillStep      = t.fill;
+    var contentStep   = t.content;
+    var containerStep = t.container;
     var get = function (name) { return stepHexByName(roleId, name); };
     var p = roleId; // semantic prefix matches role id (brand, danger, ...)
     var lines = [];
@@ -576,24 +487,23 @@
       if (!raw) return false;
       var d = JSON.parse(raw);
       if (!d || d.v !== 1 || !d.proposed) return false;
-      function adoptT1(target, src, mode) {
+      var STEP_OK = {};
+      ALL_STEPS.forEach(function (s) { STEP_OK[s] = true; });
+      function adoptT1(target, src) {
         if (!src) return;
-        var family = T1_PRESETS_BY_SPREAD[src.spread] || T1_PRESETS_BY_SPREAD.subtle;
-        var P = family[mode] || family.light;
-        if (P.fill[src.fill])           target.fill = src.fill;
-        if (P.content[src.content])     target.content = src.content;
-        if (P.container[src.container]) target.container = src.container;
-        if (src.spread === 'subtle' || src.spread === 'bold') target.spread = src.spread;
+        if (STEP_OK[src.fill])      target.fill = src.fill;
+        if (STEP_OK[src.content])   target.content = src.content;
+        if (STEP_OK[src.container]) target.container = src.container;
       }
       ROLES.forEach(function (r) {
         if (d.proposed[r.id]) State.proposed[r.id] = d.proposed[r.id];
         if (!d.t1) return;
         if (d.t1.light || d.t1.dark) {
-          adoptT1(State.t1.light[r.id], d.t1.light && d.t1.light[r.id], 'light');
-          adoptT1(State.t1.dark[r.id],  d.t1.dark  && d.t1.dark[r.id],  'dark');
+          adoptT1(State.t1.light[r.id], d.t1.light && d.t1.light[r.id]);
+          adoptT1(State.t1.dark[r.id],  d.t1.dark  && d.t1.dark[r.id]);
         } else if (d.t1[r.id]) {
-          adoptT1(State.t1.light[r.id], d.t1[r.id], 'light');
-          adoptT1(State.t1.dark[r.id],  d.t1[r.id], 'dark');
+          adoptT1(State.t1.light[r.id], d.t1[r.id]);
+          adoptT1(State.t1.dark[r.id],  d.t1[r.id]);
         }
       });
       if (d.editingMode === 'light' || d.editingMode === 'dark') State.editingMode = d.editingMode;
@@ -818,18 +728,16 @@
   }
 
   /* ── T1 Roles ────────────────────────────────────────── */
-  /* WCAG bar + auto-paired text panel for the current picks of a role/mode.
-     Extracted so hover-preview can surgically rebuild just these two
-     elements without re-rendering the whole T1 panel (which would tear
-     down the radio button under the user's cursor). */
+  /* WCAG bar + auto-derived swatches for the current step picks of a
+     role/mode. Returns two HTML strings (the bar + the derived card)
+     so the renderer can place them in the right slots. */
   function renderWcagPairsHTML(role, mode) {
     var t1 = State.t1[mode][role.id];
-    var P = presetsFor(role.id, mode);
     var pageBg = surfaceBgFor(mode);
     var wcag = computeRoleContrast(role.id, mode);
     var failCount = wcag.checks.filter(function (c) { return !c.pass; }).length;
-    /* Suppress the success bar entirely — per-option AA badges already
-       confirm everything passes. Only surface the bar (with Auto-fix
+    /* Suppress the success bar entirely — per-step AA marks already
+       confirm everything passes. Only surface the bar (with a Snap
        affordance) when something is actually broken. */
     var wcagHTML = '';
     if (failCount > 0) {
@@ -841,13 +749,13 @@
       wcagHTML = '<div class="ev2-wcag-bar" data-grade="fail">'
         + '<span class="ev2-wcag-bar-icon" aria-hidden="true">\u26A0</span>'
         + '<span class="ev2-wcag-bar-text">' + wcagBadgeTxt + '</span>'
-        + '<button type="button" class="ev2-wcag-bar-info ev2-spread-link" data-tip="' + wcagDetails.replace(/"/g,'&quot;').replace(/\n/g,'\u2003') + '">Details</button>'
-        + '<button type="button" class="ev2-wcag-bar-fix" id="ev2WcagAutoFix">Auto-fix to AA</button>'
+        + '<button type="button" class="ev2-wcag-bar-info" data-tip="' + wcagDetails.replace(/"/g,'&quot;').replace(/\n/g,'\u2003') + '">Details</button>'
+        + '<button type="button" class="ev2-wcag-bar-fix" id="ev2WcagAutoFix">Snap to AA</button>'
       + '</div>';
     }
 
-    var pairedFillHex = stepHexByName(role.id, P.fill[t1.fill]) || '#000';
-    var pairedContainerHex = stepHexByName(role.id, P.container[t1.container]) || pageBg;
+    var pairedFillHex = stepHexByName(role.id, t1.fill) || '#000';
+    var pairedContainerHex = stepHexByName(role.id, t1.container) || pageBg;
     var pairOnComp = wcag.onComp;
     var pairOnCont = wcag.onCont;
     var pairOnCompRatio = contrastRatio(pairOnComp, pairedFillHex);
@@ -859,7 +767,7 @@
        (see semanticVarsFor: container-outline = +6 steps, separator
        = +2 steps). Surface them inside the same card so designers
        see every axis accounted for without adding a new lever. */
-    var containerStep = P.container[t1.container];
+    var containerStep = t1.container;
     var borderStep    = stepRel(containerStep, 6);
     var separatorStep = stepRel(containerStep, 2);
     var borderHex     = stepHexByName(role.id, borderStep) || pairedContainerHex;
@@ -923,81 +831,55 @@
     var t1 = t1For(role.id);
     var changed = isT1Changed(role.id) || isChanged(role.id);
     var affects = AFFECTS[role.id] || [];
-    var P = presetsFor(role.id);
     var pageBg = surfaceBgFor(mode);
+    var ladder = ladderFor(role.id);
 
+    /* Per-lever palette strip: 20 swatches (one per ladder step) act
+       as the picker. The currently-picked step gets the brand ring,
+       AA-failing steps get a dimmed mark, and clicking commits. */
     var leversHTML = T1_LEVERS.map(function (lever) {
       var current = t1[lever.id];
-      var P = presetsFor(role.id);
-      var pageBg = surfaceBgFor(mode);
-      // Resolve the currently-selected content + container for cross-checks
-      var curContentHex = stepHexByName(role.id, P.content[t1.content]) || '#000';
-      var curContainerHex = stepHexByName(role.id, P.container[t1.container]) || pageBg;
+      var curHex  = ladder[current] || '#000';
+      // Header WCAG read-out for the current pick
+      var hJudge = DTFSolver.judgeStepForLever(ladder, lever.id, current, t1, mode);
+      var hCls   = hJudge.pass ? (hJudge.grade === 'AAA' ? 'aaa' : 'aa') : 'fail';
+      var hTxt   = hJudge.pass ? hJudge.grade : 'Fail';
+      var swatchesHTML = ALL_STEPS.map(function (step) {
+        var hex = ladder[step] || '#000';
+        var isSel = step === current;
+        var j = DTFSolver.judgeStepForLever(ladder, lever.id, step, t1, mode);
+        var pass = j.pass ? 'true' : 'false';
+        var tip  = 'Step ' + step + ' \u2014 ' + hex.toUpperCase()
+                 + ' \u00b7 ' + j.ratio.toFixed(2) + ':1 (' + (j.pass ? j.grade : 'Fail') + ')';
+        return '<button type="button" class="ev2-pal-sw" '
+             + 'role="radio" aria-checked="' + isSel + '" '
+             + 'data-t1-lever="' + lever.id + '" data-step="' + step + '" '
+             + 'data-pass="' + pass + '" '
+             + 'style="background:' + hex + '" '
+             + 'data-tip="' + tip + '" '
+             + 'aria-label="Step ' + step + ', ' + (j.pass ? j.grade : 'fails AA') + '">'
+             + '<span class="ev2-pal-sw-step" aria-hidden="true">' + step + '</span>'
+             + '</button>';
+      }).join('');
       return '<div class="ev2-lever-block" data-lever="' + lever.id + '">'
         + '<div class="ev2-lever-head">'
           + '<span class="ev2-lever-title">' + lever.label + '</span>'
           + '<span class="ev2-lever-sub">' + lever.sub + '</span>'
+          + '<span class="ev2-lever-step" aria-live="polite">'
+            + '<span class="ev2-lever-step-chip" style="background:' + curHex + '" aria-hidden="true"></span>'
+            + 'Step <strong>' + current + '</strong>'
+            + ' \u00b7 ' + hJudge.ratio.toFixed(2) + ':1'
+            + ' <span class="ev2-seg-wcag" data-grade="' + hCls + '" aria-hidden="true">'
+            + (hJudge.pass ? '\u2713 ' : '\u26A0 ') + hTxt + '</span>'
+          + '</span>'
         + '</div>'
-        + '<div class="ev2-seg ev2-seg-' + lever.id + '" role="radiogroup" aria-label="' + lever.label + '">'
-          + lever.options.map(function (opt) {
-              var isSel = opt.id === current;
-              var step  = P[lever.id][opt.id];
-              var hex   = stepHexByName(role.id, step) || '#000';
-              var preview = renderLeverPreview(lever.id, hex);
-              // Per-lever WCAG check
-              var judge, tipDetail;
-              if (lever.id === 'fill') {
-                // Use the smart on-component color (black/white whichever wins)
-                // so the per-option badge agrees with what we actually emit.
-                var rW = contrastRatio(hex, '#FFFFFF'), rB = contrastRatio(hex, '#0A0A0A');
-                var onComp = rB > rW ? '#0A0A0A' : '#FFFFFF';
-                var onCompName = rB > rW ? 'Black' : 'White';
-                judge = wcagJudge(Math.max(rW, rB), false);
-                tipDetail = onCompName + ' text on this fill: ' + judge.ratio.toFixed(2) + ':1';
-              } else if (lever.id === 'content') {
-                judge = wcagJudge(contrastRatio(hex, pageBg), false);
-                tipDetail = 'Text on ' + (mode === 'dark' ? 'dark' : 'light') + ' page surface: ' + judge.ratio.toFixed(2) + ':1';
-              } else { // container
-                judge = wcagJudge(contrastRatio(curContentHex, hex), false);
-                tipDetail = 'Selected content text on this container: ' + judge.ratio.toFixed(2) + ':1';
-              }
-              var badgeCls = judge.pass ? (judge.grade === 'AAA' ? 'aaa' : 'aa') : 'fail';
-              var badgeTxt = judge.pass ? judge.grade : 'Fail';
-              // Single combined tooltip on the button \u2014 badge has no own tip,
-              // so the two never stack.
-              var combinedTip = opt.hint + ' \u2014 WCAG ' + judge.grade + ' (' + judge.ratio.toFixed(2) + ':1, ' + tipDetail + ')';
-              var badge = '<span class="ev2-seg-wcag" data-grade="' + badgeCls + '" aria-hidden="true">'
-                + (judge.pass ? '\u2713 ' : '\u26A0 ') + badgeTxt
-              + '</span>';
-              return '<button class="ev2-seg-btn" role="radio" '
-                + 'aria-checked="' + isSel + '" '
-                + 'data-t1-lever="' + lever.id + '" data-t1-value="' + opt.id + '" '
-                + 'data-tip="' + combinedTip + '">'
-                + '<span class="ev2-seg-preview">' + preview + '</span>'
-                + '<span class="ev2-seg-label">'
-                  + '<span class="ev2-seg-name">' + opt.label + '</span>'
-                  + '<span class="ev2-seg-step">step ' + step + '</span>'
-                + '</span>'
-                + badge
-                + '</button>';
-            }).join('')
+        + '<div class="ev2-pal" role="radiogroup" aria-label="' + lever.label + ' \u2014 pick a step">'
+          + swatchesHTML
         + '</div>'
       + '</div>';
     }).join('');
 
-    var currentSpread = t1.spread || T1_DEFAULT.spread;
-    var spreadOpt = SPREAD_OPTIONS.find(function (o) { return o.id === currentSpread; }) || SPREAD_OPTIONS[0];
-    var spreadInfoTip = 'Step interval controls how far apart Soft, Standard and Bold sit on the palette ladder. Subtle = 1 step apart (gentle). Distinct = 2 steps apart (clearly different). Click Change to switch.';
-    var spreadHTML = '<p class="ev2-spread-line">'
-      + '<span class="ev2-spread-line-label">Step interval:</span> '
-      + '<span class="ev2-spread-line-value">' + spreadOpt.label + ' \u00b7 ' + spreadOpt.sub + '</span> '
-      + '<button type="button" class="ev2-spread-link" id="openSpreadDialog">Change</button>'
-      + '<span class="ev2-spread-sep" aria-hidden="true">\u00b7</span>'
-      + '<button type="button" class="ev2-spread-link ev2-spread-why" data-tip="' + spreadInfoTip + '" aria-label="' + spreadInfoTip + '">Why is this for?</button>'
-    + '</p>';
-
-    /* Contrast summary + auto-paired text — extracted helper so
-       hover-preview can rebuild these surgically. */
+    /* Contrast summary + auto-derived 2\u00d72 (on-comp, on-cont, border, separator). */
     var _wp = renderWcagPairsHTML(role, mode);
     var wcagHTML = _wp.wcagHTML;
     var pairedHTML = _wp.pairedHTML;
@@ -1043,7 +925,6 @@
           + '</button>'
         + '</div>'
         + '<div class="ev2-intent-body">'
-          + spreadHTML
           + wcagHTML
           + '<div class="ev2-levers">' + leversHTML + '</div>'
           + pairedHTML
@@ -1076,10 +957,9 @@
 
   function slotsTableHTML(roleId) {
     var t = t1For(roleId);
-    var P = presetsFor(roleId);
-    var fillStep      = P.fill[t.fill];
-    var contentStep   = P.content[t.content];
-    var containerStep = P.container[t.container];
+    var fillStep      = t.fill;
+    var contentStep   = t.content;
+    var containerStep = t.container;
     var rows = [
       { slot: 'component-bg-default',     step: fillStep },
       { slot: 'component-bg-hover',       step: stepRel(fillStep, 1) },
@@ -1139,8 +1019,9 @@
     document.querySelectorAll('[data-t1-lever]').forEach(function (b) {
       b.addEventListener('click', function () {
         var lever = b.getAttribute('data-t1-lever');
-        var value = b.getAttribute('data-t1-value');
-        t1For(State.activeRole)[lever] = value;
+        var step  = b.getAttribute('data-step');
+        if (!step) return;
+        t1For(State.activeRole)[lever] = step;
         pushPreview();
         refreshChangeBar();
         scheduleAutosave();
@@ -1149,11 +1030,9 @@
         focusPreview(lever, true);
       });
     });
-    var openSpread = document.getElementById('openSpreadDialog');
-    if (openSpread) openSpread.addEventListener('click', function () { openSpreadDialog(); });
   }
 
-  /* Delegated handler for the Auto-fix-to-AA button. Bound once at
+  /* Delegated handler for the Snap-to-AA button. Bound once at
      module init so it survives re-renders. */
   document.addEventListener('click', function (e) {
     var fix = e.target && e.target.closest && e.target.closest('#ev2WcagAutoFix');
@@ -1163,86 +1042,6 @@
     refreshChangeBar();
     scheduleAutosave();
     renderT1();
-  });
-
-  function openSpreadDialog() {
-    var role = State.activeRole;
-    var current = t1For(role).spread || T1_DEFAULT.spread;
-    var card = document.getElementById('ev2SpreadDialog');
-    if (!card) return;
-    // Track the pending pick — only commit on Apply
-    var pending = current;
-    function paintCards() {
-      var hasRiskyPending = (pending === 'bold');
-      card.innerHTML = (hasRiskyPending
-        ? '<div class="ev2-spread-warn" role="note">'
-            + '<span class="ev2-spread-warn-icon" aria-hidden="true">\u26A0</span>'
-            + '<span><strong>Distinct</strong> opens a wider range of picks. '
-            + 'Some Soft / Subtle / Tinted options may not pass WCAG AA \u2014 '
-            + 'check the badges in each lever before applying.</span>'
-          + '</div>'
-        : ''
-      ) + SPREAD_OPTIONS.map(function (opt) {
-        var isSel = opt.id === pending;
-        var family = T1_PRESETS_BY_SPREAD[opt.id];
-        var P = (family && family[State.editingMode]) || family.light;
-        var preview = ['soft','standard','bold'].map(function (k) {
-          var hex = stepHexByName(role, P.fill[k]) || '#000';
-          return '<span style="background:' + hex + '"></span>';
-        }).join('');
-        var desc = opt.id === 'subtle'
-          ? 'Soft, Standard and Bold sit close together \u2014 gentle, restrained variation. Best for refined or low-contrast brands.'
-          : 'Soft, Standard and Bold are clearly different shades \u2014 stronger emphasis. Best for high-contrast or expressive brands.';
-        return '<button class="ev2-spread-card" type="button" aria-pressed="' + isSel + '" data-spread-pick="' + opt.id + '">'
-          + '<div class="ev2-spread-card-head">'
-            + '<span class="ev2-spread-card-pv">' + preview + '</span>'
-            + '<div class="ev2-spread-card-titles">'
-              + '<span class="ev2-spread-card-label">' + opt.label + '</span>'
-              + '<span class="ev2-spread-card-meta">' + opt.sub + '</span>'
-            + '</div>'
-          + '</div>'
-          + '<p class="ev2-spread-card-desc">' + desc + '</p>'
-        + '</button>';
-      }).join('');
-      card.querySelectorAll('[data-spread-pick]').forEach(function (b) {
-        b.addEventListener('click', function () {
-          pending = b.getAttribute('data-spread-pick');
-          paintCards();
-        });
-      });
-    }
-    paintCards();
-    // Wire Apply (replace handler each open so closure captures fresh `pending`)
-    var applyBtn = document.getElementById('ev2SpreadApply');
-    if (applyBtn) {
-      var fresh = applyBtn.cloneNode(true);
-      applyBtn.parentNode.replaceChild(fresh, applyBtn);
-      fresh.addEventListener('click', function () {
-        if (pending !== current) {
-          t1For(State.activeRole).spread = pending;
-          pushPreview();
-          refreshChangeBar();
-          scheduleAutosave();
-          renderT1();
-        }
-        closeSpreadDialog();
-      });
-    }
-    document.getElementById('ev2SpreadDialogWrap').removeAttribute('hidden');
-  }
-  function closeSpreadDialog() {
-    var w = document.getElementById('ev2SpreadDialogWrap');
-    if (w) w.setAttribute('hidden', '');
-  }
-  // Dismiss handlers (backdrop + Close button)
-  document.addEventListener('click', function (e) {
-    if (e.target && e.target.matches && e.target.matches('[data-spread-dismiss]')) closeSpreadDialog();
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-      var w = document.getElementById('ev2SpreadDialogWrap');
-      if (w && !w.hasAttribute('hidden')) closeSpreadDialog();
-    }
   });
 
   function leverSlotHint(leverId) {
@@ -1416,21 +1215,19 @@
       });
     }
 
-    // T1 — role lever / spread changes (per mode)
+    // T1 — per-role per-mode step changes
     ['light','dark'].forEach(function (mode) {
       var rows = [];
       ROLES.forEach(function (r) {
         if (!isT1ChangedInMode(r.id, mode)) return;
         var t = State.t1[mode][r.id];
-        var def = T1_DEFAULT;
+        var def = defaultT1ForRole(r.id, mode);
         var deltas = [];
-        if (t.fill !== def.fill)           deltas.push('Fill <em>'      + def.fill      + '</em> \u2192 <em>' + t.fill      + '</em>');
-        if (t.content !== def.content)     deltas.push('Content <em>'   + def.content   + '</em> \u2192 <em>' + t.content   + '</em>');
-        if (t.container !== def.container) deltas.push('Container <em>' + def.container + '</em> \u2192 <em>' + t.container + '</em>');
-        var spr = t.spread || def.spread;
-        if (spr !== def.spread)             deltas.push('Step interval <em>' + def.spread + '</em> \u2192 <em>' + spr + '</em>');
+        if (t.fill !== def.fill)           deltas.push('Fill step <em>'      + def.fill      + '</em> \u2192 <em>' + t.fill      + '</em>');
+        if (t.content !== def.content)     deltas.push('Content step <em>'   + def.content   + '</em> \u2192 <em>' + t.content   + '</em>');
+        if (t.container !== def.container) deltas.push('Container step <em>' + def.container + '</em> \u2192 <em>' + t.container + '</em>');
         if (!deltas.length) return;
-        var swatchHex = stepHexByName(r.id, presetsFor(r.id, mode).fill[t.fill]) || State.proposed[r.id];
+        var swatchHex = stepHexByName(r.id, t.fill) || State.proposed[r.id];
         rows.push('<div class="ev2-deploy-row">'
           + '<span class="ev2-deploy-row-dot" style="background:' + swatchHex + '"></span>'
           + '<span class="ev2-deploy-row-label">' + r.label + '</span>'
@@ -1442,7 +1239,7 @@
         sections.push({
           tier: 'T1',
           title: 'Roles \u2014 ' + (mode === 'light' ? 'Light mode' : 'Dark mode'),
-          sub: 'Per-role lever picks (which step Soft / Standard / Bold maps to).',
+          sub: 'Per-role step picks for fill, content, and container.',
           rows: rows.join('')
         });
       }

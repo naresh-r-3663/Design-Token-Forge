@@ -192,6 +192,73 @@
     return ladder;
   }
 
+  /* ── Step-based API (v2 — no presets) ─────────────────
+     Direct callers pass step names ('25'..'900'). The carousel /
+     palette-strip UI lives entirely in this world. */
+  function evaluateBySteps(ladder, picks, mode) {
+    var pageBg = surfaceBgFor(mode);
+    var fillHex      = ladder[picks.fill]      || '#000';
+    var contentHex   = ladder[picks.content]   || '#000';
+    var containerHex = ladder[picks.container] || pageBg;
+    var onComp = deriveOnComponent(fillHex);
+    var onCont = deriveOnContainer(ladder, picks.content, containerHex);
+    var checks = [
+      { label: 'On-component on Fill',        ratio: contrastRatio(fillHex,    onComp)       },
+      { label: 'Content on page',             ratio: contrastRatio(contentHex, pageBg)       },
+      { label: 'Content on container',        ratio: contrastRatio(contentHex, containerHex) },
+      { label: 'On-container on container',   ratio: contrastRatio(onCont.hex, containerHex) }
+    ].map(function (c) {
+      var j = wcagJudge(c.ratio, false);
+      c.grade = j.grade; c.pass = j.pass; return c;
+    });
+    return {
+      hexes:      { fill: fillHex, content: contentHex, container: containerHex, page: pageBg },
+      onComp:     onComp,
+      onCont:     onCont.hex,
+      onContStep: onCont.step,
+      checks:     checks,
+      allPass:    checks.every(function (c) { return c.pass; })
+    };
+  }
+
+  /* Per-lever AA judge for a candidate step. Pure: no state.
+       lever ∈ 'fill' | 'content' | 'container'. For 'container'
+       the judge needs the currently-picked content step. */
+  function judgeStepForLever(ladder, lever, step, picks, mode) {
+    var hex = ladder[step]; if (!hex) return { ratio: 0, pass: false, grade: 'Fail' };
+    var ratio;
+    if (lever === 'fill') {
+      var rW = contrastRatio(hex, '#FFFFFF'), rB = contrastRatio(hex, '#0A0A0A');
+      ratio = Math.max(rW, rB);
+    } else if (lever === 'content') {
+      ratio = contrastRatio(hex, surfaceBgFor(mode));
+    } else { // container
+      var contentHex = ladder[picks.content] || '#000';
+      ratio = contrastRatio(contentHex, hex);
+    }
+    return wcagJudge(ratio, false);
+  }
+
+  /* Walk to the nearest AA-passing step (minimum disturbance from
+     current pick). Returns the same step if it already passes. */
+  function snapStepToAA(ladder, lever, currentStep, picks, mode) {
+    var startIdx = ALL_STEPS.indexOf(currentStep);
+    if (startIdx < 0) startIdx = ALL_STEPS.indexOf('500');
+    var order = [startIdx];
+    for (var d = 1; d < ALL_STEPS.length; d++) {
+      if (startIdx + d < ALL_STEPS.length) order.push(startIdx + d);
+      if (startIdx - d >= 0)               order.push(startIdx - d);
+    }
+    var bestStep = currentStep, bestRatio = 0;
+    for (var i = 0; i < order.length; i++) {
+      var step = ALL_STEPS[order[i]];
+      var j = judgeStepForLever(ladder, lever, step, picks, mode);
+      if (j.pass) return step;
+      if (j.ratio > bestRatio) { bestRatio = j.ratio; bestStep = step; }
+    }
+    return bestStep;
+  }
+
   window.DTFSolver = {
     ALL_STEPS:         ALL_STEPS,
     stepRel:           stepRel,
@@ -203,6 +270,10 @@
     resolveSteps:      resolveSteps,
     evaluate:          evaluate,
     autoFix:           autoFix,
-    ladderFromSteps:   ladderFromSteps
+    ladderFromSteps:   ladderFromSteps,
+    /* v2 step-based API (used by the palette-strip UI): */
+    evaluateBySteps:   evaluateBySteps,
+    judgeStepForLever: judgeStepForLever,
+    snapStepToAA:      snapStepToAA
   };
 })();
