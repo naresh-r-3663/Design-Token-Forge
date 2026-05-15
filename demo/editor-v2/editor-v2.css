@@ -333,6 +333,20 @@ body[data-pane-dragging="true"] .ev2-preview-frame{pointer-events:none}
   transition:transform 120ms ease;
 }
 .ev2-role[data-changed="true"] .ev2-role-dot{box-shadow:0 0 0 2px var(--brand-component-outline-default,#286CE5)}
+.ev2-role-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:16px;height:16px;padding:0 5px;
+  border-radius:999px;
+  background:var(--brand-component-bg-default,#3366f0);
+  color:var(--brand-on-component,#fff);
+  font-size:10px;font-weight:700;line-height:1;
+  margin-left:2px;
+  cursor:help;
+}
+.ev2-role[aria-selected="true"] .ev2-role-badge,
+.ev2-role[aria-current="true"] .ev2-role-badge{
+  background:var(--brand-component-bg-hover,var(--brand-component-bg-default,#286CE5));
+}
 
 /* ── Intent card ─────────────────────────────────────── */
 .ev2-intent{

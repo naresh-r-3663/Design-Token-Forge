@@ -287,6 +287,32 @@
     return isT1ChangedInMode(roleId, 'light') || isT1ChangedInMode(roleId, 'dark');
   }
   function isRoleDirty(roleId) { return isChanged(roleId) || isT1Changed(roleId); }
+
+  /* Diff every lever in both modes — returns
+     [{mode, lever, fromId, toId}, ...]. Used to populate the
+     per-role badge tooltip and the per-role count. */
+  function summarizeRoleChanges(roleId) {
+    var diffs = [];
+    ['light','dark'].forEach(function (mode) {
+      var t = State.t1[mode][roleId];
+      var b = (State.t1Baseline && State.t1Baseline[mode] && State.t1Baseline[mode][roleId]) || T1_DEFAULT;
+      ['fill','content','container','spread'].forEach(function (lever) {
+        var cur = t[lever] || (lever === 'spread' ? T1_DEFAULT.spread : null);
+        var base = b[lever] || (lever === 'spread' ? T1_DEFAULT.spread : null);
+        if (cur !== base) diffs.push({ mode: mode, lever: lever, fromId: base, toId: cur });
+      });
+    });
+    return diffs;
+  }
+  function badgeTipFor(roleId) {
+    var diffs = summarizeRoleChanges(roleId);
+    if (!diffs.length) return '';
+    var labels = { fill:'Fill', content:'Content', container:'Container', spread:'Spread' };
+    return diffs.map(function (d) {
+      var modeLabel = d.mode === 'dark' ? 'Dark' : 'Light';
+      return modeLabel + ' · ' + labels[d.lever] + ': ' + d.fromId + ' → ' + d.toId;
+    }).join('   •   ');
+  }
   function totalChanges() {
     return ROLES.reduce(function (n, r) { return n + (isRoleDirty(r.id) ? 1 : 0); }, 0);
   }
@@ -938,10 +964,17 @@
       '<div class="ev2-roles" role="tablist">'
         + ROLES.map(function (r) {
             var current = r.id === role.id;
+            var diffs = summarizeRoleChanges(r.id);
+            var badge = diffs.length
+              ? '<span class="ev2-role-badge" data-tip="' + badgeTipFor(r.id).replace(/"/g,'&quot;')
+                + '" aria-label="' + diffs.length + ' lever' + (diffs.length === 1 ? '' : 's') + ' changed">'
+                + diffs.length + '</span>'
+              : '';
             return '<button class="ev2-role" role="tab" data-role-tab="' + r.id + '" '
               + 'aria-selected="' + current + '" data-changed="' + isRoleDirty(r.id) + '">'
               + '<span class="ev2-role-dot" style="background:' + State.proposed[r.id] + '"></span>'
               + '<span>' + r.label + '</span>'
+              + badge
               + '</button>';
           }).join('')
       + '</div>'
