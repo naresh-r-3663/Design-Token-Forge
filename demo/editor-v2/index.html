@@ -15,10 +15,10 @@
   <link rel="stylesheet" href="../shared.css">
 
   <!-- Editor v2 specific layout -->
-  <link rel="stylesheet" href="./editor-v2.css?v=20">
+  <link rel="stylesheet" href="./editor-v2.css?v=22">
 
   <!-- Palette engine (browser IIFE — exposes window.PaletteEngine) -->
-  <script src="../palette-engine.js?v=20" defer></script>
+  <script src="../palette-engine.js?v=22" defer></script>
 </head>
 <body>
 
@@ -108,8 +108,17 @@
     <!-- CENTER: Token list (grouped) -->
     <section class="ev2-list" aria-label="Tokens">
       <header class="ev2-list-head">
-        <h2 class="ev2-list-title" id="listTitle">Palette</h2>
-        <p class="ev2-list-sub" id="listSub">Your foundation colors. Editing here cascades to roles, surfaces, and every component.</p>
+        <div class="ev2-list-titlerow">
+          <div class="ev2-list-titlewrap">
+            <h2 class="ev2-list-title" id="listTitle">Palette</h2>
+            <p class="ev2-list-sub" id="listSub">Your foundation colors. Editing here cascades to roles, surfaces, and every component.</p>
+          </div>
+          <button type="button" class="ev2-section-reset" id="sectionResetBtn" hidden
+            data-tip="Reset every change in this section back to the project defaults. Other sections are untouched.">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>
+            <span class="ev2-section-reset-label">Reset section</span>
+          </button>
+        </div>
         <input class="ev2-search" type="search" placeholder="Filter tokens (name, role, value…)" id="tokenSearch" aria-label="Filter tokens">
       </header>
 
@@ -139,7 +148,8 @@
           <span class="ev2-autosave" id="autosaveStatus">No draft yet</span>
         </div>
         <div class="ev2-savebar-r">
-          <button class="ev2-discard" id="discardBtn" disabled>Discard</button>
+          <button class="ev2-discard" id="discardBtn" disabled
+            data-tip="Discard every unsaved change in this draft — Palette + Roles + Surfaces + Components for both light and dark modes. To reset just one section, use the Reset section button above the token list. To reset just one role, use Reset on the role card.">Discard all</button>
         </div>
       </footer>
     </section>
@@ -180,6 +190,6 @@
     </div>
   </div>
 
-  <script src="./editor-v2.js?v=20" defer></script>
+  <script src="./editor-v2.js?v=22" defer></script>
 </body>
 </html>

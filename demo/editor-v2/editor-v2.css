@@ -224,8 +224,35 @@ body{
   background:var(--surface-base-bg);
   flex-shrink:0;
 }
+.ev2-list-titlerow{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+}
+.ev2-list-titlewrap{min-width:0;flex:1}
 .ev2-list-title{font-size:18px;font-weight:700;color:var(--surface-base-ct-strong);margin-bottom:4px}
 .ev2-list-sub{font-size:12px;color:var(--surface-base-ct-subtle);max-width:560px;line-height:1.5}
+
+.ev2-section-reset{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 11px;
+  border:1px solid var(--surface-base-outline);
+  border-radius:var(--radius-md,6px);
+  background:var(--surface-base-bg);
+  font:inherit;font-size:11px;font-weight:600;
+  color:var(--surface-base-ct-strong);
+  cursor:pointer;
+  transition:background 120ms ease, border-color 120ms ease, color 120ms ease;
+  flex-shrink:0;
+}
+.ev2-section-reset:hover:not(:disabled){
+  background:var(--surface-base-cm-bg);
+  border-color:var(--surface-base-ct-faint);
+}
+.ev2-section-reset:focus-visible{
+  outline:2px solid var(--brand-component-outline-default);
+  outline-offset:2px;
+}
+.ev2-section-reset:disabled{opacity:.4;cursor:not-allowed}
+.ev2-section-reset svg{flex-shrink:0;opacity:.7}
 .ev2-search{
   margin-top:12px;width:100%;
   padding:8px 12px;
@@ -309,6 +336,28 @@ body{
   color:var(--brand-content-default,#286CE5);
   font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
 }
+.ev2-role-reset{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 9px;
+  border:1px solid var(--surface-base-outline);
+  border-radius:var(--radius-md,6px);
+  background:var(--surface-base-bg);
+  font:inherit;font-size:10px;font-weight:600;
+  color:var(--surface-base-ct-strong);
+  cursor:pointer;
+  transition:background 120ms ease, border-color 120ms ease;
+  flex-shrink:0;
+}
+.ev2-role-reset:hover:not(:disabled){
+  background:var(--surface-base-cm-bg);
+  border-color:var(--surface-base-ct-faint);
+}
+.ev2-role-reset:focus-visible{
+  outline:2px solid var(--brand-component-outline-default);
+  outline-offset:2px;
+}
+.ev2-role-reset:disabled{opacity:.35;cursor:not-allowed}
+.ev2-role-reset svg{flex-shrink:0;opacity:.7}
 .ev2-intent-body{padding:16px}
 
 /* Big lever row: swatch + hex + picker */

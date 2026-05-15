@@ -332,37 +332,52 @@
   }
 
   /* Walk to the nearest in-options pick that satisfies AA for each lever.
-     Tries the option list in order (soft, standard, bold etc.) — picks the
-     first that passes AA. If none pass, picks the highest-ratio one. */
+  /* Auto-fix walks each lever to a passing pick using minimum-disturbance:
+     1. If the user's current pick passes, keep it.
+     2. Else prefer Standard (the visual "default" emphasis).
+     3. Else try Soft, then Bold — pick the first that passes.
+     4. If none pass, pick the highest-ratio option.
+     This avoids over-correcting (e.g. jumping straight to Bold/Strong
+     when Standard would also pass), keeping the role visually
+     consistent with the rest of the family. */
   function autoFixT1ToAA(roleId) {
     var mode = State.editingMode;
     var t = State.t1[mode][roleId];
     var P = presetsFor(roleId, mode);
     var pageBg = surfaceBgFor(mode);
 
-    function bestOption(lever, evaluator) {
+    function pickMinDisturbance(lever, currentId, evaluator) {
+      // Walk order: current → standard/light → soft/whisper → bold/tinted
+      var optionIds = lever.options.map(function (o) { return o.id; });
+      var preferred = (lever.id === 'container')
+        ? ['light', 'whisper', 'tinted']
+        : ['standard', 'soft', 'bold', 'subtle', 'strong'];
+      var order = [];
+      function push(id) { if (optionIds.indexOf(id) >= 0 && order.indexOf(id) < 0) order.push(id); }
+      push(currentId);
+      preferred.forEach(push);
+      optionIds.forEach(push); // safety net
+
       var best = null;
-      for (var i = 0; i < lever.options.length; i++) {
-        var opt = lever.options[i];
-        var step = P[lever.id][opt.id];
+      for (var i = 0; i < order.length; i++) {
+        var id = order[i];
+        var step = P[lever.id][id];
         var hex = stepHexByName(roleId, step) || '#000';
         var ratio = evaluator(hex);
-        var pass = ratio >= 4.5;
-        if (!best || ratio > best.ratio) best = { id: opt.id, ratio: ratio, pass: pass };
-        if (pass && (!best.pass || best.id !== opt.id)) best = { id: opt.id, ratio: ratio, pass: true };
+        if (ratio >= 4.5) return id; // first pass wins (= least disturbance)
+        if (!best || ratio > best.ratio) best = { id: id, ratio: ratio };
       }
-      return best ? best.id : lever.options[0].id;
+      return best ? best.id : currentId;
     }
 
     var fillLever      = T1_LEVERS.find(function (l) { return l.id === 'fill'; });
     var contentLever   = T1_LEVERS.find(function (l) { return l.id === 'content'; });
     var containerLever = T1_LEVERS.find(function (l) { return l.id === 'container'; });
 
-    t.fill    = bestOption(fillLever,    function (hex) { return contrastRatio(hex, onComponentColor()); });
-    t.content = bestOption(contentLever, function (hex) { return contrastRatio(hex, pageBg); });
-    // Container check uses the (now-updated) content pick
+    t.fill    = pickMinDisturbance(fillLever,    t.fill,    function (hex) { return contrastRatio(hex, onComponentColor()); });
+    t.content = pickMinDisturbance(contentLever, t.content, function (hex) { return contrastRatio(hex, pageBg); });
     var newContentHex = stepHexByName(roleId, P.content[t.content]) || '#000';
-    t.container = bestOption(containerLever, function (hex) { return contrastRatio(newContentHex, hex); });
+    t.container = pickMinDisturbance(containerLever, t.container, function (hex) { return contrastRatio(newContentHex, hex); });
   }
   function semanticVarsFor(roleId, mode) {
     var t = State.t1[mode][roleId];
@@ -430,6 +445,32 @@
     $deployN.hidden = n === 0;
     $deployN.textContent = n;
     refreshAutosaveLabel();
+    refreshSectionResetBtn();
+  }
+
+  function sectionDirtyCount(tierId) {
+    var n = 0;
+    if (tierId === 't0') {
+      ROLES.forEach(function (r) { if (isChanged(r.id)) n++; });
+    } else if (tierId === 't1') {
+      ROLES.forEach(function (r) { if (isT1Changed(r.id)) n++; });
+    }
+    return n;
+  }
+
+  function refreshSectionResetBtn() {
+    var btn = document.getElementById('sectionResetBtn');
+    if (!btn) return;
+    var tier = State.activeTier;
+    var supported = (tier === 't0' || tier === 't1');
+    var dirty = supported ? sectionDirtyCount(tier) : 0;
+    btn.hidden = !supported;
+    btn.disabled = dirty === 0;
+    var label = btn.querySelector('.ev2-section-reset-label');
+    if (label) {
+      var meta = TIER_META[tier];
+      label.textContent = 'Reset ' + (meta && meta.title ? meta.title : 'section');
+    }
   }
 
   function refreshAutosaveLabel() {
@@ -851,6 +892,12 @@
             + '<span class="ev2-intent-sub">How prominently should ' + role.label.toLowerCase() + ' appear across surfaces, content and containers?</span>'
           + '</div>'
           + (changed ? '<span class="ev2-intent-changed">Changed</span>' : '')
+          + '<button type="button" class="ev2-role-reset" data-role-reset="' + role.id + '"'
+            + (changed ? '' : ' disabled')
+            + ' data-tip="Reset ' + role.label + ' to project defaults — anchor color, fill / content / container picks, and step interval. Other roles are untouched.">'
+            + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>'
+            + '<span>Reset ' + role.label + '</span>'
+          + '</button>'
         + '</div>'
         + '<div class="ev2-intent-body">'
           + spreadHTML
@@ -1123,6 +1170,75 @@
     refreshChangeBar();
     refreshDraftStatus('idle');
     if (window.ev2Toast) window.ev2Toast('Reverted all changes', 'ok');
+  });
+
+  /* ── Section + per-role resets ─────────────────────────
+     Section reset = clear only the active tier (T0 or T1).
+     Role reset    = clear one role's T0 anchor + T1 picks.
+     Both go through autoFixT1ToAA so the cleared roles still
+     ship AA defaults against the loaded ladder. */
+  function resetRole(roleId) {
+    State.proposed[roleId] = State.baseline[roleId];
+    State.t1.light[roleId] = defaultT1();
+    State.t1.dark[roleId]  = defaultT1();
+    delete State.cachedSteps[roleId];
+    // Re-apply auto-AA so cleared role still passes WCAG
+    ['light','dark'].forEach(function (mode) {
+      var savedMode = State.editingMode;
+      State.editingMode = mode;
+      var wcag = computeRoleContrast(roleId, mode);
+      if (wcag.checks.some(function (c) { return !c.pass; })) autoFixT1ToAA(roleId);
+      State.editingMode = savedMode;
+    });
+    scheduleAutosave();
+    pushPreview();
+    renderActiveTier();
+    refreshChangeBar();
+  }
+  function resetSection(tierId) {
+    if (tierId === 't0') {
+      ROLES.forEach(function (r) { State.proposed[r.id] = State.baseline[r.id]; });
+      State.cachedSteps = {};
+    } else if (tierId === 't1') {
+      ROLES.forEach(function (r) {
+        State.t1.light[r.id] = defaultT1();
+        State.t1.dark[r.id]  = defaultT1();
+      });
+      // Re-apply auto-AA to all roles
+      ['light','dark'].forEach(function (mode) {
+        ROLES.forEach(function (r) {
+          var savedMode = State.editingMode;
+          State.editingMode = mode;
+          var wcag = computeRoleContrast(r.id, mode);
+          if (wcag.checks.some(function (c) { return !c.pass; })) autoFixT1ToAA(r.id);
+          State.editingMode = savedMode;
+        });
+      });
+    }
+    scheduleAutosave();
+    pushPreview();
+    renderActiveTier();
+    refreshChangeBar();
+  }
+
+  // Section reset button (in list header)
+  var $sectionReset = document.getElementById('sectionResetBtn');
+  if ($sectionReset) {
+    $sectionReset.addEventListener('click', function () {
+      resetSection(State.activeTier);
+      var label = TIER_META[State.activeTier] && TIER_META[State.activeTier].title;
+      if (window.ev2Toast) window.ev2Toast('Reset ' + (label || 'section') + ' to defaults', 'ok');
+    });
+  }
+
+  // Per-role reset (event-delegated since cards re-render)
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-role-reset]');
+    if (!btn) return;
+    var roleId = btn.getAttribute('data-role-reset');
+    var role = ROLES.find(function (r) { return r.id === roleId; });
+    resetRole(roleId);
+    if (window.ev2Toast) window.ev2Toast('Reset ' + (role ? role.label : roleId) + ' to defaults', 'ok');
   });
 
   $reload.addEventListener('click', function () {
