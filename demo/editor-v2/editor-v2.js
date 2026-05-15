@@ -379,6 +379,22 @@
     var newContentHex = stepHexByName(roleId, P.content[t.content]) || '#000';
     t.container = pickMinDisturbance(containerLever, t.container, function (hex) { return contrastRatio(newContentHex, hex); });
   }
+
+  /* Apply auto-AA fix across every role × mode where the picks fail.
+     Used at boot and after Discard/Reset to guarantee every cleared
+     role still ships AA defaults regardless of which project's
+     primitives.css ladder is loaded. */
+  function ensureAllRolesPassAA() {
+    var savedMode = State.editingMode;
+    ['light','dark'].forEach(function (mode) {
+      State.editingMode = mode;
+      ROLES.forEach(function (r) {
+        var wcag = computeRoleContrast(r.id, mode);
+        if (wcag.checks.some(function (c) { return !c.pass; })) autoFixT1ToAA(r.id);
+      });
+    });
+    State.editingMode = savedMode;
+  }
   function semanticVarsFor(roleId, mode) {
     var t = State.t1[mode][roleId];
     var P = presetsFor(roleId, mode);
@@ -435,6 +451,12 @@
     });
     darkLines.push('}');
     win.postMessage({ type: 'ev2-overrides', css: rootLines.concat(darkLines).join('\n') }, '*');
+    // Tell the preview which role is currently being edited so the
+    // contextual cards (Text card, Spotlight alert) reflect that role
+    // instead of always showing brand.
+    try {
+      win.postMessage({ type: 'ev2-active-role', role: State.activeRole }, '*');
+    } catch (e) {}
   }
 
   function refreshChangeBar() {
@@ -482,7 +504,10 @@
       return;
     }
     if (!State.lastSavedAt) { $autosave.textContent = 'Saving draft\u2026'; return; }
-    $autosave.textContent = 'Saved to local draft \u00b7 ' + relTime(State.lastSavedAt);
+    var d = new Date(State.lastSavedAt);
+    var hh = String(d.getHours()).padStart(2,'0');
+    var mm = String(d.getMinutes()).padStart(2,'0');
+    $autosave.textContent = 'Saved to draft \u00b7 ' + hh + ':' + mm + ' (' + relTime(State.lastSavedAt) + ')';
   }
 
   function relTime(ts) {
@@ -966,6 +991,8 @@
         State.activeRole = b.getAttribute('data-role-tab');
         saveUIState();
         renderT1();
+        // Tell the preview spotlight which role to feature.
+        try { $frame.contentWindow.postMessage({ type: 'ev2-active-role', role: State.activeRole }, '*'); } catch (e) {}
       });
     });
     document.querySelectorAll('.ev2-disc-head').forEach(function (h) {
@@ -1164,6 +1191,10 @@
       State.t1.dark[r.id]  = defaultT1();
     });
     State.cachedSteps = {};
+    // Re-apply auto-AA so cleared roles still pass WCAG against the
+    // loaded ladder, instead of landing on raw subtle/standard/light
+    // which may fail for some hue/seed combinations.
+    ensureAllRolesPassAA();
     clearDraftFromStorage();
     pushPreview();
     renderActiveTier();
@@ -1241,6 +1272,148 @@
     if (window.ev2Toast) window.ev2Toast('Reset ' + (role ? role.label : roleId) + ' to defaults', 'ok');
   });
 
+  /* ── Deploy summary dialog ─────────────────────────────
+     Opens on Deploy click. Lists every change the user is about to
+     ship to Figma, grouped by tier, with old → new diffs. Lets the
+     user verify before committing — prevents wrong-anchor accidents. */
+  function buildDeploySummary() {
+    var sections = [];
+    var totalChanges = 0;
+
+    // T0 — palette anchor changes
+    var t0Changes = [];
+    ROLES.forEach(function (r) {
+      if (!isChanged(r.id)) return;
+      t0Changes.push({
+        role: r,
+        from: State.baseline[r.id].toUpperCase(),
+        to:   State.proposed[r.id].toUpperCase()
+      });
+    });
+    if (t0Changes.length) {
+      totalChanges += t0Changes.length;
+      sections.push({
+        tier: 'T0',
+        title: 'Palette anchors',
+        sub: 'Foundation colors. Cascades to roles, surfaces, and components.',
+        rows: t0Changes.map(function (c) {
+          return '<div class="ev2-deploy-row">'
+            + '<span class="ev2-deploy-row-dot" style="background:' + c.to + '"></span>'
+            + '<span class="ev2-deploy-row-label">' + c.role.label + ' anchor</span>'
+            + '<span class="ev2-deploy-row-diff">'
+              + '<code class="ev2-deploy-from">' + c.from + '</code>'
+              + '<span class="ev2-deploy-arrow">\u2192</span>'
+              + '<code class="ev2-deploy-to" style="background:' + c.to + ';color:' + textOnHex(c.to) + '">' + c.to + '</code>'
+            + '</span>'
+          + '</div>';
+        }).join('')
+      });
+    }
+
+    // T1 — role lever / spread changes (per mode)
+    ['light','dark'].forEach(function (mode) {
+      var rows = [];
+      ROLES.forEach(function (r) {
+        if (!isT1ChangedInMode(r.id, mode)) return;
+        var t = State.t1[mode][r.id];
+        var def = T1_DEFAULT;
+        var deltas = [];
+        if (t.fill !== def.fill)           deltas.push('Fill <em>'      + def.fill      + '</em> \u2192 <em>' + t.fill      + '</em>');
+        if (t.content !== def.content)     deltas.push('Content <em>'   + def.content   + '</em> \u2192 <em>' + t.content   + '</em>');
+        if (t.container !== def.container) deltas.push('Container <em>' + def.container + '</em> \u2192 <em>' + t.container + '</em>');
+        var spr = t.spread || def.spread;
+        if (spr !== def.spread)             deltas.push('Step interval <em>' + def.spread + '</em> \u2192 <em>' + spr + '</em>');
+        if (!deltas.length) return;
+        var swatchHex = stepHexByName(r.id, presetsFor(r.id, mode).fill[t.fill]) || State.proposed[r.id];
+        rows.push('<div class="ev2-deploy-row">'
+          + '<span class="ev2-deploy-row-dot" style="background:' + swatchHex + '"></span>'
+          + '<span class="ev2-deploy-row-label">' + r.label + '</span>'
+          + '<span class="ev2-deploy-row-diff">' + deltas.join(' \u00b7 ') + '</span>'
+        + '</div>');
+        totalChanges += 1;
+      });
+      if (rows.length) {
+        sections.push({
+          tier: 'T1',
+          title: 'Roles \u2014 ' + (mode === 'light' ? 'Light mode' : 'Dark mode'),
+          sub: 'Per-role lever picks (which step Soft / Standard / Bold maps to).',
+          rows: rows.join('')
+        });
+      }
+    });
+
+    return { sections: sections, total: totalChanges };
+  }
+
+  // Quick contrast picker for the diff swatch label
+  function textOnHex(hex) {
+    return contrastRatio(hex, '#FFFFFF') >= contrastRatio(hex, '#000000') ? '#FFFFFF' : '#000000';
+  }
+
+  function openDeployDialog() {
+    var dlg = document.getElementById('ev2DeployDialog');
+    if (!dlg) return;
+    var summary = buildDeploySummary();
+    var body = document.getElementById('ev2DeployBody');
+    var meta = document.getElementById('ev2DeployMeta');
+    var hint = document.getElementById('ev2DeployHint');
+    var sub  = document.getElementById('ev2DeploySub');
+
+    var projId = (typeof getActiveProjectId === 'function' && getActiveProjectId()) || '';
+    var projLabel = projId ? projectName(projId) : 'No project (defaults)';
+    meta.innerHTML = '<span class="ev2-deploy-meta-row"><span class="ev2-deploy-meta-k">Project</span><span class="ev2-deploy-meta-v">' + projLabel + '</span></span>'
+      + '<span class="ev2-deploy-meta-row"><span class="ev2-deploy-meta-k">Editing mode</span><span class="ev2-deploy-meta-v">' + (State.editingMode === 'dark' ? 'Dark' : 'Light') + '</span></span>'
+      + '<span class="ev2-deploy-meta-row"><span class="ev2-deploy-meta-k">Total changes</span><span class="ev2-deploy-meta-v ev2-deploy-meta-total">' + summary.total + '</span></span>';
+
+    if (summary.total === 0) {
+      body.innerHTML = '<div class="ev2-deploy-empty">No changes to deploy. Make some edits first.</div>';
+      hint.textContent = 'Nothing to deploy.';
+      document.getElementById('ev2DeployConfirm').disabled = true;
+    } else {
+      body.innerHTML = summary.sections.map(function (s) {
+        return '<section class="ev2-deploy-section">'
+          + '<header class="ev2-deploy-section-head">'
+            + '<span class="ev2-deploy-section-tag">' + s.tier + '</span>'
+            + '<div><div class="ev2-deploy-section-title">' + s.title + '</div>'
+            + '<div class="ev2-deploy-section-sub">' + s.sub + '</div></div>'
+          + '</header>'
+          + '<div class="ev2-deploy-rows">' + s.rows + '</div>'
+        + '</section>';
+      }).join('');
+      hint.innerHTML = 'After deploy, every consumer of these tokens (other Figma files, Storybook, your apps) will see the new values within seconds.';
+      document.getElementById('ev2DeployConfirm').disabled = false;
+    }
+    sub.textContent = 'Review every change before pushing to Figma. Deploys are tracked but cannot be undone in-place.';
+    dlg.hidden = false;
+    document.body.classList.add('ev2-modal-open');
+  }
+  function closeDeployDialog() {
+    var dlg = document.getElementById('ev2DeployDialog');
+    if (dlg) { dlg.hidden = true; }
+    document.body.classList.remove('ev2-modal-open');
+  }
+
+  if ($deploy) {
+    $deploy.addEventListener('click', function () {
+      if ($deploy.disabled) return;
+      openDeployDialog();
+    });
+  }
+  document.querySelectorAll('[data-deploy-dismiss]').forEach(function (el) {
+    el.addEventListener('click', closeDeployDialog);
+  });
+  var deployConfirmBtn = document.getElementById('ev2DeployConfirm');
+  if (deployConfirmBtn) {
+    deployConfirmBtn.addEventListener('click', function () {
+      // Hook for the actual deploy call — wired to the sync server
+      // by the project widget when a project is active. For now,
+      // close the dialog and surface a toast so the flow is end-to-end
+      // testable without a live server.
+      closeDeployDialog();
+      if (window.ev2Toast) window.ev2Toast('Deploy queued (server integration TBD)', 'ok');
+    });
+  }
+
   $reload.addEventListener('click', function () {
     $frame.contentWindow.location.reload();
   });
@@ -1248,6 +1421,7 @@
   $frame.addEventListener('load', function () {
     var mode = document.documentElement.getAttribute('data-theme') || 'light';
     try { $frame.contentWindow.postMessage({ type: 'ev2-theme', mode: mode }, '*'); } catch (e) {}
+    try { $frame.contentWindow.postMessage({ type: 'ev2-active-role', role: State.activeRole }, '*'); } catch (e) {}
     pushPreview();
   });
 
@@ -1304,17 +1478,16 @@
     // the engine produces live (different project, different engine
     // version baked into primitives, etc.). We auto-walk to AA only
     // for roles the user hasn't edited.
+    var savedMode_boot = State.editingMode;
     ['light','dark'].forEach(function (mode) {
+      State.editingMode = mode;
       ROLES.forEach(function (r) {
         if (isT1ChangedInMode(r.id, mode)) return; // user owns this pick
-        var savedMode = State.editingMode;
-        State.editingMode = mode;
         var wcag = computeRoleContrast(r.id, mode);
-        var anyFail = wcag.checks.some(function (c) { return !c.pass; });
-        if (anyFail) autoFixT1ToAA(r.id);
-        State.editingMode = savedMode;
+        if (wcag.checks.some(function (c) { return !c.pass; })) autoFixT1ToAA(r.id);
       });
     });
+    State.editingMode = savedMode_boot;
 
     $frame.src = './preview.html?v=' + Date.now();
     renderActiveTier();

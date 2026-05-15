@@ -15,10 +15,10 @@
   <link rel="stylesheet" href="../shared.css">
 
   <!-- Editor v2 specific layout -->
-  <link rel="stylesheet" href="./editor-v2.css?v=22">
+  <link rel="stylesheet" href="./editor-v2.css?v=24">
 
   <!-- Palette engine (browser IIFE — exposes window.PaletteEngine) -->
-  <script src="../palette-engine.js?v=22" defer></script>
+  <script src="../palette-engine.js?v=24" defer></script>
 </head>
 <body>
 
@@ -190,6 +190,29 @@
     </div>
   </div>
 
-  <script src="./editor-v2.js?v=22" defer></script>
+  <!-- Deploy summary dialog: shows every change before pushing to Figma -->
+  <div class="ev2-deploy-dialog" id="ev2DeployDialog" hidden role="dialog" aria-modal="true" aria-labelledby="ev2DeployTitle">
+    <div class="ev2-modal-backdrop" data-deploy-dismiss></div>
+    <div class="ev2-deploy-card" role="document">
+      <button class="ev2-modal-close" type="button" data-deploy-dismiss aria-label="Close dialog">&times;</button>
+      <header class="ev2-deploy-head">
+        <div class="ev2-deploy-headtxt">
+          <h3 class="ev2-deploy-title" id="ev2DeployTitle">Deploy to Figma</h3>
+          <p class="ev2-deploy-sub" id="ev2DeploySub">Review every change before it hits the Figma file. This action cannot be undone from inside Figma.</p>
+        </div>
+        <div class="ev2-deploy-meta" id="ev2DeployMeta"></div>
+      </header>
+      <div class="ev2-deploy-body" id="ev2DeployBody"></div>
+      <footer class="ev2-deploy-actions">
+        <span class="ev2-deploy-hint" id="ev2DeployHint"></span>
+        <div class="ev2-deploy-btns">
+          <button class="ev2-modal-btn" type="button" data-deploy-dismiss>Cancel</button>
+          <button class="ev2-modal-btn ev2-modal-btn-primary" type="button" id="ev2DeployConfirm">Deploy to Figma</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <script src="./editor-v2.js?v=24" defer></script>
 </body>
 </html>

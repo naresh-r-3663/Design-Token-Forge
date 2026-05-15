@@ -44,9 +44,72 @@
     .pv-card .pv-link[data-role="success"] {color:var(--success-content-default)}
     .pv-card .pv-link[data-role="warning"] {color:var(--warning-content-default)}
     .pv-card .pv-link[data-role="info"]    {color:var(--info-content-default)}
+
+    /* Spotlight band — emphasizes the active role with a tagged pill,
+       a button trio (filled / outlined / ghost), an alert, and a
+       text card all wired to the same role. Re-bound on
+       ev2-active-role messages from the editor. */
+    .pv-spotlight{
+      margin-bottom:24px;padding:16px 18px;
+      border-radius:10px;
+      background:var(--surface-base-cm-bg);
+      border:1px solid var(--surface-base-outline);
+      position:relative;
+    }
+    .pv-spotlight-head{
+      display:flex;align-items:center;gap:8px;margin-bottom:14px;
+      font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+      color:var(--surface-base-ct-strong);
+    }
+    .pv-spotlight-pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:3px 10px;border-radius:999px;
+      background:var(--surface-base-bg);
+      border:1px solid var(--surface-base-outline);
+      font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+      color:var(--surface-base-ct-default);
+    }
+    .pv-spotlight-pill-dot{width:8px;height:8px;border-radius:999px;background:var(--pv-active-fill,#286CE5)}
+    .pv-spotlight-grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width: 720px) { .pv-spotlight-grid{grid-template-columns:1fr 1fr;gap:14px} }
+    .pv-spotlight-card{padding:12px 14px;border-radius:8px;border:1px solid var(--surface-base-outline);background:var(--surface-base-bg)}
+    .pv-spotlight-cap{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--surface-base-ct-faint);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+    .pv-spotlight-cap-tag{font-size:9px;background:var(--surface-base-subtle);padding:2px 6px;border-radius:3px;font-weight:600;letter-spacing:.04em}
+    .pv-spotlight-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
   </style>
 </head>
 <body>
+
+  <!-- Active-role spotlight: re-binds to whatever role the editor is on -->
+  <section class="pv-spotlight" id="pv-spotlight" data-pv-shows="all" data-active-role="brand" aria-label="Active role spotlight">
+    <header class="pv-spotlight-head">
+      <span>Active role</span>
+      <span class="pv-spotlight-pill"><span class="pv-spotlight-pill-dot"></span><span id="pv-spotlight-name">Brand</span></span>
+    </header>
+    <div class="pv-spotlight-grid">
+      <div class="pv-spotlight-card">
+        <div class="pv-spotlight-cap"><span>Buttons</span><span class="pv-spotlight-cap-tag">component-bg</span></div>
+        <div class="pv-spotlight-row">
+          <button class="btn" data-variant="filled" data-role="brand" id="pv-sl-fill">Filled</button>
+          <button class="btn" data-variant="outlined" data-role="brand" id="pv-sl-out">Outlined</button>
+          <button class="btn" data-variant="ghost" data-role="brand" id="pv-sl-ghost">Ghost</button>
+        </div>
+      </div>
+      <div class="pv-spotlight-card pv-alert" data-role="brand" id="pv-sl-alert" style="margin:0">
+        <div>
+          <div class="pv-spotlight-cap" style="margin-bottom:4px;color:inherit;opacity:.65"><span>Alert</span><span class="pv-spotlight-cap-tag" style="background:rgba(0,0,0,.07);color:inherit">container-bg + on-container</span></div>
+          <div class="pv-alert-title" id="pv-sl-alert-title">Heads up — Brand</div>
+          <div id="pv-sl-alert-body">This card switches to the role you're editing. Watch container softness, content weight, and fill emphasis change as you tweak the levers.</div>
+        </div>
+      </div>
+      <div class="pv-spotlight-card pv-card" style="grid-column:1/-1;margin:0">
+        <div class="pv-spotlight-cap"><span>Text card</span><span class="pv-spotlight-cap-tag">content-strong + content-default</span></div>
+        <div class="pv-h" data-role="brand" id="pv-sl-h">Brand strong heading</div>
+        <div class="pv-p" id="pv-sl-p">Body text uses surface-content tokens. The link below uses the active role's content-default token.</div>
+        <a href="#" class="pv-link" data-role="brand" id="pv-sl-link">Read documentation →</a>
+      </div>
+    </div>
+  </section>
 
   <div class="pv-section" data-pv-shows="fill" data-pv-role="brand">
     <div class="pv-label">Buttons <span class="pv-label-tag">component-bg</span></div>
@@ -133,6 +196,36 @@
       // Theme swap (parent can't write to our documentElement under file://).
       if (d.type === 'ev2-theme' && d.mode) {
         document.documentElement.setAttribute('data-theme', d.mode);
+        return;
+      }
+      // Active role swap — re-bind the spotlight section to the role
+      // the user is currently editing in T1 so the preview is contextual
+      // instead of always showing brand.
+      if (d.type === 'ev2-active-role' && d.role) {
+        var roleId = d.role;
+        var roleLabel = roleId.charAt(0).toUpperCase() + roleId.slice(1);
+        var sl = document.getElementById('pv-spotlight');
+        if (sl) sl.setAttribute('data-active-role', roleId);
+        var nm = document.getElementById('pv-spotlight-name');
+        if (nm) nm.textContent = roleLabel;
+        // Update CSS var the pill dot reads, so it tracks role color
+        var dot = document.querySelector('#pv-spotlight .pv-spotlight-pill-dot');
+        if (dot) {
+          var fillVar = '--' + roleId + '-component-bg-default';
+          dot.style.background = 'var(' + fillVar + ')';
+        }
+        ['pv-sl-fill','pv-sl-out','pv-sl-ghost'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.setAttribute('data-role', roleId);
+        });
+        var alert = document.getElementById('pv-sl-alert');
+        if (alert) alert.setAttribute('data-role', roleId);
+        var aTitle = document.getElementById('pv-sl-alert-title');
+        if (aTitle) aTitle.textContent = 'Heads up \u2014 ' + roleLabel;
+        var h = document.getElementById('pv-sl-h');
+        if (h) { h.setAttribute('data-role', roleId); h.textContent = roleLabel + ' strong heading'; }
+        var link = document.getElementById('pv-sl-link');
+        if (link) link.setAttribute('data-role', roleId);
         return;
       }
       if (d.type !== 'ev2-focus') return;
