@@ -1182,6 +1182,24 @@
         else b.removeAttribute('aria-current');
       });
     }
+    // Ensure every role's untouched T1 defaults pass AA against the
+    // actual loaded ladder. Hardcoded step picks (T1_PRESET_OVERRIDES)
+    // can fail when the loaded primitives.css ladder differs from what
+    // the engine produces live (different project, different engine
+    // version baked into primitives, etc.). We auto-walk to AA only
+    // for roles the user hasn't edited.
+    ['light','dark'].forEach(function (mode) {
+      ROLES.forEach(function (r) {
+        if (isT1ChangedInMode(r.id, mode)) return; // user owns this pick
+        var savedMode = State.editingMode;
+        State.editingMode = mode;
+        var wcag = computeRoleContrast(r.id, mode);
+        var anyFail = wcag.checks.some(function (c) { return !c.pass; });
+        if (anyFail) autoFixT1ToAA(r.id);
+        State.editingMode = savedMode;
+      });
+    });
+
     $frame.src = './preview.html?v=' + Date.now();
     renderActiveTier();
     refreshChangeBar();
