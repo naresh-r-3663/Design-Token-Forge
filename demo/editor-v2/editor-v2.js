@@ -1422,12 +1422,45 @@
     }
 
     $frame.src = './preview.html?v=' + Date.now();
+    // Re-validate after draft load: if any saved t1 picks fail AA
+    // against the CURRENT ladder (e.g. seed changed since last
+    // session, or solver thresholds tightened), silently snap them
+    // and re-snapshot the baseline so the user doesn't see stale
+    // fail badges on a draft they didn't intentionally make fail.
+    var snappedAny = false;
+    var savedMode_post = State.editingMode;
+    ['light','dark'].forEach(function (mode) {
+      State.editingMode = mode;
+      ROLES.forEach(function (r) {
+        var wcag = computeRoleContrast(r.id, mode);
+        if (wcag.checks.some(function (c) { return !c.pass; })) {
+          autoFixT1ToAA(r.id);
+          snappedAny = true;
+        }
+      });
+    });
+    State.editingMode = savedMode_post;
+    if (snappedAny) {
+      // Roll the baseline forward so the now-passing picks count as
+      // the new "no changes" state.
+      ROLES.forEach(function (r) {
+        State.t1Baseline.light[r.id] = Object.assign({}, State.t1.light[r.id]);
+        State.t1Baseline.dark[r.id]  = Object.assign({}, State.t1.dark[r.id]);
+      });
+    }
     renderActiveTier();
     refreshChangeBar();
     initProjectWidget();
     if (hadDraft) {
       refreshDraftStatus('saved');
-      if (window.ev2Toast) window.ev2Toast('Restored from local draft', 'ok');
+      if (window.ev2Toast) {
+        window.ev2Toast(
+          snappedAny
+            ? 'Restored from local draft — auto-snapped to AA'
+            : 'Restored from local draft',
+          'ok'
+        );
+      }
     } else {
       refreshDraftStatus('idle');
     }
