@@ -473,6 +473,13 @@
     try {
       win.postMessage({ type: 'ev2-active-role', role: State.activeRole }, '*');
     } catch (e) {}
+    // Tell the preview which roles have unsaved edits so the Compare
+    // panel can ring them. Sent on every push so it stays in sync with
+    // hover-preview / discard / spread / individual lever picks.
+    try {
+      var dirty = ROLES.filter(function (r) { return isRoleDirty(r.id); }).map(function (r) { return r.id; });
+      win.postMessage({ type: 'ev2-dirty-roles', roles: dirty }, '*');
+    } catch (e) {}
   }
 
   function refreshChangeBar() {
@@ -819,22 +826,23 @@
     var pageBg = surfaceBgFor(mode);
     var wcag = computeRoleContrast(role.id, mode);
     var failCount = wcag.checks.filter(function (c) { return !c.pass; }).length;
-    var wcagBadgeCls = failCount === 0 ? 'aa' : 'fail';
-    var wcagBadgeTxt = failCount === 0
-      ? 'All ' + wcag.checks.length + ' selected pairs pass AA'
-      : failCount + ' of ' + wcag.checks.length + ' selected pairs fail AA';
-    var wcagDetails = wcag.checks.map(function (c) {
-      var sym = c.pass ? '\u2713' : '\u26A0';
-      return sym + ' ' + c.label + ' \u2014 ' + c.ratio.toFixed(2) + ':1 (' + c.grade + ')';
-    }).join('\n');
-    var wcagHTML = '<div class="ev2-wcag-bar" data-grade="' + wcagBadgeCls + '">'
-      + '<span class="ev2-wcag-bar-icon" aria-hidden="true">' + (failCount === 0 ? '\u2713' : '\u26A0') + '</span>'
-      + '<span class="ev2-wcag-bar-text">' + wcagBadgeTxt + '</span>'
-      + '<button type="button" class="ev2-wcag-bar-info ev2-spread-link" data-tip="' + wcagDetails.replace(/"/g,'&quot;').replace(/\n/g,'\u2003') + '">Details</button>'
-      + (failCount > 0
-          ? '<button type="button" class="ev2-wcag-bar-fix" id="ev2WcagAutoFix">Auto-fix to AA</button>'
-          : '')
-    + '</div>';
+    /* Suppress the success bar entirely — per-option AA badges already
+       confirm everything passes. Only surface the bar (with Auto-fix
+       affordance) when something is actually broken. */
+    var wcagHTML = '';
+    if (failCount > 0) {
+      var wcagBadgeTxt = failCount + ' of ' + wcag.checks.length + ' selected pairs fail AA';
+      var wcagDetails = wcag.checks.map(function (c) {
+        var sym = c.pass ? '\u2713' : '\u26A0';
+        return sym + ' ' + c.label + ' \u2014 ' + c.ratio.toFixed(2) + ':1 (' + c.grade + ')';
+      }).join('\n');
+      wcagHTML = '<div class="ev2-wcag-bar" data-grade="fail">'
+        + '<span class="ev2-wcag-bar-icon" aria-hidden="true">\u26A0</span>'
+        + '<span class="ev2-wcag-bar-text">' + wcagBadgeTxt + '</span>'
+        + '<button type="button" class="ev2-wcag-bar-info ev2-spread-link" data-tip="' + wcagDetails.replace(/"/g,'&quot;').replace(/\n/g,'\u2003') + '">Details</button>'
+        + '<button type="button" class="ev2-wcag-bar-fix" id="ev2WcagAutoFix">Auto-fix to AA</button>'
+      + '</div>';
+    }
 
     var pairedFillHex = stepHexByName(role.id, P.fill[t1.fill]) || '#000';
     var pairedContainerHex = stepHexByName(role.id, P.container[t1.container]) || pageBg;
@@ -1148,18 +1156,21 @@
     if (openSpread) openSpread.addEventListener('click', function () { openSpreadDialog(); });
   }
 
-  /* Surgical re-render of just the WCAG bar + auto-paired text panel.
-     Called by the hover-preview handler so we can show "what AA would
-     look like if you picked this option" without renderT1() (which
-     would tear down the radio under the cursor). The Auto-fix button
-     inside the WCAG bar is wired via document-level delegation below,
-     so it survives outerHTML replacement. */
+  /* Surgical re-render of just the auto-paired text panel.
+     Called by the hover-preview handler so we can show "what the
+     auto-paired text would become" without renderT1() (which would
+     tear down the radio under the cursor).
+     Note: we deliberately do NOT update the WCAG summary bar here.
+     The bar reflects the *committed* state, not hypothetical hover
+     picks — surfacing an Auto-fix banner from a hover would be
+     overwhelming and misleading (the user hasn't actually broken
+     anything yet). The per-option AA badge already tells them
+     whether the hovered pick passes; the Auto-fix button reappears
+     once they actually commit a failing preset. */
   function applyHoverPreviewDOM(hoveredBtn) {
     var role = ROLES.find(function (r) { return r.id === State.activeRole; });
     if (!role) return;
     var html = renderWcagPairsHTML(role, State.editingMode);
-    var bar = document.querySelector('.ev2-wcag-bar');
-    if (bar) bar.outerHTML = html.wcagHTML;
     var pairs = document.querySelector('.ev2-pairs');
     if (pairs) pairs.outerHTML = html.pairedHTML;
     // Mark which option is currently being previewed so CSS can dress

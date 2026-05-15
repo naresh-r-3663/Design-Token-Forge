@@ -842,7 +842,9 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-pv-fill{
   display:block;width:100%;height:100%;
   border-radius:3px;
-  border:1px solid rgba(0,0,0,.10);
+  /* Stronger border so very pale fills (whisper / light steps) stay
+     visible on the seg-control's subtle background. */
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);
 }
 .ev2-pv-content{
   font-family:var(--font-family-sans,system-ui);
@@ -850,8 +852,9 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 }
 .ev2-pv-container{
   display:block;width:100%;height:100%;
-  border-radius:3px;border:1px solid;
-  position:relative;opacity:.55;
+  border-radius:3px;
+  border:1px solid currentColor;
+  position:relative;opacity:.7;
 }
 .ev2-seg-label{
   display:flex;flex-direction:column;gap:1px;line-height:1.15;min-width:0;
