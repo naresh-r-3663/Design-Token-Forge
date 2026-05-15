@@ -205,6 +205,20 @@
         warning: defaultT1(), info:    defaultT1()
       }
     },
+    // Snapshot of t1 picks AFTER boot-time auto-AA-fix. This is the
+    // "clean" baseline the change counter and Discard compare against,
+    // so a Discard that re-applies auto-fix doesn't count its own
+    // legitimate AA shifts as user changes.
+    t1Baseline: {
+      light: {
+        brand:   defaultT1(), danger:  defaultT1(), success: defaultT1(),
+        warning: defaultT1(), info:    defaultT1()
+      },
+      dark: {
+        brand:   defaultT1(), danger:  defaultT1(), success: defaultT1(),
+        warning: defaultT1(), info:    defaultT1()
+      }
+    },
     // Disclosure open-state persists across role / tier swaps.
     // Keyed by 'tierId:discId' so each tier can have its own pattern.
     disclosure: { 't0:steps': false, 't0:affects': false, 't1:slots': false, 't1:affects': false },
@@ -265,8 +279,9 @@
   }
   function isT1ChangedInMode(roleId, mode) {
     var t = State.t1[mode][roleId];
-    return t.fill !== T1_DEFAULT.fill || t.content !== T1_DEFAULT.content ||
-           t.container !== T1_DEFAULT.container || (t.spread || T1_DEFAULT.spread) !== T1_DEFAULT.spread;
+    var b = (State.t1Baseline && State.t1Baseline[mode] && State.t1Baseline[mode][roleId]) || T1_DEFAULT;
+    return t.fill !== b.fill || t.content !== b.content ||
+           t.container !== b.container || (t.spread || T1_DEFAULT.spread) !== (b.spread || T1_DEFAULT.spread);
   }
   function isT1Changed(roleId) {
     return isT1ChangedInMode(roleId, 'light') || isT1ChangedInMode(roleId, 'dark');
@@ -1300,14 +1315,13 @@
   $discard.addEventListener('click', function () {
     ROLES.forEach(function (r) {
       State.proposed[r.id] = State.baseline[r.id];
-      State.t1.light[r.id] = defaultT1();
-      State.t1.dark[r.id]  = defaultT1();
+      // Restore to the AA-clean t1 baseline snapshotted at boot, not
+      // raw T1_DEFAULT (which may not pass AA against the loaded
+      // ladder for some hue/seed combinations).
+      State.t1.light[r.id] = Object.assign({}, State.t1Baseline.light[r.id]);
+      State.t1.dark[r.id]  = Object.assign({}, State.t1Baseline.dark[r.id]);
     });
     State.cachedSteps = {};
-    // Re-apply auto-AA so cleared roles still pass WCAG against the
-    // loaded ladder, instead of landing on raw subtle/standard/light
-    // which may fail for some hue/seed combinations.
-    ensureAllRolesPassAA();
     clearDraftFromStorage();
     pushPreview();
     renderActiveTier();
@@ -1323,17 +1337,10 @@
      ship AA defaults against the loaded ladder. */
   function resetRole(roleId) {
     State.proposed[roleId] = State.baseline[roleId];
-    State.t1.light[roleId] = defaultT1();
-    State.t1.dark[roleId]  = defaultT1();
+    // Restore to AA-clean t1 baseline (matches Discard behavior).
+    State.t1.light[roleId] = Object.assign({}, State.t1Baseline.light[roleId]);
+    State.t1.dark[roleId]  = Object.assign({}, State.t1Baseline.dark[roleId]);
     delete State.cachedSteps[roleId];
-    // Re-apply auto-AA so cleared role still passes WCAG
-    ['light','dark'].forEach(function (mode) {
-      var savedMode = State.editingMode;
-      State.editingMode = mode;
-      var wcag = computeRoleContrast(roleId, mode);
-      if (wcag.checks.some(function (c) { return !c.pass; })) autoFixT1ToAA(roleId);
-      State.editingMode = savedMode;
-    });
     scheduleAutosave();
     pushPreview();
     renderActiveTier();
@@ -1345,18 +1352,9 @@
       State.cachedSteps = {};
     } else if (tierId === 't1') {
       ROLES.forEach(function (r) {
-        State.t1.light[r.id] = defaultT1();
-        State.t1.dark[r.id]  = defaultT1();
-      });
-      // Re-apply auto-AA to all roles
-      ['light','dark'].forEach(function (mode) {
-        ROLES.forEach(function (r) {
-          var savedMode = State.editingMode;
-          State.editingMode = mode;
-          var wcag = computeRoleContrast(r.id, mode);
-          if (wcag.checks.some(function (c) { return !c.pass; })) autoFixT1ToAA(r.id);
-          State.editingMode = savedMode;
-        });
+        // Restore to AA-clean t1 baseline (matches Discard behavior).
+        State.t1.light[r.id] = Object.assign({}, State.t1Baseline.light[r.id]);
+        State.t1.dark[r.id]  = Object.assign({}, State.t1Baseline.dark[r.id]);
       });
     }
     scheduleAutosave();
@@ -1555,6 +1553,27 @@
     // Default: show CSS names ON. Overridden below if UI state has been saved.
     document.body.classList.add('ev2-show-css');
     readBaseline();
+
+    // Run boot-time auto-AA-fix BEFORE loading the draft so we can
+    // snapshot the AA-clean values as the t1 baseline. Then the draft
+    // (if any) overrides State.t1 with user picks, and Discard knows
+    // exactly what to revert to.
+    var savedMode_pre = State.editingMode;
+    ['light','dark'].forEach(function (mode) {
+      State.editingMode = mode;
+      ROLES.forEach(function (r) {
+        var wcag = computeRoleContrast(r.id, mode);
+        if (wcag.checks.some(function (c) { return !c.pass; })) autoFixT1ToAA(r.id);
+      });
+    });
+    State.editingMode = savedMode_pre;
+    // Snapshot the AA-clean settled state as the baseline used by
+    // change-detection and Discard.
+    ROLES.forEach(function (r) {
+      State.t1Baseline.light[r.id] = Object.assign({}, State.t1.light[r.id]);
+      State.t1Baseline.dark[r.id]  = Object.assign({}, State.t1.dark[r.id]);
+    });
+
     var hadDraft = loadDraftFromStorage();
     var ui = loadUIState();
     if (ui) {
@@ -1585,22 +1604,6 @@
         else b.removeAttribute('aria-current');
       });
     }
-    // Ensure every role's untouched T1 defaults pass AA against the
-    // actual loaded ladder. Hardcoded step picks (T1_PRESET_OVERRIDES)
-    // can fail when the loaded primitives.css ladder differs from what
-    // the engine produces live (different project, different engine
-    // version baked into primitives, etc.). We auto-walk to AA only
-    // for roles the user hasn't edited.
-    var savedMode_boot = State.editingMode;
-    ['light','dark'].forEach(function (mode) {
-      State.editingMode = mode;
-      ROLES.forEach(function (r) {
-        if (isT1ChangedInMode(r.id, mode)) return; // user owns this pick
-        var wcag = computeRoleContrast(r.id, mode);
-        if (wcag.checks.some(function (c) { return !c.pass; })) autoFixT1ToAA(r.id);
-      });
-    });
-    State.editingMode = savedMode_boot;
 
     $frame.src = './preview.html?v=' + Date.now();
     renderActiveTier();
