@@ -45,6 +45,44 @@
     .pv-card .pv-link[data-role="warning"] {color:var(--warning-content-default)}
     .pv-card .pv-link[data-role="info"]    {color:var(--info-content-default)}
 
+    /* Compare-across-roles accordion. Stays closed by default so the
+       spotlight up top is the focal point. Once opened, native <details>
+       keeps it open until the user closes it explicitly. */
+    .pv-compare{
+      margin-top:8px;
+      border:1px solid var(--surface-base-outline);
+      border-radius:10px;
+      background:var(--surface-base-cm-bg);
+      overflow:hidden;
+    }
+    .pv-compare > summary{
+      list-style:none;cursor:pointer;
+      padding:14px 18px;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      font-size:12px;font-weight:700;
+      color:var(--surface-base-ct-strong);
+      letter-spacing:.04em;text-transform:uppercase;
+      user-select:none;
+    }
+    .pv-compare > summary::-webkit-details-marker{display:none}
+    .pv-compare > summary::after{
+      content:'';
+      width:8px;height:8px;
+      border:1.5px solid var(--surface-base-ct-subtle);
+      border-top:0;border-left:0;
+      transform:rotate(45deg) translateY(-2px);
+      transition:transform 180ms;
+    }
+    .pv-compare[open] > summary::after{transform:rotate(-135deg) translateY(-2px)}
+    .pv-compare > summary:hover{background:var(--surface-base-bg)}
+    .pv-compare-sub{
+      font-size:11px;font-weight:500;color:var(--surface-base-ct-subtle);
+      text-transform:none;letter-spacing:0;margin-left:auto;margin-right:8px;
+    }
+    .pv-compare-body{padding:14px 18px 8px;border-top:1px solid var(--surface-base-outline);background:var(--surface-base-bg)}
+    .pv-compare-body .pv-section{margin-bottom:14px}
+    .pv-compare-body .pv-section:last-child{margin-bottom:0}
+
     /* Spotlight band — emphasizes the active role with a tagged pill,
        a button trio (filled / outlined / ghost), an alert, and a
        text card all wired to the same role. Re-bound on
@@ -111,6 +149,13 @@
     </div>
   </section>
 
+  <details class="pv-compare" id="pv-compare">
+    <summary>
+      <span>Compare across roles</span>
+      <span class="pv-compare-sub">All 5 roles, side-by-side · click to expand</span>
+    </summary>
+    <div class="pv-compare-body">
+
   <div class="pv-section" data-pv-shows="fill" data-pv-role="brand">
     <div class="pv-label">Buttons <span class="pv-label-tag">component-bg</span></div>
     <div class="pv-row">
@@ -176,12 +221,29 @@
     </div>
   </div>
 
+    </div>
+  </details>
+
   <script>
     // Inject the override <style> ourselves on first load so file://
     // sandbox restrictions on parent.contentDocument don't block us.
     var __ev2OverrideStyle = document.createElement('style');
     __ev2OverrideStyle.id = 'ev2-overrides';
     document.head.appendChild(__ev2OverrideStyle);
+
+    // Compare-across-roles accordion: persist open state across reloads.
+    // Once a user opens it, keep it open until they manually close it —
+    // tab switches and token pushes must NEVER auto-toggle this.
+    (function () {
+      var compare = document.getElementById('pv-compare');
+      if (!compare) return;
+      try {
+        if (localStorage.getItem('ev2-pv-compare-open') === '1') compare.open = true;
+      } catch (e) {}
+      compare.addEventListener('toggle', function () {
+        try { localStorage.setItem('ev2-pv-compare-open', compare.open ? '1' : '0'); } catch (e) {}
+      });
+    })();
 
     // Listen for messages from the editor to highlight the relevant pv-section.
     var clearTimer = null;
@@ -240,10 +302,18 @@
         if (on && !match) match = s;
       });
       if (match && d.scroll) {
-        var rect = match.getBoundingClientRect();
-        var vh = window.innerHeight || document.documentElement.clientHeight;
-        var fullyVisible = rect.top >= 0 && rect.bottom <= vh;
-        if (!fullyVisible) match.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Don't auto-scroll if the comparison accordion that owns this
+        // section is collapsed — the spotlight at the top already shows
+        // the change. Forcing scroll into a closed details would just
+        // jump the iframe to the (collapsed) summary, which feels wrong.
+        var compare = match.closest('details.pv-compare');
+        var isVisible = !compare || compare.open;
+        if (isVisible) {
+          var rect = match.getBoundingClientRect();
+          var vh = window.innerHeight || document.documentElement.clientHeight;
+          var fullyVisible = rect.top >= 0 && rect.bottom <= vh;
+          if (!fullyVisible) match.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
       }
       if (d.scroll && lever) {
         if (clearTimer) clearTimeout(clearTimer);
