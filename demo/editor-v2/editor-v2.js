@@ -48,32 +48,49 @@
     i = Math.max(0, Math.min(ALL_STEPS.length - 1, i + delta));
     return ALL_STEPS[i];
   }
-  var T1_PRESETS = {
-    fill:      { soft: '300', standard: '500', bold: '700' },
-    content:   { subtle: '400', standard: '550', strong: '700' },
-    container: { whisper: '25', light: '75', tinted: '150' }
+  // Two spread modes: how far apart the soft/standard/bold steps sit on the ladder.
+  // "subtle" = 1-step interval (gentle differences). "bold" = 2-step interval (clearly distinct).
+  var T1_PRESETS_BY_SPREAD = {
+    subtle: {
+      fill:      { soft: '400', standard: '500', bold: '600' },
+      content:   { subtle: '500', standard: '550', strong: '600' },
+      container: { whisper: '50',  light: '75', tinted: '100' }
+    },
+    bold: {
+      fill:      { soft: '300', standard: '500', bold: '700' },
+      content:   { subtle: '400', standard: '550', strong: '700' },
+      container: { whisper: '25',  light: '75', tinted: '150' }
+    }
   };
-  var T1_DEFAULT = { fill: 'standard', content: 'standard', container: 'light' };
+  var SPREAD_OPTIONS = [
+    { id: 'subtle', label: 'Subtle',  sub: '1-step interval' },
+    { id: 'bold',   label: 'Distinct', sub: '2-step interval' }
+  ];
+  function presetsFor(roleId) {
+    var s = (State.t1[roleId] && State.t1[roleId].spread) || T1_DEFAULT.spread;
+    return T1_PRESETS_BY_SPREAD[s] || T1_PRESETS_BY_SPREAD.subtle;
+  }
+  var T1_DEFAULT = { fill: 'standard', content: 'standard', container: 'light', spread: 'subtle' };
   var T1_LEVERS = [
     { id: 'fill', label: 'Fill emphasis', sub: 'Solid component backgrounds (buttons, badges, fills)',
       options: [
-        { id: 'soft',     label: 'Soft',     hint: 'Step 300 \u2014 gentler, less assertive' },
-        { id: 'standard', label: 'Standard', hint: 'Step 500 \u2014 recommended default' },
-        { id: 'bold',     label: 'Bold',     hint: 'Step 700 \u2014 heavier, more presence' }
+        { id: 'soft',     label: 'Soft',     hint: 'Gentler, less assertive' },
+        { id: 'standard', label: 'Standard', hint: 'Recommended default' },
+        { id: 'bold',     label: 'Bold',     hint: 'Heavier, more presence' }
       ]
     },
     { id: 'content', label: 'Content weight', sub: 'Text and icons rendered in this color',
       options: [
-        { id: 'subtle',   label: 'Subtle',   hint: 'Step 400 \u2014 lighter on white' },
-        { id: 'standard', label: 'Standard', hint: 'Step 550 \u2014 comfortable everywhere' },
-        { id: 'strong',   label: 'Strong',   hint: 'Step 700 \u2014 high contrast' }
+        { id: 'subtle',   label: 'Subtle',   hint: 'Lighter on white' },
+        { id: 'standard', label: 'Standard', hint: 'Comfortable everywhere' },
+        { id: 'strong',   label: 'Strong',   hint: 'High contrast' }
       ]
     },
     { id: 'container', label: 'Container softness', sub: 'Soft tinted surfaces (alert bg, banners)',
       options: [
-        { id: 'whisper',  label: 'Whisper',  hint: 'Step 25 \u2014 barely tinted' },
-        { id: 'light',    label: 'Light',    hint: 'Step 75 \u2014 gentle wash' },
-        { id: 'tinted',   label: 'Tinted',   hint: 'Step 150 \u2014 clearly colored' }
+        { id: 'whisper',  label: 'Whisper',  hint: 'Barely tinted' },
+        { id: 'light',    label: 'Light',    hint: 'Gentle wash' },
+        { id: 'tinted',   label: 'Tinted',   hint: 'Clearly colored' }
       ]
     }
   ];
@@ -86,11 +103,11 @@
     proposed:   {},
     cachedSteps:{},
     t1: {
-      brand:   { fill:'standard', content:'standard', container:'light' },
-      danger:  { fill:'standard', content:'standard', container:'light' },
-      success: { fill:'standard', content:'standard', container:'light' },
-      warning: { fill:'standard', content:'standard', container:'light' },
-      info:    { fill:'standard', content:'standard', container:'light' }
+      brand:   { fill:'standard', content:'standard', container:'light', spread:'subtle' },
+      danger:  { fill:'standard', content:'standard', container:'light', spread:'subtle' },
+      success: { fill:'standard', content:'standard', container:'light', spread:'subtle' },
+      warning: { fill:'standard', content:'standard', container:'light', spread:'subtle' },
+      info:    { fill:'standard', content:'standard', container:'light', spread:'subtle' }
     },
     // Disclosure open-state persists across role / tier swaps.
     // Keyed by 'tierId:discId' so each tier can have its own pattern.
@@ -152,7 +169,7 @@
   }
   function isT1Changed(roleId) {
     var t = State.t1[roleId];
-    return t.fill !== T1_DEFAULT.fill || t.content !== T1_DEFAULT.content || t.container !== T1_DEFAULT.container;
+    return t.fill !== T1_DEFAULT.fill || t.content !== T1_DEFAULT.content || t.container !== T1_DEFAULT.container || (t.spread || T1_DEFAULT.spread) !== T1_DEFAULT.spread;
   }
   function isRoleDirty(roleId) { return isChanged(roleId) || isT1Changed(roleId); }
   function totalChanges() {
@@ -180,9 +197,10 @@
   }
   function semanticVarsFor(roleId) {
     var t = State.t1[roleId];
-    var fillStep      = T1_PRESETS.fill[t.fill];
-    var contentStep   = T1_PRESETS.content[t.content];
-    var containerStep = T1_PRESETS.container[t.container];
+    var P = presetsFor(roleId);
+    var fillStep      = P.fill[t.fill];
+    var contentStep   = P.content[t.content];
+    var containerStep = P.container[t.container];
     var get = function (name) { return stepHexByName(roleId, name); };
     var p = roleId; // semantic prefix matches role id (brand, danger, ...)
     var lines = [];
@@ -298,9 +316,11 @@
         if (d.proposed[r.id]) State.proposed[r.id] = d.proposed[r.id];
         if (d.t1 && d.t1[r.id]) {
           var t = d.t1[r.id];
-          if (T1_PRESETS.fill[t.fill])           State.t1[r.id].fill = t.fill;
-          if (T1_PRESETS.content[t.content])     State.t1[r.id].content = t.content;
-          if (T1_PRESETS.container[t.container]) State.t1[r.id].container = t.container;
+          var P = T1_PRESETS_BY_SPREAD[t.spread] || T1_PRESETS_BY_SPREAD.subtle;
+          if (P.fill[t.fill])           State.t1[r.id].fill = t.fill;
+          if (P.content[t.content])     State.t1[r.id].content = t.content;
+          if (P.container[t.container]) State.t1[r.id].container = t.container;
+          if (t.spread === 'subtle' || t.spread === 'bold') State.t1[r.id].spread = t.spread;
         }
       });
       if (d.anchor === 'exact' || d.anchor === 'normalized') State.anchor = d.anchor;
@@ -534,6 +554,7 @@
 
     var leversHTML = T1_LEVERS.map(function (lever) {
       var current = t1[lever.id];
+      var P = presetsFor(role.id);
       return '<div class="ev2-lever-block" data-lever="' + lever.id + '">'
         + '<div class="ev2-lever-head">'
           + '<span class="ev2-lever-title">' + lever.label + '</span>'
@@ -542,7 +563,7 @@
         + '<div class="ev2-seg ev2-seg-' + lever.id + '" role="radiogroup" aria-label="' + lever.label + '">'
           + lever.options.map(function (opt) {
               var isSel = opt.id === current;
-              var step  = ({fill:T1_PRESETS.fill, content:T1_PRESETS.content, container:T1_PRESETS.container})[lever.id][opt.id];
+              var step  = P[lever.id][opt.id];
               var hex   = stepHexByName(role.id, step) || '#000';
               var preview = renderLeverPreview(lever.id, hex);
               return '<button class="ev2-seg-btn" role="radio" '
@@ -557,12 +578,41 @@
         + '</div>'
         + '<div class="ev2-lever-css">--' + role.id + '-' + leverSlotHint(lever.id) + '<span> = </span>'
           + (function () {
-              var step = ({fill:T1_PRESETS.fill, content:T1_PRESETS.content, container:T1_PRESETS.container})[lever.id][current];
+              var step = P[lever.id][current];
               return (stepHexByName(role.id, step) || '#000').toUpperCase();
             })()
           + '</div>'
       + '</div>';
     }).join('');
+
+    var currentSpread = t1.spread || T1_DEFAULT.spread;
+    var spreadHTML = '<div class="ev2-spread" role="radiogroup" aria-label="Step interval between Soft / Standard / Bold">'
+      + '<div class="ev2-spread-head">'
+        + '<span class="ev2-spread-title">Step interval</span>'
+        + '<span class="ev2-spread-sub">Distance between Soft \u2192 Standard \u2192 Bold on the ladder</span>'
+      + '</div>'
+      + '<div class="ev2-spread-seg">'
+        + SPREAD_OPTIONS.map(function (opt) {
+            var isSel = opt.id === currentSpread;
+            var P = T1_PRESETS_BY_SPREAD[opt.id];
+            var preview = '<span class="ev2-spread-pv">'
+              + ['soft','standard','bold'].map(function (k) {
+                  var hex = stepHexByName(role.id, P.fill[k]) || '#000';
+                  return '<span style="background:' + hex + '"></span>';
+                }).join('')
+              + '</span>';
+            var tip = opt.id === 'subtle'
+              ? 'Subtle \u2014 1 step apart on the palette ladder. Soft, Standard and Bold sit close together for gentle, restrained variation. Best for refined or low-contrast brands.'
+              : 'Distinct \u2014 2 steps apart on the palette ladder. Soft, Standard and Bold are clearly different shades for stronger emphasis. Best for high-contrast or expressive brands.';
+            return '<button class="ev2-spread-btn" role="radio" aria-checked="' + isSel + '" '
+              + 'data-t1-spread="' + opt.id + '" data-tip="' + tip + '" title="' + tip + '">'
+              + preview
+              + '<span class="ev2-spread-label">' + opt.label + '</span>'
+              + '<span class="ev2-spread-meta">' + opt.sub + '</span>'
+              + '</button>';
+          }).join('')
+      + '</div>'
+    + '</div>';
 
     $body.innerHTML =
       '<div class="ev2-roles" role="tablist">'
@@ -584,6 +634,7 @@
           + (changed ? '<span class="ev2-intent-changed">Changed</span>' : '')
         + '</div>'
         + '<div class="ev2-intent-body">'
+          + spreadHTML
           + '<div class="ev2-levers">' + leversHTML + '</div>'
           + '<div class="ev2-disc"' + (State.disclosure['t1:slots'] ? ' data-open' : '') + ' data-disc="t1:slots">'
             + '<div class="ev2-disc-head">'
@@ -614,9 +665,10 @@
 
   function slotsTableHTML(roleId) {
     var t = State.t1[roleId];
-    var fillStep      = T1_PRESETS.fill[t.fill];
-    var contentStep   = T1_PRESETS.content[t.content];
-    var containerStep = T1_PRESETS.container[t.container];
+    var P = presetsFor(roleId);
+    var fillStep      = P.fill[t.fill];
+    var contentStep   = P.content[t.content];
+    var containerStep = P.container[t.container];
     var rows = [
       { slot: 'component-bg-default',     step: fillStep },
       { slot: 'component-bg-hover',       step: stepRel(fillStep, 1) },
@@ -684,6 +736,15 @@
         focusPreview(lever, true);
       });
     });
+    document.querySelectorAll('[data-t1-spread]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        State.t1[State.activeRole].spread = b.getAttribute('data-t1-spread');
+        pushPreview();
+        refreshChangeBar();
+        scheduleAutosave();
+        renderT1();
+      });
+    });
   }
 
   function leverSlotHint(leverId) {
@@ -746,7 +807,7 @@
   $discard.addEventListener('click', function () {
     ROLES.forEach(function (r) {
       State.proposed[r.id] = State.baseline[r.id];
-      State.t1[r.id] = { fill: T1_DEFAULT.fill, content: T1_DEFAULT.content, container: T1_DEFAULT.container };
+      State.t1[r.id] = { fill: T1_DEFAULT.fill, content: T1_DEFAULT.content, container: T1_DEFAULT.container, spread: T1_DEFAULT.spread };
     });
     State.cachedSteps = {};
     clearDraftFromStorage();
@@ -781,6 +842,8 @@
 
   function boot() {
     if (!window.PaletteEngine) { setTimeout(boot, 30); return; }
+    // Default: show CSS names ON. Overridden below if UI state has been saved.
+    document.body.classList.add('ev2-show-css');
     readBaseline();
     var hadDraft = loadDraftFromStorage();
     var ui = loadUIState();
@@ -797,10 +860,13 @@
           b.setAttribute('aria-checked', String(b.getAttribute('data-mode') === ui.mode));
         });
       }
-      if (ui.showCss) {
-        document.body.classList.add('ev2-show-css');
+      if (typeof ui.showCss === 'boolean') {
+        document.body.classList.toggle('ev2-show-css', ui.showCss);
         var cb = document.getElementById('showCssNames');
-        if (cb) cb.checked = true;
+        if (cb) cb.checked = !!ui.showCss;
+      } else {
+        // No saved preference yet — keep the HTML default (checked).
+        document.body.classList.add('ev2-show-css');
       }
       // Reflect activeTier in the rail aria-current
       document.querySelectorAll('.ev2-tier').forEach(function (b) {

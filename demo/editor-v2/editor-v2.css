@@ -498,6 +498,41 @@ body{
   color:var(--surface-base-ct-subtle);
 }
 
+/* T1 Roles — spread (interval) toggle */
+.ev2-spread{
+  display:flex;align-items:center;gap:14px;
+  padding:10px 14px;margin-bottom:14px;
+  border:1px solid var(--surface-base-outline);
+  border-radius:var(--radius-md,8px);
+  background:var(--surface-base-subtle);
+}
+.ev2-spread-head{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.ev2-spread-title{font-size:12px;font-weight:600;color:var(--surface-base-ct-strong)}
+.ev2-spread-sub{font-size:11px;color:var(--surface-base-ct-subtle)}
+.ev2-spread-seg{display:flex;gap:6px}
+.ev2-spread-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:6px 10px;min-width:84px;
+  border:1px solid var(--surface-base-outline);
+  border-radius:var(--radius-sm,6px);
+  background:var(--surface-base-bg);
+  cursor:pointer;
+  font-size:11px;font-weight:500;
+  color:var(--surface-base-ct-default);
+  transition:border-color 140ms,background 140ms;
+}
+.ev2-spread-btn:hover{background:rgba(0,0,0,.025)}
+.ev2-spread-btn[aria-checked="true"]{
+  border-color:var(--brand-component-bg-default,#3366f0);
+  background:var(--brand-container-bg,#dfe8ff);
+  color:var(--surface-base-ct-strong);
+}
+.ev2-spread-btn:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px}
+.ev2-spread-pv{display:inline-flex;gap:2px}
+.ev2-spread-pv span{display:inline-block;width:10px;height:10px;border-radius:2px;border:1px solid rgba(0,0,0,.08)}
+.ev2-spread-label{font-weight:600}
+.ev2-spread-meta{font-size:10px;color:var(--surface-base-ct-subtle)}
+
 /* T1 Roles — lever blocks + segmented controls + slots table */
 .ev2-levers{display:flex;flex-direction:column;gap:14px}
 .ev2-lever-block{
