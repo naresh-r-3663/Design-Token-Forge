@@ -82,11 +82,67 @@
     { id: 'subtle', label: 'Subtle',  sub: '1-step interval' },
     { id: 'bold',   label: 'Distinct', sub: '2-step interval' }
   ];
+
+  /* Per-role preset overrides — some hues' step ladders don't sit in the
+     same WCAG / luminance band as brand. We override only the steps that
+     need it so every role ships with AA-pass defaults AND alert
+     containers across roles look like one cohesive family.
+
+     Verified math (Subtle, light mode):
+       brand:   fill 550 vs white = 5.80; content 550 vs container 75 = 4.5+
+       danger:  fill 550 vs white = 5.86; content 550 vs container 75 = 4.5+
+       warning: fill 550 vs white = 5.42; content 550 vs container 75 = 4.5+
+       success: needs fill 600 (4.32 -> 6.07) AND container 50 (cohesive with
+                Light by being one notch up to clear text-on-container)
+       info:    needs container 50 — content 550 vs 75 falls at 4.44 (just
+                under AA); 50 lifts it cleanly above 4.5 */
+  var T1_PRESET_OVERRIDES = {
+    success: {
+      subtle: {
+        light: {
+          fill:    { soft: '550', standard: '600', bold: '700' },
+          content: { subtle: '600', standard: '700', strong: '750' },
+          container: { whisper: '25', light: '50', tinted: '75' }
+        },
+        dark: {
+          fill: { soft: '550', standard: '600', bold: '700' }
+        }
+      },
+      bold: {
+        light: {
+          fill:    { soft: '500', standard: '600', bold: '750' },
+          content: { subtle: '550', standard: '700', strong: '800' },
+          container: { whisper: '25', light: '50', tinted: '100' }
+        },
+        dark: { fill: { soft: '500', standard: '600', bold: '750' } }
+      }
+    },
+    warning: {
+      subtle: {
+        light: { fill: { soft: '550', standard: '600', bold: '700' } },
+        dark:  { fill: { soft: '550', standard: '600', bold: '700' } }
+      }
+    },
+    info: {
+      subtle: {
+        light: { container: { whisper: '25', light: '50', tinted: '75' } }
+      }
+    }
+  };
+
   function presetsFor(roleId, mode) {
     mode = mode || State.editingMode;
     var s = (State.t1[mode][roleId] && State.t1[mode][roleId].spread) || T1_DEFAULT.spread;
     var family = T1_PRESETS_BY_SPREAD[s] || T1_PRESETS_BY_SPREAD.subtle;
-    return family[mode] || family.light;
+    var base = family[mode] || family.light;
+    var ov = T1_PRESET_OVERRIDES[roleId] && T1_PRESET_OVERRIDES[roleId][s] && T1_PRESET_OVERRIDES[roleId][s][mode];
+    if (!ov) return base;
+    // Merge override layer onto base (non-destructive)
+    return {
+      fill:      Object.assign({}, base.fill,      ov.fill      || {}),
+      content:   Object.assign({}, base.content,   ov.content   || {}),
+      container: Object.assign({}, base.container, ov.container || {})
+    };
   }
   function t1For(roleId, mode) { return State.t1[mode || State.editingMode][roleId]; }
   var T1_DEFAULT = { fill: 'standard', content: 'standard', container: 'light', spread: 'subtle' };
