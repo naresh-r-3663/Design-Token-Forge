@@ -663,13 +663,12 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 /* WCAG badge inside each segmented option button */
 .ev2-seg-btn{position:relative}
 .ev2-seg-wcag{
-  position:absolute;top:6px;right:6px;
   display:inline-flex;align-items:center;
-  padding:1px 6px;
+  padding:1px 5px;
   border-radius:999px;
-  font-size:9.5px;font-weight:700;letter-spacing:.02em;
+  font-size:9px;font-weight:700;letter-spacing:.02em;
   line-height:1.4;
-  pointer-events:auto; /* allow data-tip hover */
+  pointer-events:auto;
 }
 .ev2-seg-wcag[data-grade="aaa"]{background:#1F6B33;color:#fff}
 .ev2-seg-wcag[data-grade="aa"]{background:#2F8049;color:#fff}
@@ -746,11 +745,11 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-edit-scope-meta{margin-left:auto;color:var(--surface-base-ct-subtle);font-size:11px}
 
 /* T1 Roles — lever blocks + segmented controls + slots table */
-.ev2-levers{display:flex;flex-direction:column;gap:14px}
+.ev2-levers{display:flex;flex-direction:column;gap:10px}
 .ev2-lever-block{
   border:1px solid var(--surface-base-outline);
   border-radius:var(--radius-md,8px);
-  padding:12px 14px;
+  padding:10px 12px;
   background:var(--surface-base-bg);
   transition:border-color 140ms,box-shadow 140ms;
 }
@@ -758,23 +757,23 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   border-color:var(--brand-component-outline-default,#6593fe);
   box-shadow:0 0 0 3px rgba(99,147,254,.10);
 }
-.ev2-lever-head{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
-.ev2-lever-title{font-size:12.5px;font-weight:700;color:var(--surface-base-ct-strong);letter-spacing:-.005em}
-.ev2-lever-sub{font-size:11px;color:var(--surface-base-ct-faint);line-height:1.4}
+.ev2-lever-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.ev2-lever-title{font-size:12px;font-weight:700;color:var(--surface-base-ct-strong);letter-spacing:.01em;text-transform:uppercase}
+.ev2-lever-sub{font-size:11px;color:var(--surface-base-ct-faint);line-height:1.3}
 .ev2-seg{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:4px;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:3px;
   background:var(--surface-base-subtle);
   padding:3px;border-radius:var(--radius-sm,6px);
   border:1px solid var(--surface-base-outline);
 }
 .ev2-seg-btn{
-  display:flex;flex-direction:column;align-items:center;gap:5px;
-  padding:9px 8px 7px;border:none;background:transparent;
+  display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:8px;
+  padding:6px 8px;border:none;background:transparent;
   font:inherit;font-size:12px;font-weight:600;
   color:var(--surface-base-ct-subtle);
   border-radius:calc(var(--radius-sm,6px) - 2px);
   cursor:pointer;transition:all 120ms ease;
-  position:relative;
+  position:relative;text-align:left;min-height:32px;
 }
 .ev2-seg-btn:hover{color:var(--surface-base-ct-strong);background:rgba(0,0,0,.025)}
 .ev2-seg-btn[aria-checked="true"]{
@@ -785,31 +784,28 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-seg-btn:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px}
 .ev2-seg-preview{
   display:flex;align-items:center;justify-content:center;
-  width:34px;height:20px;
+  width:22px;height:22px;
 }
 .ev2-pv-fill{
   display:block;width:100%;height:100%;
-  border-radius:4px;
+  border-radius:3px;
   border:1px solid rgba(0,0,0,.10);
 }
 .ev2-pv-content{
   font-family:var(--font-family-sans,system-ui);
-  font-size:14px;font-weight:700;letter-spacing:-.02em;line-height:1;
+  font-size:13px;font-weight:700;letter-spacing:-.02em;line-height:1;
 }
 .ev2-pv-container{
   display:block;width:100%;height:100%;
-  border-radius:4px;border:1px solid;
-  /* uses bg + border tinted same step */
+  border-radius:3px;border:1px solid;
   position:relative;opacity:.55;
 }
-.ev2-seg-label{display:block}
-.ev2-seg-css{
-  display:none;
-  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-  font-size:9px;font-weight:500;
-  color:var(--surface-base-ct-faint);
-  letter-spacing:.02em;
+.ev2-seg-label{
+  display:flex;flex-direction:column;gap:1px;line-height:1.15;min-width:0;
 }
+.ev2-seg-name{font-size:12px;font-weight:600;color:inherit}
+.ev2-seg-step{font-size:10px;font-weight:500;color:var(--surface-base-ct-faint);letter-spacing:.01em}
+.ev2-seg-css{display:none}
 .ev2-show-css .ev2-seg-css{display:block}
 .ev2-lever-css{
   display:none;

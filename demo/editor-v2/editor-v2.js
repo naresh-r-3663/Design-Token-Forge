@@ -900,18 +900,14 @@
                 + 'data-t1-lever="' + lever.id + '" data-t1-value="' + opt.id + '" '
                 + 'data-tip="' + combinedTip + '">'
                 + '<span class="ev2-seg-preview">' + preview + '</span>'
-                + '<span class="ev2-seg-label">' + opt.label + '</span>'
-                + '<span class="ev2-seg-css">step ' + step + ' \u2022 ' + hex.toUpperCase().replace('#','') + '</span>'
+                + '<span class="ev2-seg-label">'
+                  + '<span class="ev2-seg-name">' + opt.label + '</span>'
+                  + '<span class="ev2-seg-step">step ' + step + '</span>'
+                + '</span>'
                 + badge
                 + '</button>';
             }).join('')
         + '</div>'
-        + '<div class="ev2-lever-css">--' + role.id + '-' + leverSlotHint(lever.id) + '<span> = </span>'
-          + (function () {
-              var step = P[lever.id][current];
-              return (stepHexByName(role.id, step) || '#000').toUpperCase();
-            })()
-          + '</div>'
       + '</div>';
     }).join('');
 
