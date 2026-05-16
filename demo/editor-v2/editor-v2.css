@@ -995,24 +995,37 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-discard:hover:not(:disabled){color:var(--danger-content-default,#D61D20);border-color:var(--danger-component-outline-default,#D61D20)}
 .ev2-discard:disabled{opacity:.4;cursor:not-allowed}
 
-/* ── Toast ────────────────────────────────────────────── */
+/* ── Toast ──────────────────────────────────────────────
+   Toasts float above the editor canvas, so they paint on the
+   inverse surface (dark on light, light on dark). The kind chip
+   on the left is the only role-colored element — keeps the toast
+   readable on any surface AND lets a project retune the inverse
+   theme to brand its toasts in one place. */
 .ev2-toast{
   position:fixed;top:64px;right:20px;
-  padding:10px 14px;
-  border:1px solid var(--surface-base-outline);
+  display:inline-flex;align-items:center;gap:10px;
+  padding:10px 14px 10px 12px;
+  border:1px solid var(--surface-inverse-outline);
   border-radius:var(--radius-md,6px);
-  background:var(--surface-base-cm-bg);
-  color:var(--surface-base-ct-strong);
+  background:var(--surface-inverse-bg);
+  color:var(--surface-inverse-ct-default);
   font-size:12px;font-weight:500;
-  box-shadow:var(--shadow-lg,0 8px 24px rgba(0,0,0,.12));
+  box-shadow:var(--shadow-lg,0 8px 24px rgba(0,0,0,.28));
   opacity:0;transform:translateY(-8px);
   pointer-events:none;
   transition:opacity 180ms ease,transform 180ms ease;
   z-index:200;
 }
+.ev2-toast::before{
+  content:'';
+  width:8px;height:8px;border-radius:50%;
+  background:var(--surface-inverse-ct-faint);
+  flex-shrink:0;
+}
 .ev2-toast[data-show]{opacity:1;transform:translateY(0)}
-.ev2-toast[data-kind="ok"]{border-color:var(--success-component-outline-default,#0B8D28)}
-.ev2-toast[data-kind="err"]{border-color:var(--danger-component-outline-default,#D61D20)}
+.ev2-toast[data-kind="ok"]::before{background:var(--success-component-bg-default,#0B8D28)}
+.ev2-toast[data-kind="err"]::before{background:var(--danger-component-bg-default,#D61D20)}
+.ev2-toast[data-kind="warn"]::before{background:var(--warning-component-bg-default,#A66208)}
 
 /* ── Auto-paired text panel ───────────────────────────── */
 .ev2-pairs{
