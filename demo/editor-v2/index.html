@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../shared.css">
 
   <!-- Editor v2 specific layout -->
-  <link rel="stylesheet" href="./editor-v2.css?v=106">
+  <link rel="stylesheet" href="./editor-v2.css?v=107">
 
   <!-- Palette engine (browser IIFE — exposes window.PaletteEngine) -->
   <script src="../palette-engine.js?v=85" defer></script>
@@ -51,6 +51,10 @@
         <input type="checkbox" id="showCssNames" checked>
         <span>Show CSS names</span>
       </label>
+      <button class="ev2-save-default" id="saveDefaultBtn" type="button" data-tip="Snapshot the current mapping, name it, and publish as the project's new default (writes to the repo).">
+        <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 2h7l3 3v9a.5.5 0 0 1-.5.5h-9.5a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5z"/><path d="M5 2v4h6V2"/><path d="M5.5 9h5M5.5 11.5h5"/></svg>
+        <span class="ev2-save-default-label">Save as default</span>
+      </button>
       <button class="ev2-deploy" id="deployBtn" disabled>
         <span class="ev2-deploy-label">Deploy to Figma</span>
         <span class="ev2-deploy-count" hidden>0</span>
@@ -227,8 +231,11 @@
     </div>
   </div>
 
-  <!-- Deploy summary dialog: shows every change before pushing to Figma -->
-  <div class="ev2-deploy-dialog" id="ev2DeployDialog" hidden role="dialog" aria-modal="true" aria-labelledby="ev2DeployTitle">
+  <!-- Summary dialog: shared by 'Save as default' (writes to repo)
+       and 'Deploy to Figma' (pushes to plugin). Switches mode at
+       open-time so the title, body sections, and primary CTA all
+       reflect the active intent. -->
+  <div class="ev2-deploy-dialog" id="ev2DeployDialog" hidden role="dialog" aria-modal="true" aria-labelledby="ev2DeployTitle" data-mode="deploy">
     <div class="ev2-modal-backdrop" data-deploy-dismiss></div>
     <div class="ev2-deploy-card" role="document">
       <button class="ev2-modal-close" type="button" data-deploy-dismiss aria-label="Close dialog">&times;</button>
@@ -239,6 +246,36 @@
         </div>
         <div class="ev2-deploy-meta" id="ev2DeployMeta"></div>
       </header>
+
+      <!-- Save-mode only: name / description / semver. Hidden in deploy mode. -->
+      <section class="ev2-save-form" id="ev2SaveForm" hidden>
+        <h4 class="ev2-save-form-title">Snapshot details</h4>
+        <p class="ev2-save-form-sub">These are written to the repo so collaborators can see what changed and when.</p>
+        <div class="ev2-save-form-grid">
+          <label class="ev2-save-field ev2-save-field--name">
+            <span class="ev2-save-field-label">Name <em>(required)</em></span>
+            <input type="text" id="ev2SaveName" maxlength="60" placeholder="e.g. Tightened neutral mid-tones" autocomplete="off" spellcheck="false">
+          </label>
+          <div class="ev2-save-field ev2-save-field--ver">
+            <span class="ev2-save-field-label">Version</span>
+            <div class="ev2-save-ver-row">
+              <span class="ev2-save-ver-prev" id="ev2SaveVerPrev" title="Previously published version">v—</span>
+              <span class="ev2-save-ver-arrow" aria-hidden="true">→</span>
+              <div class="ev2-save-ver-bump" role="radiogroup" aria-label="Version bump">
+                <button type="button" data-ver-bump="patch" aria-checked="true" role="radio" data-tip="Patch: tiny tweaks, no semantic shift">Patch</button>
+                <button type="button" data-ver-bump="minor" aria-checked="false" role="radio" data-tip="Minor: meaningful edits, additive">Minor</button>
+                <button type="button" data-ver-bump="major" aria-checked="false" role="radio" data-tip="Major: breaking visual change">Major</button>
+              </div>
+              <span class="ev2-save-ver-next" id="ev2SaveVerNext">v—</span>
+            </div>
+          </div>
+          <label class="ev2-save-field ev2-save-field--desc">
+            <span class="ev2-save-field-label">Description <em>(optional)</em></span>
+            <textarea id="ev2SaveDesc" rows="2" maxlength="500" placeholder="What changed and why. Markdown OK." spellcheck="true"></textarea>
+          </label>
+        </div>
+      </section>
+
       <div class="ev2-deploy-body" id="ev2DeployBody"></div>
       <footer class="ev2-deploy-actions">
         <span class="ev2-deploy-hint" id="ev2DeployHint"></span>
@@ -250,6 +287,6 @@
     </div>
   </div>
 
-  <script src="./editor-v2.js?v=108" defer></script>
+  <script src="./editor-v2.js?v=109" defer></script>
 </body>
 </html>

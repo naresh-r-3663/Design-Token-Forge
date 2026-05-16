@@ -169,6 +169,23 @@ body{
 }
 .ev2-css-toggle input{margin:0;cursor:pointer}
 
+/* "Save as default" topbar action \u2014 sibling to Deploy. Outlined to
+   read as secondary; Deploy keeps the filled brand surface. */
+.ev2-save-default{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 12px;
+  border:1px solid var(--ev2-chrome-outline);
+  border-radius:var(--radius-md,6px);
+  background:var(--ev2-chrome-bg);
+  color:var(--ev2-chrome-ct-strong);
+  font:inherit;font-size:12px;font-weight:600;
+  cursor:pointer;
+  transition:background 120ms ease,border-color 120ms ease;
+}
+.ev2-save-default:hover{background:var(--ev2-chrome-subtle);border-color:var(--ev2-chrome-ct-faint)}
+.ev2-save-default:focus-visible{outline:2px solid var(--brand-component-outline-default);outline-offset:1px}
+.ev2-save-default svg{color:var(--ev2-chrome-ct-subtle)}
+
 .ev2-deploy{
   display:inline-flex;align-items:center;gap:8px;
   padding:7px 14px;
@@ -1676,6 +1693,69 @@ html.ev2-tip-js .ev2-pc-ladder-step[data-pass="false"]::before,
 .ev2-deploy-hint{font-size:11px;color:var(--ev2-chrome-ct-subtle);max-width:380px;line-height:1.5}
 .ev2-deploy-btns{display:flex;gap:8px;flex-shrink:0}
 body.ev2-modal-open{overflow:hidden}
+
+/* ── Save-as-default form (snapshot metadata) ─────────── */
+.ev2-save-form{
+  margin:0 26px 4px;padding:14px 16px;
+  border:1px solid var(--ev2-chrome-outline);
+  border-radius:8px;
+  background:var(--ev2-chrome-subtle);
+}
+.ev2-save-form-title{
+  margin:0 0 4px;font-size:12px;font-weight:700;
+  color:var(--ev2-chrome-ct-strong);text-transform:uppercase;letter-spacing:.04em;
+}
+.ev2-save-form-sub{margin:0 0 12px;font-size:11px;color:var(--ev2-chrome-ct-subtle);line-height:1.5}
+.ev2-save-form-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:10px 14px}
+.ev2-save-field{display:flex;flex-direction:column;gap:4px}
+.ev2-save-field--desc{grid-column:1 / -1}
+.ev2-save-field-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ev2-chrome-ct-faint)}
+.ev2-save-field-label em{font-style:normal;font-weight:500;color:var(--ev2-chrome-ct-subtle);text-transform:none;letter-spacing:0}
+.ev2-save-field input[type="text"],
+.ev2-save-field textarea{
+  font:inherit;font-size:12px;
+  padding:6px 9px;
+  border:1px solid var(--ev2-chrome-outline);
+  border-radius:5px;
+  background:var(--ev2-chrome-bg);
+  color:var(--ev2-chrome-ct-strong);
+  resize:vertical;
+}
+.ev2-save-field input[type="text"]:focus,
+.ev2-save-field textarea:focus{
+  outline:2px solid var(--brand-component-outline-default);
+  outline-offset:0;border-color:var(--brand-component-outline-default);
+}
+.ev2-save-field input[data-invalid]{border-color:var(--danger-component-outline-default,#DC2626)}
+.ev2-save-ver-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ev2-save-ver-prev{font-family:var(--font-family-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11px;color:var(--ev2-chrome-ct-faint)}
+.ev2-save-ver-arrow{color:var(--ev2-chrome-ct-faint);font-size:11px}
+.ev2-save-ver-next{font-family:var(--font-family-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11px;font-weight:700;color:var(--brand-content-default,#286CE5);padding:3px 7px;background:var(--brand-container-bg,rgba(40,108,229,.08));border-radius:4px}
+.ev2-save-ver-bump{display:inline-flex;gap:2px;background:var(--ev2-chrome-bg);border:1px solid var(--ev2-chrome-outline);border-radius:5px;padding:2px}
+.ev2-save-ver-bump button{
+  font:inherit;font-size:10px;font-weight:600;
+  padding:3px 8px;border:0;border-radius:3px;background:transparent;
+  color:var(--ev2-chrome-ct-subtle);cursor:pointer;transition:background 100ms,color 100ms;
+}
+.ev2-save-ver-bump button:hover{color:var(--ev2-chrome-ct-strong)}
+.ev2-save-ver-bump button[aria-checked="true"]{background:var(--brand-component-bg-default,#286CE5);color:var(--brand-on-component,#fff)}
+
+/* Section headers + hierarchy summary (used in both modes) */
+.ev2-deploy-section{margin-bottom:14px}
+.ev2-deploy-section:last-child{margin-bottom:0}
+.ev2-deploy-section-head{display:flex;align-items:flex-start;gap:10px;padding:6px 14px 8px;background:var(--ev2-chrome-subtle)}
+.ev2-deploy-section-tag{
+  font-size:10px;font-weight:700;letter-spacing:.04em;
+  padding:2px 7px;border-radius:3px;
+  background:var(--ev2-chrome-ct-strong);color:var(--ev2-chrome-bg);
+  flex-shrink:0;line-height:1.5;
+}
+.ev2-deploy-section-title{font-size:12px;font-weight:700;color:var(--ev2-chrome-ct-strong)}
+.ev2-deploy-section-sub{font-size:11px;color:var(--ev2-chrome-ct-subtle);margin-top:1px}
+.ev2-deploy-section-empty{padding:10px 14px;font-size:11px;font-style:italic;color:var(--ev2-chrome-ct-faint)}
+
+/* When in save-mode, the title gets a "saving" tone via a data attr */
+.ev2-deploy-dialog[data-mode="save"] .ev2-deploy-section-tag{background:var(--brand-content-default,#286CE5)}
 
 /* ── WCAG sentinel popover ──────────────────────────────
    Click-stable panel anchored under a .ev2-pc-wcag chip. Shows the

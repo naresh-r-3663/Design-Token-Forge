@@ -3266,69 +3266,178 @@
     }
   });
 
-  /* ── Deploy summary dialog ─────────────────────────────
-     Opens on Deploy click. Lists every change the user is about to
-     ship to Figma, grouped by tier, with old → new diffs. Lets the
-     user verify before committing — prevents wrong-anchor accidents. */
-  function buildDeploySummary() {
+  /* ── Save/Deploy summary dialog ────────────────────────
+     One dialog, two modes:
+       - 'save'   → Save as project default. Lists EVERY emitted
+                    token (full hierarchy snapshot), collects name/
+                    description/semver, writes to the repo so the
+                    new mapping becomes the project's loaded default.
+       - 'deploy' → Push to Figma (existing flow). Lists only the
+                    deltas vs. the project default, since Figma
+                    already has the rest.
+     Both share the same shell so the user gets one mental model:
+     "review → confirm". The mode only affects: title/sub copy, the
+     metadata form's visibility, the summary scope, and what the
+     confirm button does. */
+
+  function buildDeploySummary(scope) {
+    // scope: 'delta' (default — only changes) or 'full' (everything that will be persisted)
+    scope = scope || 'delta';
+    var full = (scope === 'full');
     var sections = [];
     var totalChanges = 0;
 
     // T0 — palette anchor changes
     var t0Changes = [];
     ROLES.forEach(function (r) {
-      if (!isChanged(r.id)) return;
+      var changed = isChanged(r.id);
+      if (!full && !changed) return;
       t0Changes.push({
         role: r,
-        from: State.baseline[r.id].toUpperCase(),
-        to:   State.proposed[r.id].toUpperCase()
+        from: (State.baseline[r.id] || '').toUpperCase(),
+        to:   (State.proposed[r.id] || '').toUpperCase(),
+        changed: changed
       });
     });
     if (t0Changes.length) {
-      totalChanges += t0Changes.length;
+      if (!full) totalChanges += t0Changes.filter(function(c){return c.changed;}).length;
       sections.push({
         tier: 'T0',
-        title: 'Palette anchors',
-        sub: 'Foundation colors. Cascades to roles, surfaces, and components.',
+        title: full ? 'Palette anchors' : 'Palette anchors',
+        sub: full ? 'Foundation seed colors for every role. The full ladder is regenerated from these.' : 'Foundation colors. Cascades to roles, surfaces, and components.',
         rows: t0Changes.map(function (c) {
+          var diffHTML = c.changed
+            ? '<code class="ev2-deploy-from">' + c.from + '</code>'
+                + '<span class="ev2-deploy-arrow">\u2192</span>'
+                + '<code class="ev2-deploy-to" style="background:' + c.to + ';color:' + textOnHex(c.to) + '">' + c.to + '</code>'
+            : '<code class="ev2-deploy-to" style="background:' + c.to + ';color:' + textOnHex(c.to) + '">' + c.to + '</code>';
           return '<div class="ev2-deploy-row">'
             + '<span class="ev2-deploy-row-dot" style="background:' + c.to + '"></span>'
             + '<span class="ev2-deploy-row-label">' + c.role.label + ' anchor</span>'
-            + '<span class="ev2-deploy-row-diff">'
-              + '<code class="ev2-deploy-from">' + c.from + '</code>'
-              + '<span class="ev2-deploy-arrow">\u2192</span>'
-              + '<code class="ev2-deploy-to" style="background:' + c.to + ';color:' + textOnHex(c.to) + '">' + c.to + '</code>'
-            + '</span>'
+            + '<span class="ev2-deploy-row-diff">' + diffHTML + '</span>'
           + '</div>';
         }).join('')
       });
+    }
+
+    // T0.5 — custom palettes (project-level, e.g. "neutral"). Show in
+    // full-mode only; deltas aren't tracked because custom palettes
+    // come from primitives.css we don't currently edit at runtime.
+    if (full) {
+      var customs = (typeof discoverCustomPalettes === 'function') ? discoverCustomPalettes() : [];
+      if (customs.length) {
+        sections.push({
+          tier: 'T0',
+          title: 'Custom palettes',
+          sub: 'Project-specific palettes loaded from primitives.css. Persisted as-is.',
+          rows: customs.map(function (c) {
+            var ladder = (typeof customPaletteSteps === 'function') ? customPaletteSteps(c.id) : null;
+            var seed = ladder ? (ladder.find(function(s){return s.name==='500';}) || {}).hex : '';
+            var swatch = seed || '#888';
+            return '<div class="ev2-deploy-row">'
+              + '<span class="ev2-deploy-row-dot" style="background:' + swatch + '"></span>'
+              + '<span class="ev2-deploy-row-label">' + c.label + '</span>'
+              + '<span class="ev2-deploy-row-diff"><code class="ev2-deploy-to" style="background:' + swatch + ';color:' + textOnHex(swatch) + '">' + (seed || '\u2014').toUpperCase() + '</code>'
+                + '<em>22-step ladder</em></span>'
+            + '</div>';
+          }).join('')
+        });
+      }
     }
 
     // T1 — per-role per-mode step changes
     ['light','dark'].forEach(function (mode) {
       var rows = [];
       ROLES.forEach(function (r) {
-        if (!isT1ChangedInMode(r.id, mode)) return;
+        var changed = isT1ChangedInMode(r.id, mode);
+        if (!full && !changed) return;
         var t = State.t1[mode][r.id];
         var def = defaultT1ForRole(r.id, mode);
-        var deltas = [];
-        if (t.fill !== def.fill)           deltas.push('Fill step <em>'      + def.fill      + '</em> \u2192 <em>' + t.fill      + '</em>');
-        if (t.content !== def.content)     deltas.push('Content step <em>'   + def.content   + '</em> \u2192 <em>' + t.content   + '</em>');
-        if (t.container !== def.container) deltas.push('Container step <em>' + def.container + '</em> \u2192 <em>' + t.container + '</em>');
-        if (!deltas.length) return;
         var swatchHex = stepHexByName(r.id, t.fill) || State.proposed[r.id];
-        rows.push('<div class="ev2-deploy-row">'
-          + '<span class="ev2-deploy-row-dot" style="background:' + swatchHex + '"></span>'
-          + '<span class="ev2-deploy-row-label">' + r.label + '</span>'
-          + '<span class="ev2-deploy-row-diff">' + deltas.join(' \u00b7 ') + '</span>'
-        + '</div>');
-        totalChanges += 1;
+        if (full) {
+          // Show the current picks plainly (no diff arrows when unchanged)
+          var pickHTML = 'Fill <em>' + t.fill + '</em> \u00b7 Content <em>' + t.content + '</em> \u00b7 Container <em>' + t.container + '</em>';
+          if (changed) {
+            var deltas = [];
+            if (t.fill !== def.fill)           deltas.push('Fill <em>'      + def.fill      + '</em> \u2192 <em>' + t.fill      + '</em>');
+            if (t.content !== def.content)     deltas.push('Content <em>'   + def.content   + '</em> \u2192 <em>' + t.content   + '</em>');
+            if (t.container !== def.container) deltas.push('Container <em>' + def.container + '</em> \u2192 <em>' + t.container + '</em>');
+            if (deltas.length) pickHTML = deltas.join(' \u00b7 ');
+          }
+          rows.push('<div class="ev2-deploy-row">'
+            + '<span class="ev2-deploy-row-dot" style="background:' + swatchHex + '"></span>'
+            + '<span class="ev2-deploy-row-label">' + r.label + (changed ? ' \u2022 edited' : '') + '</span>'
+            + '<span class="ev2-deploy-row-diff">' + pickHTML + '</span>'
+          + '</div>');
+        } else {
+          var deltas2 = [];
+          if (t.fill !== def.fill)           deltas2.push('Fill step <em>'      + def.fill      + '</em> \u2192 <em>' + t.fill      + '</em>');
+          if (t.content !== def.content)     deltas2.push('Content step <em>'   + def.content   + '</em> \u2192 <em>' + t.content   + '</em>');
+          if (t.container !== def.container) deltas2.push('Container step <em>' + def.container + '</em> \u2192 <em>' + t.container + '</em>');
+          if (!deltas2.length) return;
+          rows.push('<div class="ev2-deploy-row">'
+            + '<span class="ev2-deploy-row-dot" style="background:' + swatchHex + '"></span>'
+            + '<span class="ev2-deploy-row-label">' + r.label + '</span>'
+            + '<span class="ev2-deploy-row-diff">' + deltas2.join(' \u00b7 ') + '</span>'
+          + '</div>');
+          totalChanges += 1;
+        }
       });
       if (rows.length) {
         sections.push({
           tier: 'T1',
           title: 'Roles \u2014 ' + (mode === 'light' ? 'Light mode' : 'Dark mode'),
           sub: 'Per-role step picks for fill, content, and container.',
+          rows: rows.join('')
+        });
+      }
+    });
+
+    // T2 — per-surface palette + per-prop step picks. In full mode,
+    // emit one row per surface summarising "palette + N custom props".
+    // In delta mode, only surfaces with changes appear.
+    ['light','dark'].forEach(function (mode) {
+      var rows = [];
+      T2_SURFACES.forEach(function (s) {
+        var changed = isT2Changed(s.id);
+        if (!full && !changed) return;
+        var pal = surfacePaletteFor(s.id);
+        var bg  = t2HexFor(s.id, 'bg', mode);
+        var customCount = 0;
+        var bag = State.t2 && State.t2[mode] && State.t2[mode][s.id];
+        if (bag) {
+          Object.keys(bag).forEach(function (pid) {
+            var ov = bag[pid];
+            if (ov && (ov.step || ov.follows)) customCount++;
+          });
+        }
+        if (full) {
+          var pieces = ['palette <em>' + pal + '</em>'];
+          if (customCount) pieces.push(customCount + ' custom prop' + (customCount === 1 ? '' : 's'));
+          else pieces.push('all defaults');
+          rows.push('<div class="ev2-deploy-row">'
+            + '<span class="ev2-deploy-row-dot" style="background:' + bg + '"></span>'
+            + '<span class="ev2-deploy-row-label">' + s.label + (changed ? ' \u2022 edited' : '') + '</span>'
+            + '<span class="ev2-deploy-row-diff">' + pieces.join(' \u00b7 ') + '</span>'
+          + '</div>');
+        } else {
+          if (!customCount && !isSurfacePaletteCustom(s.id)) return;
+          var deltaPieces = [];
+          if (isSurfacePaletteCustom(s.id)) deltaPieces.push('palette \u2192 <em>' + pal + '</em>');
+          if (customCount) deltaPieces.push(customCount + ' prop' + (customCount === 1 ? '' : 's') + ' overridden');
+          rows.push('<div class="ev2-deploy-row">'
+            + '<span class="ev2-deploy-row-dot" style="background:' + bg + '"></span>'
+            + '<span class="ev2-deploy-row-label">' + s.label + '</span>'
+            + '<span class="ev2-deploy-row-diff">' + deltaPieces.join(' \u00b7 ') + '</span>'
+          + '</div>');
+          totalChanges += 1;
+        }
+      });
+      if (rows.length) {
+        sections.push({
+          tier: 'T2',
+          title: 'Surfaces \u2014 ' + (mode === 'light' ? 'Light mode' : 'Dark mode'),
+          sub: 'Surface-level palette assignments and per-prop overrides.',
           rows: rows.join('')
         });
       }
@@ -3342,69 +3451,408 @@
     return contrastRatio(hex, '#FFFFFF') >= contrastRatio(hex, '#000000') ? '#FFFFFF' : '#000000';
   }
 
-  function openDeployDialog() {
+  /* ── CSS emitters (full snapshot for save-as-default) ──
+     pushPreview() already builds the overrides CSS string for the
+     iframe; these emitters split that logic so each file the writer
+     publishes (primitives.css, semantic.css, surfaces.css) can be
+     generated independently and committed to the project folder.
+     The serialised content matches what the iframe sees at runtime,
+     so a reload of the project will replay the editor state byte-
+     identically. */
+  function buildPrimitivesCSS(meta) {
+    var lines = [];
+    lines.push('/* Generated by Design Token Forge editor v2 \u2014 do not edit by hand. */');
+    if (meta) {
+      lines.push('/* version: ' + meta.version + ' \u2014 ' + (meta.name || '') + ' */');
+      lines.push('/* saved:   ' + meta.savedAt + (meta.savedBy ? ' by ' + meta.savedBy : '') + ' */');
+    }
+    lines.push(':root {');
+    ROLES.forEach(function (r) {
+      var steps = stepsFor(r.id);
+      steps.forEach(function (s) {
+        if (s.name === 'white' || s.name === 'black') return;
+        lines.push('  --prim-' + r.prefix + '-' + s.name + ': ' + s.hex + ';');
+      });
+    });
+    // Re-emit any custom palettes (e.g. writer-handhelds 'neutral')
+    // exactly as the editor sees them today \u2014 these come from the
+    // project's loaded primitives.css and need to survive the round-
+    // trip even though the editor doesn't currently rewrite them.
+    var customs = (typeof discoverCustomPalettes === 'function') ? discoverCustomPalettes() : [];
+    customs.forEach(function (c) {
+      var ladder = customPaletteSteps(c.id);
+      if (!ladder) return;
+      ladder.forEach(function (s) {
+        if (s.name === 'white' || s.name === 'black' || !s.hex) return;
+        lines.push('  --prim-' + c.id + '-' + s.name + ': ' + s.hex.toUpperCase() + ';');
+      });
+    });
+    lines.push('}');
+    return lines.join('\n') + '\n';
+  }
+  function buildSemanticCSS(meta) {
+    var lines = [];
+    lines.push('/* Generated by Design Token Forge editor v2 \u2014 do not edit by hand. */');
+    if (meta) lines.push('/* version: ' + meta.version + ' */');
+    lines.push(':root {');
+    ROLES.forEach(function (r) {
+      semanticVarsFor(r.id, 'light').forEach(function (l) { lines.push(l); });
+    });
+    lines.push('}');
+    lines.push('[data-theme="dark"] {');
+    ROLES.forEach(function (r) {
+      semanticVarsFor(r.id, 'dark').forEach(function (l) { lines.push(l); });
+    });
+    lines.push('}');
+    return lines.join('\n') + '\n';
+  }
+  function buildSurfacesCSS(meta) {
+    var lines = [];
+    lines.push('/* Generated by Design Token Forge editor v2 \u2014 do not edit by hand. */');
+    if (meta) lines.push('/* version: ' + meta.version + ' */');
+    lines.push(':root {');
+    surfaceVarsLinesForMode('light').forEach(function (l) { lines.push(l); });
+    lines.push('}');
+    lines.push('[data-theme="dark"] {');
+    surfaceVarsLinesForMode('dark').forEach(function (l) { lines.push(l); });
+    lines.push('}');
+    return lines.join('\n') + '\n';
+  }
+  function buildConfigJSON(prevCfg, meta) {
+    // Merge into existing config rather than replace \u2014 keeps any
+    // future keys (paletteKeys, etc.) untouched.
+    var cfg = prevCfg ? JSON.parse(JSON.stringify(prevCfg)) : {};
+    cfg.schemaVersion = Math.max(cfg.schemaVersion || 2, 2);
+    cfg.surfacePaletteSrc = {};
+    T2_SURFACES.forEach(function (s) {
+      cfg.surfacePaletteSrc[s.id] = surfacePaletteFor(s.id);
+    });
+    // Mirror customRoles so future loads keep them as first-class T1.
+    var builtins = { brand:1, danger:1, success:1, warning:1, info:1 };
+    var customRoles = ROLES.filter(function (r) { return !builtins[r.id]; }).map(function (r) {
+      return { id: r.id, label: r.label, keyHex: (State.proposed[r.id] || '').toUpperCase() };
+    });
+    if (customRoles.length) cfg.customRoles = customRoles;
+    cfg.latestVersion = {
+      version: meta.version,
+      name:    meta.name || '',
+      description: meta.description || '',
+      savedAt: meta.savedAt,
+      savedBy: meta.savedBy || ''
+    };
+    return JSON.stringify(cfg, null, 2) + '\n';
+  }
+
+  /* ── Semver helpers ─────────────────────────────────── */
+  function parseSemver(v) {
+    var m = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(String(v || '').trim());
+    if (!m) return { major: 1, minor: 0, patch: 0 };
+    return { major: +m[1], minor: +m[2], patch: +m[3] };
+  }
+  function formatSemver(s) { return 'v' + s.major + '.' + s.minor + '.' + s.patch; }
+  function bumpSemver(current, bump) {
+    var s = parseSemver(current);
+    if (bump === 'major') return formatSemver({ major: s.major + 1, minor: 0, patch: 0 });
+    if (bump === 'minor') return formatSemver({ major: s.major, minor: s.minor + 1, patch: 0 });
+    return formatSemver({ major: s.major, minor: s.minor, patch: s.patch + 1 });
+  }
+  function getProjectCurrentVersion() {
+    var cfg = readProjectConfigSync();
+    return (cfg && cfg.latestVersion && cfg.latestVersion.version) || 'v0.0.0';
+  }
+
+  /* ── Unified open/close ──────────────────────────────── */
+  function openDialog(mode) {
     var dlg = document.getElementById('ev2DeployDialog');
     if (!dlg) return;
-    var summary = buildDeploySummary();
+    dlg.setAttribute('data-mode', mode);
+
+    var isSave = (mode === 'save');
+    var summary = buildDeploySummary(isSave ? 'full' : 'delta');
     var body = document.getElementById('ev2DeployBody');
     var meta = document.getElementById('ev2DeployMeta');
     var hint = document.getElementById('ev2DeployHint');
     var sub  = document.getElementById('ev2DeploySub');
+    var title = document.getElementById('ev2DeployTitle');
+    var confirmBtn = document.getElementById('ev2DeployConfirm');
+    var saveForm = document.getElementById('ev2SaveForm');
 
-    var projId = (typeof getActiveProjectId === 'function' && getActiveProjectId()) || '';
+    var projId = getActiveProjectId() || '';
     var projLabel = projId ? projectName(projId) : 'No project (defaults)';
-    meta.innerHTML = '<span class="ev2-deploy-meta-row"><span class="ev2-deploy-meta-k">Project</span><span class="ev2-deploy-meta-v">' + projLabel + '</span></span>'
-      + '<span class="ev2-deploy-meta-row"><span class="ev2-deploy-meta-k">Editing mode</span><span class="ev2-deploy-meta-v">' + (State.editingMode === 'dark' ? 'Dark' : 'Light') + '</span></span>'
-      + '<span class="ev2-deploy-meta-row"><span class="ev2-deploy-meta-k">Total changes</span><span class="ev2-deploy-meta-v ev2-deploy-meta-total">' + summary.total + '</span></span>';
 
-    if (summary.total === 0) {
-      body.innerHTML = '<div class="ev2-deploy-empty">No changes to deploy. Make some edits first.</div>';
-      hint.textContent = 'Nothing to deploy.';
-      document.getElementById('ev2DeployConfirm').disabled = true;
+    if (isSave) {
+      title.textContent = 'Save as project default';
+      sub.textContent = 'Snapshot every mapping below as the new default for this project. The next time anyone opens "' + projLabel + '", they\u2019ll see exactly this.';
+      saveForm.hidden = false;
+      confirmBtn.textContent = 'Save as default';
+      hint.innerHTML = 'Writes the snapshot to the project folder on GitHub. Requires a Personal Access Token with <code>repo</code> scope.';
+
+      // Wire metadata form defaults
+      var cur = getProjectCurrentVersion();
+      var nextVer = bumpSemver(cur, 'patch');
+      document.getElementById('ev2SaveVerPrev').textContent = cur;
+      document.getElementById('ev2SaveVerNext').textContent = nextVer;
+      saveForm.querySelectorAll('[data-ver-bump]').forEach(function (btn) {
+        btn.setAttribute('aria-checked', btn.getAttribute('data-ver-bump') === 'patch' ? 'true' : 'false');
+      });
+      var nameInput = document.getElementById('ev2SaveName');
+      var descInput = document.getElementById('ev2SaveDesc');
+      nameInput.value = '';
+      descInput.value = '';
+      nameInput.removeAttribute('data-invalid');
     } else {
-      body.innerHTML = summary.sections.map(function (s) {
-        return '<section class="ev2-deploy-section">'
-          + '<header class="ev2-deploy-section-head">'
-            + '<span class="ev2-deploy-section-tag">' + s.tier + '</span>'
-            + '<div><div class="ev2-deploy-section-title">' + s.title + '</div>'
-            + '<div class="ev2-deploy-section-sub">' + s.sub + '</div></div>'
-          + '</header>'
-          + '<div class="ev2-deploy-rows">' + s.rows + '</div>'
-        + '</section>';
-      }).join('');
+      title.textContent = 'Deploy to Figma';
+      sub.textContent = 'Review every change before pushing to Figma. Deploys are tracked but cannot be undone in-place.';
+      saveForm.hidden = true;
+      confirmBtn.textContent = 'Deploy to Figma';
       hint.innerHTML = 'After deploy, every consumer of these tokens (other Figma files, Storybook, your apps) will see the new values within seconds.';
-      document.getElementById('ev2DeployConfirm').disabled = false;
     }
-    sub.textContent = 'Review every change before pushing to Figma. Deploys are tracked but cannot be undone in-place.';
+
+    var metaBits = [
+      '<span class="ev2-deploy-meta-row"><span class="ev2-deploy-meta-k">Project</span><span class="ev2-deploy-meta-v">' + projLabel + '</span></span>'
+    ];
+    if (isSave) {
+      metaBits.push('<span class="ev2-deploy-meta-row"><span class="ev2-deploy-meta-k">Sections</span><span class="ev2-deploy-meta-v">' + summary.sections.length + '</span></span>');
+    } else {
+      metaBits.push('<span class="ev2-deploy-meta-row"><span class="ev2-deploy-meta-k">Editing mode</span><span class="ev2-deploy-meta-v">' + (State.editingMode === 'dark' ? 'Dark' : 'Light') + '</span></span>');
+      metaBits.push('<span class="ev2-deploy-meta-row"><span class="ev2-deploy-meta-k">Total changes</span><span class="ev2-deploy-meta-v ev2-deploy-meta-total">' + summary.total + '</span></span>');
+    }
+    meta.innerHTML = metaBits.join('');
+
+    if (isSave) {
+      // Save mode: confirm is always enabled (you can save the project's
+      // current state even with no draft edits \u2014 useful for "baseline now").
+      body.innerHTML = summary.sections.length
+        ? summary.sections.map(renderSummarySection).join('')
+        : '<div class="ev2-deploy-section-empty">Nothing to snapshot yet \u2014 the project has no editable mappings.</div>';
+      confirmBtn.disabled = false;
+    } else {
+      if (summary.total === 0) {
+        body.innerHTML = '<div class="ev2-deploy-section-empty">No changes to deploy. Make some edits first.</div>';
+        confirmBtn.disabled = true;
+      } else {
+        body.innerHTML = summary.sections.map(renderSummarySection).join('');
+        confirmBtn.disabled = false;
+      }
+    }
     dlg.hidden = false;
     document.body.classList.add('ev2-modal-open');
   }
+  function renderSummarySection(s) {
+    return '<section class="ev2-deploy-section">'
+      + '<header class="ev2-deploy-section-head">'
+        + '<span class="ev2-deploy-section-tag">' + s.tier + '</span>'
+        + '<div><div class="ev2-deploy-section-title">' + s.title + '</div>'
+        + '<div class="ev2-deploy-section-sub">' + s.sub + '</div></div>'
+      + '</header>'
+      + '<div class="ev2-deploy-rows">' + s.rows + '</div>'
+    + '</section>';
+  }
+  function openDeployDialog() { openDialog('deploy'); }
+  function openSaveDefaultDialog() { openDialog('save'); }
   function closeDeployDialog() {
     var dlg = document.getElementById('ev2DeployDialog');
     if (dlg) { dlg.hidden = true; }
     document.body.classList.remove('ev2-modal-open');
   }
 
+  /* ── GitHub writer for save-as-default ───────────────── */
+  var GH_API = 'https://api.github.com';
+  var GH_REPO_NAME = 'Design-Token-Forge';
+  function getGhPat() { return localStorage.getItem('dtf-gh-pat') || ''; }
+  function getGhUser() { return localStorage.getItem('dtf-gh-user') || ''; }
+  function ghFetch(endpoint, opts) {
+    opts = opts || {};
+    var url = endpoint.startsWith('http') ? endpoint : GH_API + endpoint;
+    return fetch(url, {
+      method: opts.method || 'GET',
+      headers: { 'Authorization': 'Bearer ' + getGhPat(), 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function (r) {
+      if (!r.ok) return r.json().then(function (d) { throw new Error(d.message || r.status); });
+      return r.json();
+    });
+  }
+  function ghEncode(str) { return btoa(unescape(encodeURIComponent(str))); }
+
+  /* Multi-file commit via the git-tree API \u2014 atomic vs. N
+     separate file PUTs. Mirrors the legacy editor's flow. */
+  function ghMultiCommit(owner, files, message, branch, _retry) {
+    branch = branch || 'main';
+    return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/git/ref/heads/' + branch)
+      .then(function (ref) {
+        var commitSha = ref.object.sha;
+        return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/git/commits/' + commitSha)
+          .then(function (commit) {
+            return Promise.all(files.map(function (f) {
+              return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/git/blobs', {
+                method: 'POST', body: { content: ghEncode(f.content), encoding: 'base64' }
+              }).then(function (blob) { return { path: f.path, sha: blob.sha }; });
+            })).then(function (blobs) {
+              var tree = blobs.map(function (b) { return { path: b.path, mode: '100644', type: 'blob', sha: b.sha }; });
+              return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/git/trees', {
+                method: 'POST', body: { base_tree: commit.tree.sha, tree: tree }
+              });
+            }).then(function (newTree) {
+              return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/git/commits', {
+                method: 'POST', body: { message: message, tree: newTree.sha, parents: [commitSha] }
+              });
+            }).then(function (newCommit) {
+              return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/git/refs/heads/' + branch, {
+                method: 'PATCH', body: { sha: newCommit.sha, force: false }
+              });
+            });
+          });
+      })
+      .catch(function (err) {
+        if (!_retry && err.message && /fast.?forward/i.test(err.message)) {
+          return ghMultiCommit(owner, files, message, branch, true);
+        }
+        throw err;
+      });
+  }
+
+  function ensureGhCredentials() {
+    var pat = getGhPat();
+    var user = getGhUser();
+    if (pat && user) return Promise.resolve({ pat: pat, user: user });
+    var entered = prompt('GitHub Personal Access Token (with "repo" scope):\n\nThis token writes to your fork of ' + GH_REPO_NAME + '. Stored locally only.');
+    if (!entered) return Promise.reject(new Error('Cancelled'));
+    localStorage.setItem('dtf-gh-pat', entered.trim());
+    // Verify + capture username
+    return ghFetch('/user').then(function (u) {
+      if (!u || !u.login) throw new Error('Token rejected by GitHub');
+      localStorage.setItem('dtf-gh-user', u.login);
+      return { pat: entered.trim(), user: u.login };
+    }).catch(function (err) {
+      localStorage.removeItem('dtf-gh-pat');
+      throw err;
+    });
+  }
+
+  function saveAsDefault() {
+    var projId = getActiveProjectId();
+    if (!projId) {
+      if (window.ev2Toast) window.ev2Toast('No active project \u2014 open one first', 'warn');
+      return;
+    }
+    var nameInput = document.getElementById('ev2SaveName');
+    var descInput = document.getElementById('ev2SaveDesc');
+    var name = (nameInput.value || '').trim();
+    if (!name) {
+      nameInput.setAttribute('data-invalid', '');
+      nameInput.focus();
+      if (window.ev2Toast) window.ev2Toast('Snapshot needs a name', 'warn');
+      return;
+    }
+    nameInput.removeAttribute('data-invalid');
+    var description = (descInput.value || '').trim();
+    var bumpEl = document.querySelector('#ev2SaveForm [data-ver-bump][aria-checked="true"]');
+    var bump = bumpEl ? bumpEl.getAttribute('data-ver-bump') : 'patch';
+    var curVer = getProjectCurrentVersion();
+    var nextVer = bumpSemver(curVer, bump);
+
+    var meta = {
+      version:     nextVer,
+      name:        name,
+      description: description,
+      savedAt:     new Date().toISOString(),
+      savedBy:     getGhUser() || ''
+    };
+
+    var confirmBtn = document.getElementById('ev2DeployConfirm');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Connecting\u2026';
+
+    ensureGhCredentials().then(function (cred) {
+      meta.savedBy = cred.user;
+      confirmBtn.textContent = 'Publishing ' + nextVer + '\u2026';
+
+      var prevCfg = readProjectConfigSync();
+      var primCSS = buildPrimitivesCSS(meta);
+      var semCSS  = buildSemanticCSS(meta);
+      var surfCSS = buildSurfacesCSS(meta);
+      var cfgJSON = buildConfigJSON(prevCfg, meta);
+      var versionSnapshot = JSON.stringify({
+        meta: meta,
+        savedFrom: 'editor-v2',
+        files: ['primitives.css','semantic.css','surfaces.css','config.json']
+      }, null, 2) + '\n';
+
+      var base = 'projects/' + projId;
+      var files = [
+        { path: base + '/primitives.css', content: primCSS },
+        { path: base + '/semantic.css',   content: semCSS },
+        { path: base + '/surfaces.css',   content: surfCSS },
+        { path: base + '/config.json',    content: cfgJSON },
+        { path: base + '/versions/' + nextVer + '.json', content: versionSnapshot }
+      ];
+
+      var msg = 'project(' + projId + '): publish ' + nextVer + ' \u2014 ' + name;
+      return ghMultiCommit(cred.user, files, msg);
+    }).then(function () {
+      confirmBtn.textContent = 'Save as default';
+      confirmBtn.disabled = false;
+      closeDeployDialog();
+      if (window.ev2Toast) window.ev2Toast('Published ' + nextVer + ' to ' + projId, 'ok');
+      // Promote current state to the new baseline so "Discard" reverts
+      // to what we just published instead of the pre-edit state.
+      try {
+        State.baseline = JSON.parse(JSON.stringify(State.proposed));
+        State.t1Baseline = JSON.parse(JSON.stringify(State.t1));
+        if (typeof refreshChangeBar === 'function') refreshChangeBar();
+      } catch (e) { /* baseline reset is best-effort */ }
+    }).catch(function (err) {
+      confirmBtn.textContent = 'Save as default';
+      confirmBtn.disabled = false;
+      var msg = (err && err.message) ? err.message : String(err);
+      if (window.ev2Toast) window.ev2Toast('Save failed: ' + msg, 'err');
+      // eslint-disable-next-line no-console
+      console.error('[save-as-default]', err);
+    });
+  }
+
+  var $saveDefault = document.getElementById('saveDefaultBtn');
+  if ($saveDefault) {
+    $saveDefault.addEventListener('click', openSaveDefaultDialog);
+  }
+  // Top-bar deploy button \u2014 opens dialog in deploy mode.
   if ($deploy) {
     $deploy.addEventListener('click', function () {
       if ($deploy.disabled) return;
       openDeployDialog();
     });
   }
+  // Backdrop, close button, cancel button \u2014 all carry data-deploy-dismiss.
   document.querySelectorAll('[data-deploy-dismiss]').forEach(function (el) {
     el.addEventListener('click', closeDeployDialog);
   });
+  // Confirm button: routes by current dialog mode.
   var deployConfirmBtn = document.getElementById('ev2DeployConfirm');
   if (deployConfirmBtn) {
     deployConfirmBtn.addEventListener('click', function () {
-      // Hook for the actual deploy call — wired to the sync server
-      // by the project widget when a project is active. For now,
-      // close the dialog and surface a toast so the flow is end-to-end
-      // testable without a live server.
-      closeDeployDialog();
-      if (window.ev2Toast) window.ev2Toast('Deploy queued (server integration TBD)', 'ok');
+      var dlg = document.getElementById('ev2DeployDialog');
+      var mode = dlg ? (dlg.getAttribute('data-mode') || 'deploy') : 'deploy';
+      if (mode === 'save') {
+        saveAsDefault();
+      } else {
+        // Deploy-to-Figma hook \u2014 server integration TBD.
+        closeDeployDialog();
+        if (window.ev2Toast) window.ev2Toast('Deploy queued (server integration TBD)', 'ok');
+      }
     });
   }
+  // Version-bump pills (delegated for tolerance to re-renders)
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('#ev2SaveForm [data-ver-bump]');
+    if (!btn) return;
+    var group = btn.parentElement;
+    group.querySelectorAll('[data-ver-bump]').forEach(function (b) { b.setAttribute('aria-checked', b === btn ? 'true' : 'false'); });
+    var cur = getProjectCurrentVersion();
+    var next = bumpSemver(cur, btn.getAttribute('data-ver-bump'));
+    var nextEl = document.getElementById('ev2SaveVerNext');
+    if (nextEl) nextEl.textContent = next;
+  });
 
   $reload.addEventListener('click', function () {
     $frame.contentWindow.location.reload();
