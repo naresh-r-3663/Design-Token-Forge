@@ -4672,6 +4672,13 @@
       if (typeof pal !== 'string' || !pal) return;
       if (!isValidSurfacePalette(pal)) return;
       State.t2SurfacePalette[sid] = pal;
+      // Mirror into the baseline so the loaded mapping is treated
+      // as "what was last published" \u2014 not as a fresh edit on
+      // top of factory defaults. Without this, every surface whose
+      // project config differs from T2_SURFACES default registers
+      // as dirty on first load, producing a phantom "N changes"
+      // badge on every hard refresh.
+      State.t2SurfacePaletteBaseline[sid] = pal;
     });
   }
 
