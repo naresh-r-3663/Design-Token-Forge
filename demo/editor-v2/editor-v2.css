@@ -1232,35 +1232,7 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   font:inherit;
   transition:transform 120ms,border-color 120ms,box-shadow 120ms;
 }
-/* Chevron affordance so the swatch reads as a button. Sits in the
-   bottom-right corner; rotates 180° when expanded. */
-.ev2-pc-sw::after{
-  content:'';
-  position:absolute;
-  right:-4px;bottom:-4px;
-  width:12px;height:12px;
-  background:var(--surface-base-bg);
-  border:1px solid var(--surface-base-outline);
-  border-radius:50%;
-  transition:transform 160ms,border-color 120ms;
-  pointer-events:none;
-}
-.ev2-pc-sw::before{
-  content:'';
-  position:absolute;
-  right:0;bottom:0;
-  width:0;height:0;
-  border-left:3px solid transparent;
-  border-right:3px solid transparent;
-  border-top:3.5px solid var(--surface-base-ct-strong);
-  margin-right:1px;margin-bottom:2px;
-  transition:transform 160ms;
-  pointer-events:none;
-  z-index:1;
-}
-.ev2-pc[data-expanded="true"] .ev2-pc-sw::before{transform:rotate(180deg) translate(0,3.5px)}
 .ev2-pc-sw:hover{transform:scale(1.06);border-color:var(--brand-component-bg-default,#3366f0)}
-.ev2-pc-sw:hover::after{border-color:var(--brand-component-bg-default,#3366f0)}
 .ev2-pc-sw:focus-visible{
   outline:2px solid var(--brand-component-bg-default,#3366f0);
   outline-offset:2px;
@@ -1295,7 +1267,7 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 }
 .ev2-pc-chip-muted{background:var(--surface-base-subtle);color:var(--surface-base-ct-faint)}
 .ev2-pc-controls{display:inline-flex;align-items:center;gap:4px}
-.ev2-pc-step-btn,.ev2-pc-reset{
+.ev2-pc-step-btn,.ev2-pc-reset,.ev2-pc-disclose{
   display:inline-flex;align-items:center;justify-content:center;
   width:28px;height:28px;
   border:1px solid var(--surface-base-outline);
@@ -1303,14 +1275,21 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   background:var(--surface-base-bg);
   color:var(--surface-base-ct-strong);
   font:inherit;font-size:13px;cursor:pointer;
-  transition:background 120ms,border-color 120ms;
+  transition:background 120ms,border-color 120ms,transform 160ms;
 }
-.ev2-pc-step-btn:hover,.ev2-pc-reset:not(:disabled):hover{background:var(--surface-base-subtle)}
-.ev2-pc-step-btn:focus-visible,.ev2-pc-reset:focus-visible{
+.ev2-pc-step-btn:hover,.ev2-pc-reset:not(:disabled):hover,.ev2-pc-disclose:hover{background:var(--surface-base-subtle);border-color:var(--surface-base-cm-outline-hover,#C8D0D8)}
+.ev2-pc-step-btn:focus-visible,.ev2-pc-reset:focus-visible,.ev2-pc-disclose:focus-visible{
   outline:2px solid var(--brand-component-bg-default,#3366f0);
   outline-offset:1px;
 }
 .ev2-pc-reset:disabled{opacity:.35;cursor:default}
+.ev2-pc-disclose svg{transition:transform 160ms}
+.ev2-pc[data-expanded="true"] .ev2-pc-disclose svg{transform:rotate(180deg)}
+.ev2-pc[data-expanded="true"] .ev2-pc-disclose{
+  background:var(--brand-component-bg-default,#3366f0);
+  border-color:var(--brand-component-bg-default,#3366f0);
+  color:#fff;
+}
 .ev2-pc-wcag{
   font-size:11px;font-weight:600;
   padding:3px 7px;border-radius:3px;
