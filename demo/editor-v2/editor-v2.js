@@ -3816,25 +3816,21 @@
       var who  = meta.savedBy || '';
       var desc = meta.description || '';
       var isCurrent = (s.name === liveName);
-      // Restorable only when the snapshot embeds full file contents
-      // (object form), not the legacy array-of-names form.
-      var hasInline = s.json && s.json.files && !Array.isArray(s.json.files) && typeof s.json.files === 'object';
-      var restorable = hasInline && !isCurrent;
-      var rowState = isCurrent ? 'live' : (hasInline ? 'restorable' : 'unavailable');
+      // Restorable for ANY published snapshot: we either read inline
+      // files from the snapshot JSON, or recover them from the git
+      // commit that created the snapshot file. Only the Live row
+      // is intentionally inert.
       var btnAttrs, btnLabel, btnDisabledAttr;
       if (isCurrent) {
         btnAttrs = ''; btnLabel = 'Live'; btnDisabledAttr = 'disabled';
-      } else if (hasInline) {
+      } else {
         btnAttrs = 'data-restore="' + escapeAttr(ver) + '"';
         btnLabel = 'Restore'; btnDisabledAttr = '';
-      } else {
-        btnAttrs = 'data-tip="This snapshot was published before inline file storage was added, so its contents aren\u2019t available to restore. Publish a new version to make future restores possible."';
-        btnLabel = 'Unavailable'; btnDisabledAttr = 'disabled';
       }
+      var rowState = isCurrent ? 'live' : 'restorable';
       var metaBits = [];
       if (when) metaBits.push(escapeHTML(when));
       if (who)  metaBits.push(escapeHTML('@' + who));
-      if (!hasInline) metaBits.push('<span class="ev2-history-flag" data-tip="This snapshot only stored metadata (filenames), not file contents, so it can\u2019t be restored.">no file contents</span>');
       var metaLine = metaBits.join(' <span class="ev2-history-meta-sep">\u00b7</span> ');
       return '<div class="ev2-history-row" data-current="' + (isCurrent ? 'true' : 'false') + '" data-state="' + rowState + '">'
         + '<div class="ev2-history-ver">'
@@ -3851,20 +3847,22 @@
         + '</button>'
       + '</div>';
     }).join('');
-    var hasUnavailable = snapshots.some(function (s) {
-      return !(s.json && s.json.files && !Array.isArray(s.json.files) && typeof s.json.files === 'object');
-    });
-    var note = hasUnavailable
-      ? '<div class="ev2-history-note">Snapshots published before this editor saved file contents inline cannot be restored. New publishes are always restorable.</div>'
-      : '';
-    body.innerHTML = note + '<div class="ev2-history-list">' + rows + '</div>';
+    body.innerHTML = '<div class="ev2-history-list">' + rows + '</div>';
     body._ghUser = ghUser;
     body._snapshots = snapshots;
   }
 
   // Restore = republish the snapshot's files as a new patch version.
   // Same files API as Publish; same Pages rebuild. Old version JSONs
-  // are untouched — history only grows.
+  // are untouched \u2014 history only grows.
+  //
+  // Two paths to get the file contents:
+  //   1. Inline (snapshot.files is an object \u2192 take as-is)
+  //   2. Git history (snapshot.files is missing or array \u2192 find
+  //      the commit that wrote versions/<ver>.json and read each
+  //      file at that SHA). This makes EVERY published snapshot
+  //      restorable, including ones from older builds that only
+  //      saved metadata in the version JSON.
   function restoreVersion(ver) {
     var projId = getActiveProjectId();
     if (!projId) return;
@@ -3872,8 +3870,8 @@
     var snap = (body && body._snapshots || []).find(function (s) {
       return (s.json && s.json.meta && s.json.meta.version) === ver;
     });
-    if (!snap || !snap.json || !snap.json.files || Array.isArray(snap.json.files)) {
-      if (window.ev2Toast) window.ev2Toast('Snapshot for ' + ver + ' has no embedded files', 'error');
+    if (!snap || !snap.json) {
+      if (window.ev2Toast) window.ev2Toast('Couldn\u2019t find snapshot for ' + ver, 'error');
       return;
     }
     var curVer  = getProjectCurrentVersion();
@@ -3891,15 +3889,25 @@
     var dlg = document.getElementById('ev2HistoryDialog');
     if (dlg) dlg._restoring = true;
 
+    var creds; // captured for the recover step
     ensureGhCredentials().then(function (cred) {
+      creds = cred;
+      var hasInline = snap.json.files && !Array.isArray(snap.json.files) && typeof snap.json.files === 'object';
+      if (hasInline) return snap.json.files;
+      // Recover from git history. Older snapshots (array of names
+      // or no files key) are still in the repo \u2014 we just need
+      // to read them at the commit that introduced them.
+      if (btn) btn.textContent = 'Recovering\u2026';
+      return recoverFilesFromGit(cred.user, projId, ver);
+    }).then(function (files) {
       var meta = {
         version:     nextVer,
         name:        'Restore of ' + ver,
         description: 'Restored from ' + ver + (origName && origName !== ver ? ' \u2014 "' + origName + '"' : ''),
         savedAt:     new Date().toISOString(),
-        savedBy:     cred.user
+        savedBy:     creds.user
       };
-      var files = snap.json.files;
+      if (btn) btn.textContent = 'Restoring\u2026';
       // Patch the snapshot's config.json so latestVersion reflects
       // the NEW version, not the restored one. Without this, the
       // editor would re-open thinking ver is the live version.
@@ -3939,7 +3947,7 @@
         { path: base + '/versions/' + nextVer + '.json', content: versionSnapshot }
       ];
       var msg = 'project(' + projId + '): restore ' + ver + ' as ' + nextVer;
-      return ghMultiCommit(cred.user, toCommit, msg).then(function () { return meta; });
+      return ghMultiCommit(creds.user, toCommit, msg).then(function () { return meta; });
     }).then(function (meta) {
       // Fire Pages rebuild — best-effort like normal Publish.
       triggerPagesRebuild().catch(function () {});
@@ -3956,6 +3964,51 @@
       // eslint-disable-next-line no-console
       console.error('[restore]', err);
     });
+  }
+
+  /* Recover project files at the commit that introduced
+     versions/<ver>.json. Used when the snapshot itself doesn't
+     embed file contents (older builds). Returns a Promise of
+     { 'primitives.css': string, ... } same shape as inline. */
+  function recoverFilesFromGit(owner, projId, ver) {
+    var base = 'projects/' + projId;
+    var versionPath = base + '/versions/' + ver + '.json';
+    // Step 1: find the publish commit (first/only commit that
+    // wrote that specific version file).
+    return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/commits?path='
+        + encodeURIComponent(versionPath) + '&per_page=1')
+      .then(function (commits) {
+        if (!commits || !commits.length) {
+          throw new Error('No commit found for ' + ver);
+        }
+        var sha = commits[0].sha;
+        // Step 2: fetch each project file at that SHA.
+        var names = ['primitives.css','semantic.css','surfaces.css','config.json'];
+        return Promise.all(names.map(function (name) {
+          return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME
+              + '/contents/' + encodeURIComponent(base + '/' + name)
+              + '?ref=' + encodeURIComponent(sha))
+            .then(function (resp) {
+              // resp.content is base64 with newlines; decode as UTF-8.
+              var b64 = (resp && resp.content) ? resp.content.replace(/\n/g, '') : '';
+              var bytes = atob(b64);
+              try {
+                return { name: name, text: decodeURIComponent(escape(bytes)) };
+              } catch (_) {
+                return { name: name, text: bytes };
+              }
+            })
+            .catch(function () { return { name: name, text: '' }; });
+        }));
+      })
+      .then(function (parts) {
+        var out = {};
+        parts.forEach(function (p) { out[p.name] = p.text; });
+        if (!out['primitives.css']) {
+          throw new Error('Couldn\u2019t read primitives.css at that commit');
+        }
+        return out;
+      });
   }
 
   /* Semver compare. Returns -1 / 0 / 1. */
