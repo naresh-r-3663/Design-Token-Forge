@@ -152,25 +152,52 @@
   /* The 16 properties per surface. Default offsets are signed in
      "lighter→darker" steps and get multiplied by tonalDir(mode) at
      resolve time — so light/dark mirror automatically. Numbers come
-     straight from docs §3.2 "Default offset table". */
+  /* The 16 properties per surface, modeled as a TREE so the renderer
+     can show parent-child relationships and the resolver cascades
+     overrides correctly. `parent` = prop id of the anchor (null for
+     bg). `defaultDelta` = signed offset from parent (in lighter→
+     darker steps); multiplied by tonalDir(mode) at resolve time so
+     light/dark mirror automatically. `level` controls UI indent.
+
+     Tree (anchored at bg):
+       bg                                          — family root
+         ├─ subtle      (+1 from bg)
+         ├─ strong      (+2 from bg)
+         ├─ outline     (+3 from bg)            — edges
+         │   └─ separator  ( 0 from outline)
+         ├─ ct-default  (+16 from bg)           — content
+         │   ├─ ct-strong  (+3 from ct-default)
+         │   ├─ ct-subtle  (-6 from ct-default)
+         │   └─ ct-faint   (-8 from ct-default)
+         └─ cm-bg       (-1 from bg)            — component
+             ├─ cm-bg-hover       (+1 from cm-bg)
+             ├─ cm-bg-pressed     (+2 from cm-bg)
+             ├─ cm-outline        (+4 from cm-bg)
+             │   ├─ cm-outline-hover   (+1 from cm-outline)
+             │   └─ cm-outline-pressed (+1 from cm-outline)
+             └─ cm-separator      (+4 from cm-bg) */
   var T2_PROP_DEFS = [
-    { id:'bg',                 family:'surface',   defaultOffset:  0 },
-    { id:'subtle',             family:'surface',   defaultOffset:  1 },
-    { id:'strong',             family:'surface',   defaultOffset:  2 },
-    { id:'outline',            family:'surface',   defaultOffset:  3 },
-    { id:'separator',          family:'surface',   defaultOffset:  3 },
-    { id:'ct-default',         family:'content',   defaultOffset: 16 },
-    { id:'ct-strong',          family:'content',   defaultOffset: 19 },
-    { id:'ct-subtle',          family:'content',   defaultOffset: 10 },
-    { id:'ct-faint',           family:'content',   defaultOffset:  8 },
-    { id:'cm-bg',              family:'component', defaultOffset: -1 },
-    { id:'cm-bg-hover',        family:'component', defaultOffset:  0 },
-    { id:'cm-bg-pressed',      family:'component', defaultOffset:  1 },
-    { id:'cm-outline',         family:'component', defaultOffset:  3 },
-    { id:'cm-outline-hover',   family:'component', defaultOffset:  4 },
-    { id:'cm-outline-pressed', family:'component', defaultOffset:  4 },
-    { id:'cm-separator',       family:'component', defaultOffset:  3 }
+    { id:'bg',                 family:'surface',   parent:null,         defaultDelta:  0, level:0 },
+    { id:'subtle',             family:'surface',   parent:'bg',         defaultDelta:  1, level:1 },
+    { id:'strong',             family:'surface',   parent:'bg',         defaultDelta:  2, level:1 },
+    { id:'outline',            family:'edges',     parent:'bg',         defaultDelta:  3, level:0 },
+    { id:'separator',          family:'edges',     parent:'outline',    defaultDelta:  0, level:1 },
+    { id:'ct-default',         family:'content',   parent:'bg',         defaultDelta: 16, level:0 },
+    { id:'ct-strong',          family:'content',   parent:'ct-default', defaultDelta:  3, level:1 },
+    { id:'ct-subtle',          family:'content',   parent:'ct-default', defaultDelta: -6, level:1 },
+    { id:'ct-faint',           family:'content',   parent:'ct-default', defaultDelta: -8, level:1 },
+    { id:'cm-bg',              family:'component', parent:'bg',         defaultDelta: -1, level:0 },
+    { id:'cm-bg-hover',        family:'component', parent:'cm-bg',      defaultDelta:  1, level:1 },
+    { id:'cm-bg-pressed',      family:'component', parent:'cm-bg',      defaultDelta:  2, level:1 },
+    { id:'cm-outline',         family:'component', parent:'cm-bg',      defaultDelta:  4, level:1 },
+    { id:'cm-outline-hover',   family:'component', parent:'cm-outline', defaultDelta:  1, level:2 },
+    { id:'cm-outline-pressed', family:'component', parent:'cm-outline', defaultDelta:  1, level:2 },
+    { id:'cm-separator',       family:'component', parent:'cm-bg',      defaultDelta:  4, level:1 }
   ];
+  function propDefById(id) {
+    for (var i = 0; i < T2_PROP_DEFS.length; i++) if (T2_PROP_DEFS[i].id === id) return T2_PROP_DEFS[i];
+    return null;
+  }
 
   function makeEmptyT2() {
     var out = {};
@@ -191,10 +218,13 @@
     return (T2_BASE_STEPS[mode] && T2_BASE_STEPS[mode][surfaceId]) || '500';
   }
   function defaultT2Step(surfaceId, propId, mode) {
-    var prop = T2_PROP_DEFS.find(function (p) { return p.id === propId; });
+    var prop = propDefById(propId);
     if (!prop) return surfaceBaseStep(surfaceId, mode);
-    if (prop.id === 'bg') return surfaceBaseStep(surfaceId, mode);
-    return stepRel(surfaceBaseStep(surfaceId, mode), prop.defaultOffset * tonalDir(mode));
+    if (!prop.parent) return surfaceBaseStep(surfaceId, mode); // bg = root
+    // Walk: parent's RESOLVED step (so user's parent override
+    // cascades into the child's default) + this prop's delta.
+    var parentStep = resolveT2Step(surfaceId, prop.parent, mode);
+    return stepRel(parentStep, prop.defaultDelta * tonalDir(mode));
   }
   function resolveT2Step(surfaceId, propId, mode) {
     var ov = State.t2 && State.t2[mode] && State.t2[mode][surfaceId] && State.t2[mode][surfaceId][propId];
@@ -218,15 +248,14 @@
   }
 
   /* Family grouping for the T2 renderer — order matters, it's what
-     the user sees top-to-bottom in the editing pane. Labels are the
-     canonical token-domain names (surface / content / component) so
-     designers reading the panel are reading the same words they
-     write in code. The surface-pane description already gives
-     context; no sub-titles per family. */
+     the user sees top-to-bottom in the editing pane. 4 families:
+     Surface tones, Edges, Content, Component. Each card shows its
+     anchor reference (parent of the family's root prop) for context. */
   var T2_FAMILIES = [
-    { id:'surface',   label:'Surface'   },
-    { id:'content',   label:'Content'   },
-    { id:'component', label:'Component' }
+    { id:'surface',   label:'Surface',   anchorRef:null  /* bg IS the anchor */ },
+    { id:'edges',     label:'Edges',     anchorRef:'bg' },
+    { id:'content',   label:'Content',   anchorRef:'bg' },
+    { id:'component', label:'Component', anchorRef:'bg' }
   ];
 
   /* Neutral palette generator. ROLES already cover brand/danger/etc
@@ -1098,7 +1127,8 @@
   }
 
   function propertyCardHTML(opts) {
-    // opts: { tokenName, swatchHex, step, isDetached, sentinel?, dataAttrs? }
+    // opts: { tokenName, swatchHex, step, isDetached, sentinel?,
+    //         dataAttrs?, expanded?, level?, parentLabel?, deltaSigned? }
     var swSt = 'background:' + opts.swatchHex + ';' +
                'border-style:' + (opts.isDetached ? 'solid' : 'dashed') + ';';
     var sent = opts.sentinel;
@@ -1115,24 +1145,30 @@
     if (opts.dataAttrs) Object.keys(opts.dataAttrs).forEach(function (k) {
       attrs += ' data-' + k + '="' + String(opts.dataAttrs[k]).replace(/"/g,'&quot;') + '"';
     });
-    // Column order is: swatch | name+meta | WCAG | controls.
-    // WCAG sits left-of-controls so the eye reads "what's the issue"
-    // BEFORE "what can I do about it", and controls are flush-right
-    // for predictable click targets across all rows.
-    // Inline ladder picker appears as a second row when expanded.
     var expanded = !!opts.expanded;
     var ladderHTML = '';
     if (expanded && opts.dataAttrs && opts.dataAttrs['pc-surface'] && opts.dataAttrs['pc-prop']) {
       ladderHTML = pcLadderHTML(opts.dataAttrs['pc-surface'], opts.dataAttrs['pc-prop'], State.editingMode);
     }
-    return '<div class="ev2-pc" data-detached="' + (opts.isDetached ? 'true' : 'false') + '" data-expanded="' + (expanded ? 'true' : 'false') + '"' + attrs + '>'
+    // Build meta strip. For child rows we show "step N · +d from parent"
+    // when linked, and "step N · custom" when the user has pinned it.
+    var metaBits = '<span class="ev2-pc-step">step ' + opts.step + '</span>';
+    if (opts.isDetached) {
+      metaBits += '<span class="ev2-pc-chip">custom</span>';
+    } else if (opts.parentLabel && typeof opts.deltaSigned === 'number') {
+      var sign = opts.deltaSigned > 0 ? '+' : '';
+      metaBits += '<span class="ev2-pc-chip ev2-pc-chip-link" data-tip="Linked to ' + opts.parentLabel + ' — step changes follow">'
+        + sign + opts.deltaSigned + ' from ' + opts.parentLabel
+      + '</span>';
+    } else {
+      metaBits += '<span class="ev2-pc-chip ev2-pc-chip-muted">default</span>';
+    }
+    var lvl = opts.level || 0;
+    return '<div class="ev2-pc" data-detached="' + (opts.isDetached ? 'true' : 'false') + '" data-expanded="' + (expanded ? 'true' : 'false') + '" data-level="' + lvl + '"' + attrs + '>'
       + '<button type="button" class="ev2-pc-sw" style="' + swSt + '" data-pc-toggle aria-expanded="' + (expanded ? 'true' : 'false') + '" data-tip="' + (expanded ? 'Hide steps' : 'Pick a step') + '" aria-label="' + (expanded ? 'Hide steps' : 'Pick a step') + ' — swatch (also opens picker)"></button>'
       + '<div class="ev2-pc-main">'
         + '<div class="ev2-pc-name">' + opts.tokenName + '</div>'
-        + '<div class="ev2-pc-meta">'
-          + '<span class="ev2-pc-step">step ' + opts.step + '</span>'
-          + (opts.isDetached ? '<span class="ev2-pc-chip">custom</span>' : '<span class="ev2-pc-chip ev2-pc-chip-muted">default</span>')
-        + '</div>'
+        + '<div class="ev2-pc-meta">' + metaBits + '</div>'
       + '</div>'
       + sentHTML
       + '<div class="ev2-pc-controls">'
@@ -1172,9 +1208,21 @@
       var swatchHex    = t2HexFor(surface.id, prop.id, mode);
       var ov = State.t2[mode][surface.id] && State.t2[mode][surface.id][prop.id];
       var isDetached   = !!(ov && ov.step);
-      // bg never shows a sentinel (it IS the baseline for the surface).
       var sentinel = t2Sentinel(surface.id, prop.id, mode);
       var expanded = __expandedT2 === (surface.id + '/' + prop.id);
+      // For child rows, compute effective delta from parent (in
+      // mode-correct units) so meta strip can show "+1 from bg" etc.
+      var parentLabel = null;
+      var deltaSigned = null;
+      if (prop.parent) {
+        parentLabel = prop.parent;
+        var pStep = resolveT2Step(surface.id, prop.parent, mode);
+        var pIdx  = ALL_STEPS.indexOf(pStep);
+        var cIdx  = ALL_STEPS.indexOf(resolvedStep);
+        if (pIdx >= 0 && cIdx >= 0) {
+          deltaSigned = (cIdx - pIdx) * tonalDir(mode);
+        }
+      }
       return propertyCardHTML({
         tokenName: '--surface-' + surface.id + '-' + prop.id,
         swatchHex: swatchHex,
@@ -1182,6 +1230,9 @@
         isDetached: isDetached,
         expanded: expanded,
         sentinel: sentinel,
+        level: prop.level,
+        parentLabel: parentLabel,
+        deltaSigned: deltaSigned,
         dataAttrs: {
           'pc-surface': surface.id,
           'pc-prop':    prop.id,
@@ -1189,9 +1240,22 @@
         }
       });
     }).join('');
+    // Optional anchor reference chip — shows the family's external
+    // anchor (e.g. Edges/Content/Component all anchor on bg). Lets
+    // the user see "what am I deriving from" without leaving the card.
+    var anchorChip = '';
+    if (family.anchorRef) {
+      var aStep = resolveT2Step(surface.id, family.anchorRef, mode);
+      var aHex  = t2HexFor(surface.id, family.anchorRef, mode);
+      anchorChip = '<div class="ev2-pc-group-anchor" data-tip="Family is derived from --surface-' + surface.id + '-' + family.anchorRef + ' (step ' + aStep + ')">'
+        + '<span class="ev2-pc-group-anchor-sw" style="background:' + aHex + '"></span>'
+        + '<span class="ev2-pc-group-anchor-lbl">follows <code>' + family.anchorRef + '</code> · step ' + aStep + '</span>'
+      + '</div>';
+    }
     return '<section class="ev2-pc-group" data-family="' + family.id + '">'
       + '<header class="ev2-pc-group-head">'
         + '<h3 class="ev2-pc-group-title">' + family.label + '</h3>'
+        + anchorChip
       + '</header>'
       + '<div class="ev2-pc-list">' + cards + '</div>'
     + '</section>';

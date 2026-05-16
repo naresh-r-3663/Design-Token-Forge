@@ -1197,8 +1197,30 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 /* Family group containing N Property Cards */
 .ev2-pc-group{padding:20px 24px 8px}
 .ev2-pc-group + .ev2-pc-group{border-top:1px solid var(--surface-base-separator)}
-.ev2-pc-group-head{margin-bottom:8px}
+.ev2-pc-group-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-bottom:8px;
+}
 .ev2-pc-group-title{font-size:13px;font-weight:700;color:var(--surface-base-ct-strong);text-transform:uppercase;letter-spacing:.04em}
+/* Anchor reference chip: small pill that shows "follows bg · step N"
+   so users know what the family is derived from. */
+.ev2-pc-group-anchor{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:3px 8px 3px 4px;border-radius:999px;
+  background:var(--surface-base-subtle);
+  border:1px solid var(--surface-base-outline);
+  font-size:11px;color:var(--surface-base-ct-subtle);
+  font-variant-numeric:tabular-nums;
+}
+.ev2-pc-group-anchor-sw{
+  width:14px;height:14px;border-radius:50%;
+  border:1px solid var(--surface-base-outline);
+}
+.ev2-pc-group-anchor-lbl code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:10.5px;font-weight:600;
+  color:var(--surface-base-ct-default);
+}
 .ev2-pc-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 
 /* ── Property Card (frozen primitive — docs §4) ──────────
@@ -1266,6 +1288,41 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   color:var(--brand-content-default,#3366f0);
 }
 .ev2-pc-chip-muted{background:var(--surface-base-subtle);color:var(--surface-base-ct-faint)}
+/* Linked chip: shows "+1 from bg" for cards that follow a parent.
+   Visually quieter than 'custom' (which uses brand fill) so the user
+   can scan a column of mostly-linked rows and spot the rare detached
+   one. Uses dashed border to echo the dashed swatch style. */
+.ev2-pc-chip-link{
+  background:transparent;
+  border:1px dashed var(--surface-base-outline);
+  color:var(--surface-base-ct-subtle);
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Tree indent: child rows nudge in to make parent-child obvious.
+   16px per level, with a faint guide line so the eye can track
+   which parent the indented row belongs to. */
+.ev2-pc[data-level="1"]{margin-left:16px;position:relative}
+.ev2-pc[data-level="2"]{margin-left:32px;position:relative}
+.ev2-pc[data-level="1"]::before,
+.ev2-pc[data-level="2"]::before{
+  content:'';
+  position:absolute;
+  left:-9px;top:50%;
+  width:8px;height:1px;
+  background:var(--surface-base-outline);
+  pointer-events:none;
+}
+.ev2-pc[data-level="1"]::after,
+.ev2-pc[data-level="2"]::after{
+  content:'';
+  position:absolute;
+  left:-9px;top:-7px;bottom:50%;
+  width:1px;
+  background:var(--surface-base-outline);
+  pointer-events:none;
+}
 .ev2-pc-controls{display:inline-flex;align-items:center;gap:4px}
 .ev2-pc-step-btn,.ev2-pc-reset,.ev2-pc-disclose{
   display:inline-flex;align-items:center;justify-content:center;
