@@ -171,7 +171,7 @@
   </div>
   <div class="hub-top-actions">
     <a class="hub-link" href="components.html">Components</a>
-    <a class="hub-link" href="editor-legacy.html" title="Sign in with GitHub PAT to create or delete projects">Manage&nbsp;projects</a>
+    <a class="hub-link primary" href="onboard.html" title="Create a new project (requires GitHub PAT)">+ New project</a>
     <button class="hub-link" type="button" id="themeToggle" aria-label="Toggle theme">🌙</button>
   </div>
 </header>
@@ -289,7 +289,7 @@
 
   function renderEmpty(){
     countEl.textContent = '0 projects';
-    grid.innerHTML = '<div class="hub-empty">No projects yet. <a href="editor-legacy.html">Create one in the legacy editor</a> (requires GitHub PAT).</div>';
+    grid.innerHTML = '<div class="hub-empty">No projects yet. <a href="onboard.html">Create your first project</a> (requires GitHub PAT).</div>';
   }
 
   function renderError(){

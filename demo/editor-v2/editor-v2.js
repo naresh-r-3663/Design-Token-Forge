@@ -3676,7 +3676,10 @@
   function ghEncode(str) { return btoa(unescape(encodeURIComponent(str))); }
 
   /* Multi-file commit via the git-tree API \u2014 atomic vs. N
-     separate file PUTs. Mirrors the legacy editor's flow. */
+     separate file PUTs. Mirrors the legacy editor's flow.
+     Each entry in `files` is either { path, content } (add/update)
+     or { path, delete: true } (remove from tree by emitting a
+     null-sha tree entry). */
   function ghMultiCommit(owner, files, message, branch, _retry) {
     branch = branch || 'main';
     return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/git/ref/heads/' + branch)
@@ -3684,12 +3687,21 @@
         var commitSha = ref.object.sha;
         return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/git/commits/' + commitSha)
           .then(function (commit) {
-            return Promise.all(files.map(function (f) {
+            // Only create blobs for non-delete entries.
+            var writeFiles = files.filter(function (f) { return !f.delete; });
+            return Promise.all(writeFiles.map(function (f) {
               return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/git/blobs', {
                 method: 'POST', body: { content: ghEncode(f.content), encoding: 'base64' }
               }).then(function (blob) { return { path: f.path, sha: blob.sha }; });
             })).then(function (blobs) {
-              var tree = blobs.map(function (b) { return { path: b.path, mode: '100644', type: 'blob', sha: b.sha }; });
+              var bySha = {};
+              blobs.forEach(function (b) { bySha[b.path] = b.sha; });
+              var tree = files.map(function (f) {
+                if (f.delete) {
+                  return { path: f.path, mode: '100644', type: 'blob', sha: null };
+                }
+                return { path: f.path, mode: '100644', type: 'blob', sha: bySha[f.path] };
+              });
               return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/git/trees', {
                 method: 'POST', body: { base_tree: commit.tree.sha, tree: tree }
               });
@@ -4333,6 +4345,27 @@
     try { return JSON.parse(localStorage.getItem('dtf-known-projects') || '[]') || []; }
     catch (e) { return []; }
   }
+  /* Refresh the localStorage known-projects cache from the canonical
+     projects.json. Tries a few path candidates so we work on file://,
+     Pages, and local dev servers. Best-effort \u2014 silent on failure. */
+  function syncKnownProjectsFromIndex() {
+    var candidates = ['../../projects.json', '/Design-Token-Forge/projects.json', '/projects.json'];
+    var i = 0;
+    function tryNext() {
+      if (i >= candidates.length) return;
+      fetch(candidates[i++], { cache: 'no-store' }).then(function (r) {
+        if (!r.ok) throw new Error('http ' + r.status);
+        return r.json();
+      }).then(function (list) {
+        if (!Array.isArray(list)) return;
+        try { localStorage.setItem('dtf-known-projects', JSON.stringify(list)); } catch (e) {}
+        // Re-render the panel + label if either is stale vs. what we just fetched.
+        if (typeof renderProjPanel === 'function' && $projPanel && !$projPanel.hasAttribute('hidden')) renderProjPanel();
+        if (typeof syncProjLabel === 'function') syncProjLabel();
+      }).catch(tryNext);
+    }
+    tryNext();
+  }
   function projectName(id) {
     var list = getKnownProjects();
     var hit = list.find(function (p) { return p && p.id === id; });
@@ -4342,6 +4375,10 @@
   function initProjectWidget() {
     syncProjLabel();
     renderProjPanel();
+    // Pull the canonical project list from projects.json so the
+    // switcher matches the hub even on first visit. Async, best-
+    // effort: a stale cache is fine to render against meanwhile.
+    syncKnownProjectsFromIndex();
 
     $projBtn.addEventListener('click', function (e) {
       e.stopPropagation();
@@ -4371,7 +4408,7 @@
     var list = getKnownProjects();
     var active = getActiveProjectId();
     if (!list.length) {
-      $projPanel.innerHTML = '<div class="ev2-proj-empty">No projects yet.<br><a href="../onboard.html" style="color:var(--brand-content-default,#286CE5)">Create one</a></div>';
+      $projPanel.innerHTML = '<div class="ev2-proj-empty">No projects yet.<br><a href="../onboard.html" style="color:var(--brand-content-default,#286CE5)">Create your first project</a></div>';
       return;
     }
     var rowsHtml = list.map(function (p) {
@@ -4421,16 +4458,73 @@
     $projBtn.setAttribute('aria-expanded', 'false');
     openModal({
       title: 'Delete \u201C' + name + '\u201D?',
-      body: 'Deleting a project removes its tokens, palette, and config from the repository for everyone. '
-        + 'This requires GitHub authentication, so we will hand off to the legacy editor to complete the deletion. '
-        + 'You can cancel from there before the final confirmation.',
-      confirmLabel: 'Continue in legacy editor',
+      body: 'This removes the project\u2019s tokens, palette, and config from your GitHub fork and updates projects.json. '
+        + 'The change is committed to your repository and cannot be undone from here.',
+      confirmLabel: 'Delete project',
       cancelLabel: 'Keep project',
       kind: 'danger',
-      onConfirm: function () {
-        var url = '../editor-legacy.html?project=' + encodeURIComponent(id) + '&action=delete';
-        window.location.href = url;
-      }
+      onConfirm: function () { performProjectDelete(id, name); }
+    });
+  }
+
+  /* In-editor delete via GitHub API: enumerate every file under
+     projects/<id>/ in the user\u2019s fork, mark them for removal in
+     a single tree commit, and rewrite projects.json without the
+     entry. After success, auto-switch to the next remaining
+     project (or send the user back to the project hub when the
+     fork has none left). */
+  function performProjectDelete(id, name) {
+    if (window.ev2Toast) window.ev2Toast('Connecting to GitHub\u2026', 'ok');
+    ensureGhCredentials().then(function (cred) {
+      var owner = cred.user;
+      var branch = 'main';
+      // 1. Get the current tree to enumerate files under projects/<id>/.
+      return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/git/ref/heads/' + branch).then(function (ref) {
+        return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/git/trees/' + ref.object.sha + '?recursive=1');
+      }).then(function (tree) {
+        var prefix = 'projects/' + id + '/';
+        var doomed = (tree.tree || []).filter(function (n) {
+          return n.type === 'blob' && n.path.indexOf(prefix) === 0;
+        }).map(function (n) { return { path: n.path, delete: true }; });
+        if (!doomed.length) throw new Error('Project folder not found in your fork \u2014 nothing to delete.');
+
+        // 2. Fetch + rewrite projects.json (root index).
+        return ghFetch('/repos/' + owner + '/' + GH_REPO_NAME + '/contents/projects.json?ref=' + branch).then(function (idx) {
+          var listRaw;
+          try { listRaw = JSON.parse(decodeURIComponent(escape(atob(idx.content.replace(/\n/g,''))))); }
+          catch (e) { throw new Error('Could not parse projects.json from fork'); }
+          var nextList = Array.isArray(listRaw) ? listRaw.filter(function (p) { return p && p.id !== id; }) : [];
+          doomed.push({ path: 'projects.json', content: JSON.stringify(nextList, null, 2) + '\n' });
+          return ghMultiCommit(owner, doomed, 'project(' + id + '): delete via editor v2', branch).then(function () { return nextList; });
+        });
+      }).then(function (nextList) {
+        // 3. Update local cache, pick next project, navigate.
+        try { localStorage.setItem('dtf-known-projects', JSON.stringify(nextList)); } catch (e) {}
+        // Clear any draft state for the deleted project.
+        try { localStorage.removeItem('ev2-draft-' + id); } catch (e) {}
+        var wasActive = (getActiveProjectId() === id);
+        if (window.ev2Toast) window.ev2Toast('Deleted \u201C' + name + '\u201D', 'ok');
+        if (!nextList.length) {
+          // No projects left in this fork \u2014 hand off to the create wizard.
+          localStorage.removeItem('dtf-active-project');
+          setTimeout(function () { window.location.href = '../onboard.html'; }, 600);
+          return;
+        }
+        if (wasActive) {
+          localStorage.setItem('dtf-active-project', nextList[0].id);
+          setTimeout(function () { window.location.reload(); }, 600);
+        } else {
+          // Just refresh the dropdown.
+          renderProjPanel();
+        }
+      }).catch(function (err) {
+        var msg = (err && err.message) ? err.message : String(err);
+        if (window.ev2Toast) window.ev2Toast('Delete failed: ' + msg, 'err');
+        // eslint-disable-next-line no-console
+        console.error('[project-delete]', err);
+      });
+    }).catch(function () {
+      if (window.ev2Toast) window.ev2Toast('GitHub authentication cancelled', 'warn');
     });
   }
 
