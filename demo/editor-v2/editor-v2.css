@@ -824,7 +824,7 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
    failures dim. */
 .ev2-pal{
   display:grid;
-  grid-template-columns:repeat(20, 1fr);
+  grid-template-columns:repeat(22, 1fr);
   gap:2px;
   padding:3px;
   border-radius:var(--radius-sm,6px);
@@ -1391,7 +1391,7 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-pc-ladder{
   grid-column:1 / -1;
   display:grid;
-  grid-template-columns:repeat(20, minmax(0, 1fr));
+  grid-template-columns:repeat(22, minmax(0, 1fr));
   gap:4px;
   margin-top:10px;
   padding:8px;

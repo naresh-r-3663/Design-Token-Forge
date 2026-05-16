@@ -27,7 +27,10 @@
 (function () {
   'use strict';
 
-  var ALL_STEPS = ['25','50','75','100','150','175','200','250','300','350','400','450','500','550','600','700','750','800','850','900'];
+  // Includes the L*100 extreme ('white') and L*0 extreme ('black')
+  // so designers can pin a surface bg to literal #FFF / #000 from
+  // the step picker, and so stepRel can step past 25/900 into them.
+  var ALL_STEPS = ['white','25','50','75','100','150','175','200','250','300','350','400','450','500','550','600','700','750','800','850','900','black'];
 
   function stepRel(name, delta) {
     var i = ALL_STEPS.indexOf(name); if (i < 0) return name;

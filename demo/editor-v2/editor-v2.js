@@ -48,7 +48,10 @@
      Standard / Bold" preset vocabulary — just the same step numbers
      that ship in the CSS output (`--brand-component-bg-default:
      var(--prim-brand-550)`). One word, one meaning, end-to-end.   */
-  var ALL_STEPS = ['25','50','75','100','150','175','200','250','300','350','400','450','500','550','600','700','750','800','850','900'];
+  // Mirror of DTFSolver.ALL_STEPS — includes the 'white' (L*100) and
+  // 'black' (L*0) extremes so designers can pin a surface bg to
+  // literal #FFF / #000 from the picker.
+  var ALL_STEPS = ['white','25','50','75','100','150','175','200','250','300','350','400','450','500','550','600','700','750','800','850','900','black'];
   function stepRel(name, delta) {
     var i = ALL_STEPS.indexOf(name); if (i < 0) return name;
     i = Math.max(0, Math.min(ALL_STEPS.length - 1, i + delta));
@@ -1156,6 +1159,7 @@
     scheduleAutosave();
     refreshChangeBar();
     renderT2();
+    pushPreview();
   }
   function clearT2Override(surfaceId, propId, mode) {
     if (State.t2[mode] && State.t2[mode][surfaceId]) {
@@ -1164,6 +1168,7 @@
     scheduleAutosave();
     refreshChangeBar();
     renderT2();
+    pushPreview();
   }
 
   /* Property Card primitive (docs \u00a74). Same DOM will be used by T1
@@ -1187,7 +1192,6 @@
     var def     = defaultT2Step(surfaceId, propId, mode);
     return '<div class="ev2-pc-ladder" data-pc-ladder-surface="' + surfaceId + '" data-pc-ladder-prop="' + propId + '">'
       + ladder.map(function (s) {
-          if (s.name === 'white' || s.name === 'black') return '';
           var isCur = s.name === current;
           var isDef = s.name === def;
           var tip = 'step ' + s.name + ' \u2022 ' + s.hex.toUpperCase()
