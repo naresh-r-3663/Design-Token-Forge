@@ -98,10 +98,15 @@
     var ddHtml = '';
     var activePid = '';
     try { activePid = localStorage.getItem('dtf-active-project') || ''; } catch (e) {}
+    /* All NAV_ITEMS hrefs are written relative to /demo/. If we are
+       currently inside a subdir like /demo/editor-v2/, prefix '../'
+       so links resolve to the right files instead of 404'ing. */
+    var inSubdir = /\/demo\/[^/]+\/[^/]*$/.test(location.pathname);
+    var prefix = inSubdir ? '../' : '';
     for (i = 0; i < NAV_ITEMS.length; i++) {
       var it = NAV_ITEMS[i];
       if (it.sep) { ddHtml += '<div class="dd-sep" role="separator"></div>'; continue; }
-      var href = it.href;
+      var href = prefix + it.href;
       if (activePid && !/[?&]project=/.test(href)) {
         href += (href.indexOf('?') >= 0 ? '&' : '?') + 'project=' + encodeURIComponent(activePid);
       }
@@ -114,10 +119,10 @@
     }
 
     /* shell */
-    var homeHref = 'index.html';
+    var homeHref = prefix + 'index.html';
     if (activePid) homeHref += '?project=' + encodeURIComponent(activePid);
     var newHtml = noNew ? '' :
-      '<a href="onboard.html" class="nav-project-new" title="New Project">+ New</a>';
+      '<a href="' + esc(prefix + 'onboard.html') + '" class="nav-project-new" title="New Project">+ New</a>';
     var themeHtml = noTheme ? '' :
       '<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle theme" aria-pressed="false">'
         + ICON_SUN + ICON_MOON +
