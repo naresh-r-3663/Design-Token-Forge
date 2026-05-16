@@ -3447,6 +3447,15 @@
       }
     } catch (e) { /* ignore — older browsers, file:// quirks */ }
 
+    /* Promote project's config.customRoles to first-class T1 roles.
+       The 5 baseline roles (brand, danger, success, warning, info)
+       are hardcoded. Projects may add roles via config.customRoles —
+       writer-handhelds ships "neutral". Without this step they'd
+       appear only as custom palettes (T0) but not as editable T1
+       roles. We fetch the config synchronously so ROLES + State.t1
+       are extended BEFORE the AA-fix loop iterates them. */
+    promoteCustomRoles();
+
     bindAddPaletteDialog();
     // Default: show CSS names ON. Overridden below if UI state has been saved.
     document.body.classList.add('ev2-show-css');
@@ -3646,6 +3655,50 @@
 
   function getActiveProjectId() {
     return localStorage.getItem('dtf-active-project') || '';
+  }
+
+  /* Read project config.json synchronously (file:// — sync XHR is
+     fine, blocks boot for ~1ms). Returns parsed object or null.
+     Used by promoteCustomRoles() before State init runs. */
+  function readProjectConfigSync() {
+    var id = getActiveProjectId();
+    if (!id) return null;
+    var depth = (location.pathname.indexOf('/demo/') !== -1) ? '../..' : '.';
+    var url = depth + '/projects/' + encodeURIComponent(id) + '/config.json';
+    try {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', url, /* async */ false);
+      xhr.send(null);
+      if (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 300)) {
+        return JSON.parse(xhr.responseText);
+      }
+    } catch (e) { /* missing file, parse error, CORS — fall through */ }
+    return null;
+  }
+
+  /* Extend ROLES + State.t1 dictionaries with config.customRoles
+     so the new roles are first-class T1 editors instead of just
+     palette entries. Idempotent — safe to call repeatedly. */
+  function promoteCustomRoles() {
+    var cfg = readProjectConfigSync();
+    if (!cfg || !Array.isArray(cfg.customRoles) || !cfg.customRoles.length) return;
+    cfg.customRoles.forEach(function (cr) {
+      if (!cr || !cr.id) return;
+      if (!/^[a-z][a-z0-9-]*$/i.test(cr.id)) return;
+      // Skip if already present (either as built-in or previously promoted)
+      if (ROLES.some(function (r) { return r.id === cr.id; })) return;
+      ROLES.push({ id: cr.id, label: cr.label || cr.id, prefix: cr.id });
+      // Seed default step picks. defaultT1ForRole() falls back to brand
+      // when the role isn't in T1_DEFAULT_STEPS — sane starting point
+      // that the boot-time AA-fix loop will tighten.
+      State.t1.light[cr.id]         = defaultT1ForRole(cr.id, 'light');
+      State.t1.dark[cr.id]          = defaultT1ForRole(cr.id, 'dark');
+      State.t1Baseline.light[cr.id] = defaultT1ForRole(cr.id, 'light');
+      State.t1Baseline.dark[cr.id]  = defaultT1ForRole(cr.id, 'dark');
+      // Inform AFFECTS so the role card shows a meaningful component
+      // hint instead of "undefined".
+      AFFECTS[cr.id] = AFFECTS[cr.id] || ['Custom (project role)'];
+    });
   }
   function getKnownProjects() {
     try { return JSON.parse(localStorage.getItem('dtf-known-projects') || '[]') || []; }
