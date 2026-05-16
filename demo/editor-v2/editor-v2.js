@@ -544,6 +544,35 @@
     return lines;
   }
 
+  /* Emit every --surface-<id>-<prop> as a literal hex for one mode.
+     Per the "always emit full ladder" pattern: we ship ALL surfaces
+     in both modes whether or not anything is detached, so the
+     preview's surfaces.css gets fully shadowed by editor state.
+     Guarantees the preview's WCAG eye-test matches the editor's
+     WCAG math, with no drift between override and clean cells. */
+  function surfaceVarsLinesForMode(mode) {
+    var out = [];
+    T2_SURFACES.forEach(function (s) {
+      T2_PROP_DEFS.forEach(function (p) {
+        out.push('  --surface-' + s.id + '-' + p.id + ': ' + t2HexFor(s.id, p.id, mode) + ';');
+      });
+    });
+    return out;
+  }
+
+  /* The preview is "surface-aware" when the user is on T2: the body
+     repaints as the surface being edited. For any other tier we fall
+     back to base so the preview is the canonical default. */
+  function activeSurfaceForPreview() {
+    if (State.activeTier !== 't2') return 'base';
+    return State.activeSurface || 'base';
+  }
+  function pushActiveSurface() {
+    var win = $frame && $frame.contentWindow;
+    if (!win) return;
+    try { win.postMessage({ type: 'ev2-active-surface', surface: activeSurfaceForPreview() }, '*'); } catch (e) {}
+  }
+
   function pushPreview() {
     // contentDocument is null on file:// sandboxed iframes — use postMessage.
     var win = $frame.contentWindow;
@@ -559,12 +588,15 @@
       // Light-mode semantic slots also live on :root (default scope).
       semanticVarsFor(r.id, 'light').forEach(function (l) { rootLines.push(l); });
     });
+    // T2 surface vars for light mode — same scope as light semantic.
+    surfaceVarsLinesForMode('light').forEach(function (l) { rootLines.push(l); });
     rootLines.push('}');
-    // Dark-mode semantic slots live under [data-theme="dark"].
+    // Dark-mode semantic + surface slots live under [data-theme="dark"].
     var darkLines = ['[data-theme="dark"] {'];
     ROLES.forEach(function (r) {
       semanticVarsFor(r.id, 'dark').forEach(function (l) { darkLines.push(l); });
     });
+    surfaceVarsLinesForMode('dark').forEach(function (l) { darkLines.push(l); });
     darkLines.push('}');
     win.postMessage({ type: 'ev2-overrides', css: rootLines.concat(darkLines).join('\n') }, '*');
     // Tell the preview which role is currently being edited so the
@@ -573,6 +605,9 @@
     try {
       win.postMessage({ type: 'ev2-active-role', role: State.activeRole }, '*');
     } catch (e) {}
+    // Same idea for surface: on T2, repaint preview body on the
+    // surface the user is editing. On other tiers, force base.
+    pushActiveSurface();
   }
 
   function refreshChangeBar() {
@@ -1550,6 +1585,10 @@
       State.activeTier = btn.getAttribute('data-tier');
       saveUIState();
       renderActiveTier();
+      // Switching INTO or OUT of T2 changes which surface the preview
+      // should paint with. Push the active-surface signal so the
+      // preview repaints; the heavy CSS payload doesn't need to move.
+      pushActiveSurface();
     });
   });
 
@@ -1667,6 +1706,10 @@
         State.activeSurface = sid;
         saveUIState();
         renderT2();
+        // Switching surfaces in T2 = the preview should repaint on
+        // that surface. Active-surface signal is enough; the CSS
+        // payload doesn't change.
+        pushActiveSurface();
       }
       return;
     }

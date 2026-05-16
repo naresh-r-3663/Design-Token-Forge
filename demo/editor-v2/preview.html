@@ -300,6 +300,44 @@
         });
         return;
       }
+      // Active surface — when the user is on the T2 Surfaces tier we
+      // repaint the preview body to render on whichever surface they
+      // are editing. Implemented as an alias substitution: override
+      // every --surface-base-* to forward to --surface-<id>-*. One
+      // switch flips body + cards + alerts + buttons + text all at
+      // once because every preview style consumes the base aliases.
+      // When tier !== t2 (or surface = base) we strip the override
+      // so the preview renders on its canonical base surface.
+      if (d.type === 'ev2-active-surface' && d.surface) {
+        var as = d.surface;
+        var sheet = document.getElementById('pv-active-surface-vars');
+        if (!sheet) {
+          sheet = document.createElement('style');
+          sheet.id = 'pv-active-surface-vars';
+          document.head.appendChild(sheet);
+        }
+        if (as === 'base') {
+          if (sheet.textContent !== '') sheet.textContent = '';
+        } else {
+          // Mirror the full 16-prop surface table from editor's
+          // T2_PROP_DEFS so any --surface-base-* the preview reads
+          // (now or after a future preview tweak) gets remapped.
+          var PROPS = [
+            'bg','subtle','strong','outline','separator',
+            'ct-default','ct-strong','ct-subtle','ct-faint',
+            'cm-bg','cm-bg-hover','cm-bg-pressed',
+            'cm-outline','cm-outline-hover','cm-outline-pressed',
+            'cm-separator'
+          ];
+          var body = PROPS.map(function (p) {
+            return '--surface-base-' + p + ': var(--surface-' + as + '-' + p + ');';
+          }).join('');
+          var next = ':root{' + body + '}';
+          if (sheet.textContent !== next) sheet.textContent = next;
+        }
+        document.body.setAttribute('data-active-surface', as);
+        return;
+      }
       if (d.type !== 'ev2-focus') return;
       var lever = d.lever || null;
       // While a click-flash is in flight, ignore hover messages so the auto-clear schedule survives.
