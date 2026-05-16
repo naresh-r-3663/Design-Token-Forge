@@ -15,7 +15,13 @@
   <link rel="stylesheet" href="../../packages/components/src/input/input.css">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0}
-    body{font-family:var(--font-family-sans,system-ui);background:var(--surface-base-bg);color:var(--surface-base-ct-default);padding:24px;line-height:1.5}
+    html{background:var(--surface-base-bg)}
+    body{font-family:var(--font-family-sans,system-ui);background:var(--surface-base-bg);color:var(--surface-base-ct-default);padding:24px;line-height:1.5;min-height:100vh}
+    /* On T2, the whole iframe should read as the active surface so
+       scrolling never exposes a contrasting base-bg strip behind the
+       canvas. Limited to T2 because T0/T1/T3 sit on base by design. */
+    html:has(body[data-active-tier="t2"]){background:var(--surface-active-bg,var(--surface-base-bg))}
+    body[data-active-tier="t2"]{background:var(--surface-active-bg,var(--surface-base-bg))}
     .pv-section{position:relative;margin-bottom:24px;padding:14px;border-radius:8px;border:1px solid transparent;transition:box-shadow 200ms,background 200ms}
     .pv-section[data-active="true"]{box-shadow:0 0 0 2px var(--brand-component-outline-default,#6593fe), 0 6px 20px -8px rgba(60,90,200,.25);background:transparent}
     .pv-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--surface-base-ct-faint);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}

@@ -198,6 +198,18 @@
     for (var i = 0; i < T2_PROP_DEFS.length; i++) if (T2_PROP_DEFS[i].id === id) return T2_PROP_DEFS[i];
     return null;
   }
+  /* Props whose defaultDelta means "go AWAY from bg in contrast
+     direction" (vs. "go in an absolute brightness direction"). Used
+     to flip deltas on polarity-inverted surfaces (inverse). The
+     cm-bg subtree is EXCLUDED because it encodes elevation/press
+     state, not contrast. */
+  var POLARITY_SENSITIVE = {
+    'subtle':1,'strong':1,'outline':1,'separator':1,
+    'ct-default':1,'ct-strong':1,'ct-subtle':1,'ct-faint':1,
+    'cm-outline':1,'cm-outline-hover':1,'cm-outline-pressed':1,
+    'cm-separator':1
+  };
+  function isPolaritySensitive(propId) { return POLARITY_SENSITIVE[propId] === 1; }
 
   function makeEmptyT2() {
     var out = {};
@@ -224,7 +236,17 @@
     // Walk: parent's RESOLVED step (so user's parent override
     // cascades into the child's default) + this prop's delta.
     var parentStep = resolveT2Step(surfaceId, prop.parent, mode);
-    return stepRel(parentStep, prop.defaultDelta * tonalDir(mode));
+    // Polarity: most props (subtle/strong/outline/separator/ct-*/
+    // cm-outline*/cm-separator) encode "contrast against bg" and
+    // assume bg sits at the LIGHT end of its mode's palette. For
+    // a polarity-inverted surface like `inverse` (bg pinned at the
+    // dark end in light mode and vice versa), those deltas have
+    // to flip or ct-default falls past the end of the ladder and
+    // clamps back onto bg — invisible text. cm-bg/cm-bg-hover/
+    // cm-bg-pressed encode ELEVATION (raised component, hover
+    // depression) which is direction-agnostic, so they don't flip.
+    var polarity = (surfaceId === 'inverse' && isPolaritySensitive(propId)) ? -1 : 1;
+    return stepRel(parentStep, prop.defaultDelta * tonalDir(mode) * polarity);
   }
   function resolveT2Step(surfaceId, propId, mode) {
     var ov = State.t2 && State.t2[mode] && State.t2[mode][surfaceId] && State.t2[mode][surfaceId][propId];
