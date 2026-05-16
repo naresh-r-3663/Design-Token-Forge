@@ -448,13 +448,17 @@ body[data-pane-dragging="true"] .ev2-preview-frame{pointer-events:none}
 .ev2-empty-title{font-size:14px;font-weight:600;color:var(--ev2-chrome-ct-strong);margin-bottom:4px}
 .ev2-empty-sub{font-size:12px;color:var(--ev2-chrome-ct-faint)}
 
-/* ── T0 Palette intent: role tabs ────────────────────── */
+/* ── T0 Palette intent: role tabs ──────────────────────
+   Now lives INSIDE .ev2-intent as the card's top strip, so
+   "pick a role" and "edit that role" read as one decision in
+   one card (no separate floating pill rail above). */
 .ev2-roles{
-  display:flex;gap:4px;padding:4px;
-  border:1px solid var(--ev2-chrome-outline);
-  border-radius:999px;
+  display:flex;gap:4px;padding:8px 10px;
+  border-bottom:1px solid var(--ev2-chrome-outline);
   background:var(--ev2-chrome-subtle);
-  margin-bottom:18px;flex-wrap:wrap;
+  border-top-left-radius:inherit;
+  border-top-right-radius:inherit;
+  flex-wrap:wrap;
 }
 .ev2-role{
   display:inline-flex;align-items:center;gap:7px;

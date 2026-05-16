@@ -1317,17 +1317,17 @@
     var affects = AFFECTS[role.id] || [];
 
     return ''
-      + '<div class="ev2-roles" role="tablist">'
-        + ROLES.map(function (r) {
-            var current = r.id === role.id;
-            return '<button class="ev2-role" role="tab" data-role-tab="' + r.id + '" '
-              + 'aria-current="' + current + '" data-changed="' + isChanged(r.id) + '">'
-              + '<span class="ev2-role-dot" style="background:' + State.proposed[r.id] + '"></span>'
-              + '<span>' + r.label + '</span>'
-              + '</button>';
-          }).join('')
-      + '</div>'
       + '<div class="ev2-intent">'
+        + '<div class="ev2-roles" role="tablist" aria-label="Role">'
+          + ROLES.map(function (r) {
+              var current = r.id === role.id;
+              return '<button class="ev2-role" role="tab" data-role-tab="' + r.id + '" '
+                + 'aria-current="' + current + '" data-changed="' + isChanged(r.id) + '">'
+                + '<span class="ev2-role-dot" style="background:' + State.proposed[r.id] + '"></span>'
+                + '<span>' + r.label + '</span>'
+                + '</button>';
+            }).join('')
+        + '</div>'
         + '<div class="ev2-intent-head">'
           + '<div class="ev2-intent-titlewrap">'
             + '<span class="ev2-intent-title">' + role.label + ' key color</span>'
