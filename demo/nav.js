@@ -19,7 +19,6 @@
   var NAV_ITEMS = [
     { label: 'Edit Colors',     href: 'index.html',              hint: ''            },
     { label: 'Tokens',          href: 'color-tokens.html',       hint: ''            },
-    { label: 'How It Works',    href: 'color-integration.html',  hint: ''            },
     { label: 'Frameworks',      href: 'frameworks.html',         hint: ''            },
     { sep: true },
     { label: 'All Components',  href: 'components.html',         hint: ''            },
