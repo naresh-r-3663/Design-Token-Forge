@@ -1055,6 +1055,42 @@
   /* Property Card primitive (docs \u00a74). Same DOM will be used by T1
      migration + T3 \u2014 keep it portable; no T2-specific assumptions
      except what the caller passes in. */
+
+  // In-memory only \u2014 NEVER persisted to draft. Holds 'surfaceId/propId'
+  // of the currently expanded card (one at a time across the whole
+  // T2 view), or null. Cleared on surface tab switch.
+  var __expandedT2 = null;
+
+  /* Build the 20-step ladder strip for the inline picker. Walks the
+     surface's source palette (brand for accent, neutral otherwise),
+     marks the current pick, and tags every step with surface/prop
+     so the picker click handler can resolve them. */
+  function pcLadderHTML(surfaceId, propId, mode) {
+    var surface = T2_SURFACES.find(function (s) { return s.id === surfaceId; });
+    if (!surface) return '';
+    var ladder = surface.palette === 'brand' ? stepsFor('brand') : neutralSteps();
+    var current = resolveT2Step(surfaceId, propId, mode);
+    var def     = defaultT2Step(surfaceId, propId, mode);
+    return '<div class="ev2-pc-ladder" data-pc-ladder-surface="' + surfaceId + '" data-pc-ladder-prop="' + propId + '">'
+      + ladder.map(function (s) {
+          if (s.name === 'white' || s.name === 'black') return '';
+          var isCur = s.name === current;
+          var isDef = s.name === def;
+          var tip = 'step ' + s.name + ' \u2022 ' + s.hex.toUpperCase()
+                  + (isDef ? ' \u2022 default' : '')
+                  + (isCur ? ' \u2022 selected' : '');
+          return '<button type="button" class="ev2-pc-ladder-step"'
+            + ' data-pc-ladder-pick="' + s.name + '"'
+            + ' data-current="' + isCur + '"'
+            + ' data-default="' + isDef + '"'
+            + ' data-tip="' + tip + '"'
+            + ' aria-label="' + tip + '"'
+            + ' style="background:' + s.hex + '">'
+          + '</button>';
+        }).join('')
+    + '</div>';
+  }
+
   function propertyCardHTML(opts) {
     // opts: { tokenName, swatchHex, step, isDetached, sentinel?, dataAttrs? }
     var swSt = 'background:' + opts.swatchHex + ';' +
@@ -1077,8 +1113,14 @@
     // WCAG sits left-of-controls so the eye reads "what's the issue"
     // BEFORE "what can I do about it", and controls are flush-right
     // for predictable click targets across all rows.
-    return '<div class="ev2-pc" data-detached="' + (opts.isDetached ? 'true' : 'false') + '"' + attrs + '>'
-      + '<div class="ev2-pc-sw" style="' + swSt + '"></div>'
+    // Inline ladder picker appears as a second row when expanded.
+    var expanded = !!opts.expanded;
+    var ladderHTML = '';
+    if (expanded && opts.dataAttrs && opts.dataAttrs['pc-surface'] && opts.dataAttrs['pc-prop']) {
+      ladderHTML = pcLadderHTML(opts.dataAttrs['pc-surface'], opts.dataAttrs['pc-prop'], State.editingMode);
+    }
+    return '<div class="ev2-pc" data-detached="' + (opts.isDetached ? 'true' : 'false') + '" data-expanded="' + (expanded ? 'true' : 'false') + '"' + attrs + '>'
+      + '<button type="button" class="ev2-pc-sw" style="' + swSt + '" data-pc-toggle aria-expanded="' + (expanded ? 'true' : 'false') + '" data-tip="' + (expanded ? 'Hide steps' : 'Pick a step') + '" aria-label="' + (expanded ? 'Hide steps' : 'Pick a step') + '"></button>'
       + '<div class="ev2-pc-main">'
         + '<div class="ev2-pc-name">' + opts.tokenName + '</div>'
         + '<div class="ev2-pc-meta">'
@@ -1092,6 +1134,7 @@
         + '<button type="button" class="ev2-pc-step-btn" data-pc-step="+1" data-tip="Step darker" aria-label="Step darker">+</button>'
         + '<button type="button" class="ev2-pc-reset" data-pc-reset' + (opts.isDetached ? '' : ' disabled') + ' data-tip="Reset to default" aria-label="Reset to default">\u21BA</button>'
       + '</div>'
+      + ladderHTML
     + '</div>';
   }
 
@@ -1124,11 +1167,13 @@
       var isDetached   = !!(ov && ov.step);
       // bg never shows a sentinel (it IS the baseline for the surface).
       var sentinel = t2Sentinel(surface.id, prop.id, mode);
+      var expanded = __expandedT2 === (surface.id + '/' + prop.id);
       return propertyCardHTML({
         tokenName: '--surface-' + surface.id + '-' + prop.id,
         swatchHex: swatchHex,
         step: resolvedStep,
         isDetached: isDetached,
+        expanded: expanded,
         sentinel: sentinel,
         dataAttrs: {
           'pc-surface': surface.id,
@@ -1704,6 +1749,10 @@
       var sid = surfBtn.getAttribute('data-surface-tab');
       if (sid && sid !== State.activeSurface) {
         State.activeSurface = sid;
+        // Different surface = different cards. Close any expanded
+        // ladder picker so the user lands with the new family list
+        // visible and uncluttered.
+        __expandedT2 = null;
         saveUIState();
         renderT2();
         // Switching surfaces in T2 = the preview should repaint on
@@ -1711,6 +1760,32 @@
         // payload doesn't change.
         pushActiveSurface();
       }
+      return;
+    }
+    // Property Card expand/collapse toggle (the swatch is the affordance).
+    var toggleBtn = e.target.closest && e.target.closest('[data-pc-toggle]');
+    if (toggleBtn) {
+      var tcard = toggleBtn.closest('.ev2-pc');
+      if (!tcard) return;
+      var key = tcard.getAttribute('data-pc-surface') + '/' + tcard.getAttribute('data-pc-prop');
+      __expandedT2 = (__expandedT2 === key) ? null : key;
+      renderT2();
+      return;
+    }
+    // Picked a step from the inline ladder — same write path as the
+    // ± stepper. setT2Step's auto-default-drop logic keeps the
+    // override map minimal if the user re-picks the default step.
+    var pickBtn = e.target.closest && e.target.closest('[data-pc-ladder-pick]');
+    if (pickBtn) {
+      var pcard = pickBtn.closest('.ev2-pc');
+      if (!pcard) return;
+      var picked = pickBtn.getAttribute('data-pc-ladder-pick');
+      setT2Step(
+        pcard.getAttribute('data-pc-surface'),
+        pcard.getAttribute('data-pc-prop'),
+        State.editingMode,
+        picked
+      );
       return;
     }
     var stepBtn = e.target.closest && e.target.closest('[data-pc-step]');
