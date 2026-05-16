@@ -1484,18 +1484,28 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   outline-offset:1px;
   z-index:4;
 }
-/* Per-step pass/fail dimming. T1 ladder marks each of the 22 steps
-   with its WCAG outcome against the current lever's baseline — the
-   point is to see at a glance which steps satisfy AA. Failing steps
-   get a subtle diagonal strikethrough + reduced opacity. T2 doesn't
-   set data-pass so this rule is inert there. */
-.ev2-pc-ladder-step[data-pass="false"]{opacity:.55}
+/* Per-step pass/fail mark. T1 ladders annotate each of the 22 steps
+   with its WCAG outcome against the current lever's baseline. The
+   point is to flag failing steps WITHOUT lying about the color —
+   designers must see step N in T1 as the IDENTICAL hue/value they
+   saw in T0. We do not dim the swatch or stripe across it; we drop
+   a small corner mark instead. T2 doesn't set data-pass so this
+   rule is inert there. */
+/* The global `html.ev2-tip-js [data-tip]::before` catch-all (line
+   ~540) suppresses ::before with !important on every tipped
+   element. Ladder swatches carry data-tip, so we must re-arm both
+   `content` and `display` with !important to render the fail dot. */
+html.ev2-tip-js .ev2-pc-ladder-step[data-pass="false"]::before,
 .ev2-pc-ladder-step[data-pass="false"]::before{
-  content:'';
-  position:absolute;inset:2px;
-  background:linear-gradient(135deg, transparent 47%, rgba(0,0,0,.35) 47%, rgba(0,0,0,.35) 53%, transparent 53%);
+  content:" " !important;
+  display:block !important;
+  position:absolute;
+  top:1px;right:1px;
+  width:7px;height:7px;
+  border-radius:50%;
+  background:var(--danger-component-bg-default, #d33);
+  box-shadow:0 0 0 1.5px var(--surface-base-bg, #fff);
   pointer-events:none;
-  border-radius:3px;
 }
 
 /* T1 always-expanded cards: the swatch is decorative (no toggle

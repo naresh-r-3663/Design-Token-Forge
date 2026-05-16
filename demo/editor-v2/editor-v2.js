@@ -3265,6 +3265,62 @@
       }
       var arrow = '<div class="ev2-wcag-pop-arrow" aria-hidden="true">\u2192</div>';
 
+      // ---- T1 derived tokens (border / separator / on-component /
+      //       on-container) \u2014 render in the actual role-tinted
+      //       setting so the designer reads "this border on THIS
+      //       role's container" instead of "this border on a
+      //       generic surface card". Falls through to the legacy
+      //       branches below for T2 and T1 levers. ----
+      var t1Ctx = pop.__t1Ctx;
+      if (t1Ctx && propId && propId.indexOf('t1d:') === 0) {
+        var derivedKind = t1Ctx.derivedId;
+        // Border on the role's container, with a real heading + body
+        // line painted in on-container. 2px so the edge reads.
+        if (derivedKind === 'border') {
+          function borderCard(borderHex) {
+            return '<div class="ev2-wcag-pop-prev-box" style="background:' + t1Ctx.roleContainerHex + ';border:2px solid ' + borderHex + ';border-radius:6px;padding:9px 11px;display:flex;flex-direction:column;gap:4px;align-items:stretch;justify-content:center;color:' + t1Ctx.onContainerHex + '">'
+              + '<span style="font-size:11px;font-weight:700;line-height:1.1">Container heading</span>'
+              + '<span style="font-size:10px;font-weight:500;opacity:.85;line-height:1.2">Body text inside the container.</span>'
+            + '</div>';
+          }
+          return borderCard(curHex) + (sug ? arrow + borderCard(sugHex) : '');
+        }
+        // Separator: two stacked rows on the role container, divided
+        // by a 1px line in the separator color.
+        if (derivedKind === 'separator') {
+          function sepCard(sepHex) {
+            var row = '<div style="padding:5px 0;font-size:10px;font-weight:500;color:' + t1Ctx.onContainerHex + ';line-height:1.2">List item</div>';
+            return '<div class="ev2-wcag-pop-prev-box" style="background:' + t1Ctx.roleContainerHex + ';border-radius:6px;padding:4px 11px;display:flex;flex-direction:column;align-items:stretch;justify-content:center">'
+              + row
+              + '<div style="height:1px;background:' + sepHex + '" aria-hidden="true"></div>'
+              + row
+              + '<div style="height:1px;background:' + sepHex + '" aria-hidden="true"></div>'
+              + row
+            + '</div>';
+          }
+          return sepCard(curHex) + (sug ? arrow + sepCard(sugHex) : '');
+        }
+        // On-component: a real role-tinted pill (button) carrying
+        // the on-component text. The fill is the role's fill hex.
+        if (derivedKind === 'onComponent') {
+          function ocPill(textHex) {
+            return '<div class="ev2-wcag-pop-prev-box" style="background:' + t1Ctx.roleFillHex + ';color:' + textHex + ';padding:8px 16px;border-radius:999px;min-height:0;font-size:11px;font-weight:600;justify-content:center">Button</div>';
+          }
+          return ocPill(curHex) + (sug ? arrow + ocPill(sugHex) : '');
+        }
+        // On-container: a real role-tinted card (alert) carrying a
+        // small heading + body line in the on-container hex.
+        if (derivedKind === 'onContainer') {
+          function occBox(textHex) {
+            return '<div class="ev2-wcag-pop-prev-box" style="background:' + t1Ctx.roleContainerHex + ';color:' + textHex + ';padding:8px 12px;border-radius:6px;min-height:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;text-align:left">'
+              + '<span style="font-size:11px;font-weight:700;line-height:1.1">Heads up</span>'
+              + '<span style="font-size:10px;font-weight:500;line-height:1.2">Body copy inside the container.</span>'
+            + '</div>';
+          }
+          return occBox(curHex) + (sug ? arrow + occBox(sugHex) : '');
+        }
+      }
+
       // ---- Fill intent (T1 fill lever) ----
       // Role color paints the BG; on-component (white/black) is
       // the legible text the button would carry in real UI.
@@ -3366,6 +3422,21 @@
           })();
           tokenName = t1DerivedTokenName(roleId, derivedId);
           pop.__cellHex = t1DerivedHex(roleId, derivedId, mode);
+          // Stash extra context so renderPreviewHTML can render the
+          // derived token in its role-tinted setting (border on the
+          // role container, on-component text on the role fill,
+          // etc.) instead of falling back to abstract surface chrome.
+          var roleLadder = ladderFor(roleId);
+          var t1cur = State.t1[mode][roleId];
+          pop.__t1Ctx = {
+            derivedId: derivedId,
+            roleFillHex:      roleLadder[t1cur.fill]      || '#000',
+            roleContentHex:   roleLadder[t1cur.content]   || '#000',
+            roleContainerHex: roleLadder[t1cur.container] || '#fff',
+            onComponentHex:   onComponentColor(roleId, mode),
+            onContainerHex:   onContainerColor(roleId, mode)
+          };
+          propIdHint = 't1d:' + derivedId;
           applyAttrs = ' data-pc-wcag-tier="t1d" data-pc-wcag-role="' + roleId + '" data-pc-wcag-derived="' + derivedId + '"';
         } else {
           var leverId = card.getAttribute('data-pc-lever');
@@ -3374,6 +3445,7 @@
           sug  = t1SuggestStep(roleId, leverId, mode);
           tokenName = t1TokenName(roleId, leverId);
           pop.__cellHex = t1HexFor(roleId, leverId, mode);
+          pop.__t1Ctx = null;
           applyAttrs = ' data-pc-wcag-tier="t1" data-pc-wcag-role="' + roleId + '" data-pc-wcag-lever="' + leverId + '"';
         }
       } else {
