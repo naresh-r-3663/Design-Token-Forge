@@ -1028,6 +1028,7 @@
     }
     refreshAutosaveLabel();
     refreshSectionResetBtn();
+    refreshT0Switch();
   }
 
   function sectionDirtyCount(tierId) {
@@ -1059,6 +1060,23 @@
       var meta = TIER_META[tier];
       label.textContent = 'Reset ' + (meta && meta.title ? meta.title : 'section');
     }
+  }
+
+  /* T0 has two pivots on the same data — keys for each role, and
+     the full palette inventory. Instead of stacking another pill
+     row above the role tabs (cognitive overload), we surface the
+     OTHER view as a single inline switch in the section header.
+     Hidden on every tier except T0. Label reads "Manage palette
+     library →" when on Key colors, "← Back to key colors" when on
+     the library. */
+  function refreshT0Switch() {
+    var btn = document.getElementById('t0SubSwitch');
+    if (!btn) return;
+    if (State.activeTier !== 't0') { btn.hidden = true; return; }
+    btn.hidden = false;
+    var onPalettes = (State.activeT0 === 'palettes');
+    btn.textContent = onPalettes ? '← Back to key colors' : 'Manage palette library →';
+    btn.setAttribute('aria-label', btn.textContent);
   }
 
   function refreshAutosaveLabel() {
@@ -1288,15 +1306,7 @@
                   are *defined*; T2 is where they're *mapped* to
                   surfaces. */
   function renderT0() {
-    $body.innerHTML =
-      '<div class="ev2-t0-subs" role="tablist" aria-label="T0 sub-view">'
-        + '<button class="ev2-t0-sub" role="tab" data-t0-sub="roles" '
-          + 'aria-selected="' + (State.activeT0 === 'roles') + '">Key colors</button>'
-        + '<button class="ev2-t0-sub" role="tab" data-t0-sub="palettes" '
-          + 'aria-selected="' + (State.activeT0 === 'palettes') + '">Palette library</button>'
-      + '</div>'
-      + (State.activeT0 === 'palettes' ? renderT0Palettes() : renderT0Roles());
-
+    $body.innerHTML = State.activeT0 === 'palettes' ? renderT0Palettes() : renderT0Roles();
     bindT0();
   }
 
@@ -1450,16 +1460,9 @@
   }
 
   function bindT0() {
-    /* Sub-tab switching */
-    document.querySelectorAll('[data-t0-sub]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var sub = b.getAttribute('data-t0-sub');
-        if (sub !== 'roles' && sub !== 'palettes') return;
-        State.activeT0 = sub;
-        saveUIState();
-        renderT0();
-      });
-    });
+    // Sub-view switching is wired once at boot against the persistent
+    // header button (#t0SubSwitch). The old in-body pill row was
+    // dropped to reduce stacked tab rows on T0.
 
     /* Roles sub-view bindings (the elements only exist on T0 Roles) */
     if (State.activeT0 === 'roles') bindT0Roles();
@@ -3177,6 +3180,18 @@
       resetSection(State.activeTier);
       var label = TIER_META[State.activeTier] && TIER_META[State.activeTier].title;
       if (window.ev2Toast) window.ev2Toast('Reset ' + (label || 'section') + ' to defaults', 'ok');
+    });
+  }
+
+  // T0 sub-view inline switch (header link). Only visible on T0;
+  // refreshT0Switch() handles label + visibility.
+  var $t0SubSwitch = document.getElementById('t0SubSwitch');
+  if ($t0SubSwitch) {
+    $t0SubSwitch.addEventListener('click', function () {
+      State.activeT0 = (State.activeT0 === 'palettes') ? 'roles' : 'palettes';
+      saveUIState();
+      renderT0();
+      refreshT0Switch();
     });
   }
 

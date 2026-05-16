@@ -409,6 +409,23 @@ body[data-pane-dragging="true"] .ev2-preview-frame{pointer-events:none}
 }
 .ev2-section-reset:disabled{opacity:.4;cursor:not-allowed}
 .ev2-section-reset svg{flex-shrink:0;opacity:.7}
+
+/* T0 sub-view inline switch \u2014 ghost link styling, lower visual
+   weight than the Reset section button so it reads as secondary
+   navigation, not a primary action. */
+.ev2-t0-switch{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:6px 10px;
+  border:1px solid transparent;
+  border-radius:var(--radius-md,6px);
+  background:transparent;
+  font:inherit;font-size:11px;font-weight:600;
+  color:var(--brand-content-default,#286CE5);
+  cursor:pointer;flex-shrink:0;
+  transition:background 120ms ease, color 120ms ease;
+}
+.ev2-t0-switch:hover{background:var(--brand-container-bg,#EAF2FF)}
+.ev2-t0-switch:focus-visible{outline:2px solid var(--brand-component-outline-default);outline-offset:2px}
 .ev2-search{
   margin-top:12px;width:100%;
   padding:8px 12px;
