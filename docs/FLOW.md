@@ -5,7 +5,7 @@
 > happens next. Update this file whenever a page is added,
 > renamed, or retired.
 
-_Last refresh: 2026-05-16_
+_Last refresh: 2026-05-16 (post-cleanup A+B+C; added §1.5 user journeys)_
 
 ---
 
@@ -43,6 +43,99 @@ _Last refresh: 2026-05-16_
 
 ---
 
+## 1.5 User journeys (narrative)
+
+These are the canonical paths a real human takes. Every PR that
+touches the hub, onboard, editor-v2 switcher, or save/deploy
+flows must keep all five working end-to-end.
+
+### J1 — First-time visitor, empty fork ("I want to try DTF")
+
+1. Lands on `demo/index.html`. Sees the hub hero + an empty grid with
+   "No projects yet — Create your first project."
+2. Clicks **+ New project** (topbar) or the empty-state link → lands
+   on `demo/onboard.html`.
+3. Wizard prompts for a GitHub PAT (`repo` scope). Token + username
+   are stored in `localStorage` (`dtf-gh-pat`, `dtf-gh-user`).
+4. Wizard creates the fork if missing, enables Pages + Actions,
+   commits `projects/<id>/{primitives,semantic,surfaces}.css` +
+   `config.json`, and prepends the entry to `projects.json`.
+5. Onboard finishes → hands off to `demo/editor-v2/?project=<id>`.
+6. Editor v2 strips the query param, persists `dtf-active-project`,
+   loads the project's CSS, and renders.
+
+**Exit criteria:** user can edit a color and see the preview update.
+
+### J2 — Returning editor ("I want to tweak my brand color")
+
+1. Lands on `demo/index.html` → cards render (cache hit if visited
+   recently, fresh `projects.json` fetch otherwise).
+2. Clicks the project card → `demo/editor-v2/?project=<id>`.
+3. Editor v2 boots, picks the project as active, replays any draft
+   from `ev2-draft-<id>` localStorage if present.
+4. User edits T0 anchor or a T1 step → the change persists to draft
+   storage on every edit; preview updates live.
+5. User opens the topbar **Save as default** dialog → fills name,
+   picks bump (patch / minor / major), confirms → PAT writes 5 files
+   atomically; baselines are promoted in-memory.
+6. **Discard** now reverts to the just-published snapshot, not the
+   pre-edit state. **Deploy to Figma** shows only the delta vs. the
+   new baseline.
+
+**Exit criteria:** `projects/<id>/config.json` on the fork has the
+new `latestVersion`, and reloading the editor shows the saved state.
+
+### J3 — Switching between projects ("Compare brand vs. handhelds")
+
+1. From editor-v2, user clicks the project name in the topbar to
+   open the switcher.
+2. Switcher lists every project the local fork knows about
+   (`dtf-known-projects` cache, refreshed on each boot).
+3. User clicks a different project.
+4. If there are unsaved changes → confirm modal ("Discard & switch"
+   vs. "Stay here").
+5. On confirm: `dtf-active-project` rewritten → page reloads → new
+   project's primitives / semantic / surfaces are injected
+   synchronously before the AA-fix loop runs.
+
+**Exit criteria:** the swatch row, semantic legend, and preview
+iframe all reflect the newly-active project within one reload.
+
+### J4 — Deleting a project ("This was a sandbox, kill it")
+
+1. From editor-v2's switcher, user hovers a project row → the trash
+   icon fades in (opacity transition, no layout jerk).
+2. Clicks trash → confirm modal ("Delete 'X'? This removes the
+   project's tokens, palette, and config from your GitHub fork…").
+3. On confirm: PAT prompt if not yet authenticated.
+4. v2 enumerates every blob under `projects/<id>/` from the fork's
+   tree, marks them for removal, rewrites `projects.json`, and
+   commits everything atomically.
+5. Toast confirms deletion.
+6. If the deleted project was active and others remain → auto-switch
+   to the next remaining project.
+7. If the fork now has zero projects → redirect to `onboard.html`.
+
+**Exit criteria:** `projects/<id>/` is gone from the fork on next
+page load; `projects.json` no longer lists it; the switcher cache
+reflects this without a manual hard refresh.
+
+### J5 — Designer in Figma ("Push my color changes to the plugin")
+
+1. In editor-v2, user finishes editing and clicks **Deploy to Figma**.
+2. Dialog opens in delta mode: shows only changes vs. the project's
+   published baseline (cleaner than save-mode, because Figma already
+   has the rest).
+3. User confirms → today this is a toast hook (server integration
+   pending). When wired, the sync server pushes overrides to the
+   plugin, which calls `setValueForMode()` on each Figma variable.
+4. Component instances inside Figma update on next refresh.
+
+**Exit criteria:** Figma plugin variables match what the editor
+shows. (Currently a stub — see Gaps §5.)
+
+---
+
 ## 2. Pages directory
 
 ### 2.1 Active surface (linked from canonical flow)
@@ -64,26 +157,9 @@ _Last refresh: 2026-05-16_
 
 | Path | Status | Recommendation |
 |---|---|---|
-| `demo/editor-legacy.html` | **Frozen** — the old monolithic Color System editor. Still functional, supports `?action=delete` URL handler. Was the only delete path before v2 grew its own. | Keep until v2 covers ALL its features (advanced AA tuning, multi-mode export). After parity → delete. Currently NOT linked from the hub anymore (removed in 2026-05-16). |
-| `demo/editor-v1-archive.html` | Archived v1 editor, kept for diffing | Safe to delete — its replacement (`editor-legacy.html`) already covers archival. **Recommended: remove.** |
-| `demo/color-system.html` | Old color-roles page; superseded by `editor-v2`. Only referenced from `_TEMPLATE.html`. | Move to `dead/` or delete. **Recommended: remove.** |
-| `demo/color-generator.html` | Old standalone palette generator. No inbound links from active pages. | **Recommended: remove.** |
-| `demo/color-integration.html` | "How It Works" page from old IA. Still referenced by `nav.js`. | Either keep (and link from hub) or delete + drop the `nav.js` entry. **Recommended: remove + update nav.js.** |
-| `demo/alert.html.old`, `demo/alert.html.prev` | Backup files left over from a refactor | **Recommended: delete.** Pure cruft. |
+| `demo/editor-legacy.html` | **Frozen** — the old monolithic Color System editor. Still functional as a fallback. No longer linked from the hub or editor-v2. | Keep until v2 covers all its remaining features (advanced AA tuning, multi-mode export). After parity → retire. |
 
-### 2.3 Repo-root pages (NOT published to Pages; never linked)
-
-Pages publishes only `dist/` (see `.github/workflows/deploy-tokens.yml`).
-None of the following are part of the publish artifact:
-
-| Path | Notes | Recommendation |
-|---|---|---|
-| `index.html` (root) | 1779-line monolithic "Tokn — Design System Portal" mockup | **Recommended: delete.** Pre-DTF prototype. |
-| `interactive.html` | 763 lines, prototype | **Recommended: delete.** |
-| `mockup.html`, `mockup-v2.html` | Static mockups (724 + 921 lines) | **Recommended: delete.** |
-| `complete.html`, `complete-backup.html` | Old "complete" prototype + its backup. `validate.js` still reads `complete.html`. | **Recommended: delete both** and remove `validate.js` (or rewrite if its rule is still useful). |
-
-### 2.4 Plugin / packages
+### 2.3 Plugin / packages
 
 | Path | Purpose |
 |---|---|
@@ -99,7 +175,6 @@ None of the following are part of the publish artifact:
 | `demo/index.html` | Hub | Reads `projects.json` (relative or `/Design-Token-Forge/projects.json`); seeds `dtf-known-projects` localStorage by handing off via card click. |
 | `demo/editor-v2/?project=<id>` | Editor v2 | On boot: writes `dtf-active-project` from query, strips param, then loads. Falls back to last-active if no param. |
 | `demo/onboard.html?return=<url>` (planned) | Onboard | Currently always returns to `editor-v2/`. **TODO:** honour `?return=` so deep-link-after-create works. |
-| `demo/editor-legacy.html?project=<id>&action=delete` | Legacy | Was the v2 delete handoff target. **NO LONGER USED** as of 2026-05-16 — v2 deletes in-place. |
 | `demo/editor-legacy.html?keep=1` | Legacy | Bypass any auto-action params. Still works. |
 
 ---
@@ -122,35 +197,26 @@ None of the following are part of the publish artifact:
 
 1. **Onboard return URL** — `onboard.html` always lands on `editor-v2/` after create. Should honour `?return=`.
 2. **Hub doesn't show "set as default" version** — once a project has a `latestVersion`, surface it on the card (e.g. "v1.2.0 · Updated 3 days ago").
-3. **Cross-fork projects** — when projects.json lists a project owned by another user, the local fork can't write to it. Hub should label these "read-only" or hide them behind a toggle.
+3. **Cross-fork projects** — when `projects.json` lists a project owned by another user, the local fork can't write to it. Hub should label these "read-only" or hide them behind a toggle.
 4. **`shared.css` cache busting drift** — each demo page hard-codes `?v=20260516a` independently. Centralise.
-5. **`nav.js` link map is stale** — references `color-integration.html` which is recommended for removal.
+5. **Deploy-to-Figma is a stub** — dialog opens and confirms, but the server-side push to the plugin is not wired (toast "Deploy queued (server integration TBD)"). See J5.
 
 ---
 
-## 6. Cleanup proposal (separate commit, requires sign-off)
+## 6. Cleanup log
 
-Group A — pure cruft, zero risk:
-- `demo/alert.html.old`
-- `demo/alert.html.prev`
-- `complete-backup.html`
+| Date | Commit | Scope | Files removed |
+|---|---|---|---|
+| 2026-05-16 | `539cd87` | Group A — backup cruft | `complete-backup.html`, `demo/alert.html.old`, `demo/alert.html.prev` |
+| 2026-05-16 | `d73d18f` | Group B — pages superseded by editor-v2 | `demo/editor-v1-archive.html`, `demo/color-system.html`, `demo/color-generator.html`, `demo/color-integration.html` (+ supporting edits in `demo/nav.js` and `demo/_TEMPLATE.html`) |
+| 2026-05-16 | `023a48d` | Group C — root-level prototypes (never in Pages artifact) | `index.html`, `interactive.html`, `mockup.html`, `mockup-v2.html`, `complete.html`, `validate.js` |
 
-Group B — superseded by editor-v2, no live inbound links:
-- `demo/editor-v1-archive.html`
-- `demo/color-system.html` (+ remove ref in `_TEMPLATE.html`)
-- `demo/color-generator.html`
-- `demo/color-integration.html` (+ remove entry in `nav.js`)
+Follow-ups still open:
 
-Group C — unpublished prototypes at repo root:
-- `index.html`
-- `interactive.html`
-- `mockup.html`
-- `mockup-v2.html`
-- `complete.html` (+ delete `validate.js` or rewrite)
-
-Group D — keep but link properly:
-- `demo/editor-legacy.html` (keep; remove last hub references; eventually retire when v2 reaches parity)
+- **Stale comments** in `packages/sync-server/build-static.js` and `packages/sync-server/generate-from-config.js` still mention `color-system.html`. Descriptive comments only — no live references. Schedule in a later doc pass.
+- **`demo/editor-legacy.html`** is retained as fallback for features v2 doesn't cover yet (advanced AA tuning, multi-mode export). Retire when v2 reaches parity.
 
 **Do not delete:**
+
 - Anything under `packages/`, `projects/`, `scripts/`, `specs/`, `docs/`, `src/`, `tests/`, `tokn-deploy/`.
 - `demo/_TEMPLATE.html`, `demo/_COMPONENT_CONFIGS.js`, `demo/_onboard-*` (build templates).
