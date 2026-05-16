@@ -1729,31 +1729,16 @@
   }
 
   /* ── T1 Roles ────────────────────────────────────────── */
-  /* WCAG bar + auto-derived swatches for the current step picks of a
-     role/mode. Returns two HTML strings (the bar + the derived card)
-     so the renderer can place them in the right slots. */
+  /* Auto-derived border/separator/on-* swatches for the current step
+     picks of a role/mode. The old AA-fail banner + Snap-to-AA action
+     lived here too; both were removed once per-lever Property Cards
+     started carrying their own WCAG chip + click-to-Apply popover —
+     the banner just restated the same fail status without any data
+     the card chips didn't already show. */
   function renderWcagPairsHTML(role, mode) {
     var t1 = State.t1[mode][role.id];
     var pageBg = surfaceBgFor(mode);
     var wcag = computeRoleContrast(role.id, mode);
-    var failCount = wcag.checks.filter(function (c) { return !c.pass; }).length;
-    /* Suppress the success bar entirely — per-step AA marks already
-       confirm everything passes. Only surface the bar (with a Snap
-       affordance) when something is actually broken. */
-    var wcagHTML = '';
-    if (failCount > 0) {
-      var wcagBadgeTxt = failCount + ' of ' + wcag.checks.length + ' selected pairs fail AA';
-      var wcagDetails = wcag.checks.map(function (c) {
-        var sym = c.pass ? '\u2713' : '\u26A0';
-        return sym + ' ' + c.label + ' \u2014 ' + c.ratio.toFixed(2) + ':1 (' + c.grade + ')';
-      }).join('\n');
-      wcagHTML = '<div class="ev2-wcag-bar" data-grade="fail">'
-        + '<span class="ev2-wcag-bar-icon" aria-hidden="true">\u26A0</span>'
-        + '<span class="ev2-wcag-bar-text">' + wcagBadgeTxt + '</span>'
-        + '<button type="button" class="ev2-wcag-bar-info" data-tip="' + wcagDetails.replace(/"/g,'&quot;').replace(/\n/g,'\u2003') + '">Details</button>'
-        + '<button type="button" class="ev2-wcag-bar-fix" id="ev2WcagAutoFix">Snap to AA</button>'
-      + '</div>';
-    }
 
     var pairedFillHex = stepHexByName(role.id, t1.fill) || '#000';
     var pairedContainerHex = stepHexByName(role.id, t1.container) || pageBg;
@@ -1855,7 +1840,7 @@
         + '</div>'
       + '</div>'
     + '</div>';
-    return { wcagHTML: wcagHTML, pairedHTML: pairedHTML };
+    return { pairedHTML: pairedHTML };
   }
 
   function renderT1() {
@@ -1907,10 +1892,8 @@
       });
     }).join('');
 
-    /* Contrast summary + auto-derived 2\u00d72 (on-comp, on-cont, border, separator). */
-    var _wp = renderWcagPairsHTML(role, mode);
-    var wcagHTML = _wp.wcagHTML;
-    var pairedHTML = _wp.pairedHTML;
+    /* Auto-derived 2\u00d72 (on-comp, on-cont, border, separator). */
+    var pairedHTML = renderWcagPairsHTML(role, mode).pairedHTML;
 
     $body.innerHTML =
       '<div class="ev2-roles" role="tablist">'
@@ -1947,7 +1930,6 @@
           + '</button>'
         + '</div>'
         + '<div class="ev2-intent-body">'
-          + wcagHTML
           + '<div class="ev2-levers">' + leversHTML + '</div>'
           + pairedHTML
           + '<div class="ev2-disc"' + (State.disclosure['t1:slots'] ? ' data-open' : '') + ' data-disc="t1:slots">'
@@ -2042,18 +2024,6 @@
        is now a Property Card ladder so picks are dispatched through
        the shared [data-pc-ladder-pick] handler with a t1 branch. */
   }
-
-  /* Delegated handler for the Snap-to-AA button. Bound once at
-     module init so it survives re-renders. */
-  document.addEventListener('click', function (e) {
-    var fix = e.target && e.target.closest && e.target.closest('#ev2WcagAutoFix');
-    if (!fix) return;
-    autoFixT1ToAA(State.activeRole);
-    pushPreview();
-    refreshChangeBar();
-    scheduleAutosave();
-    renderT1();
-  });
 
   /* Delegated handlers for the border / separator step controls.
      Lets the user walk the auto-derived step or reset to the

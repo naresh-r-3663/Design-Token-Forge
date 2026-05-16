@@ -1266,6 +1266,15 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   border-color:var(--brand-component-bg-default,#3366f0);
   box-shadow:0 0 0 1px var(--brand-component-bg-default,#3366f0) inset;
 }
+/* T1 cards: drop the detached brand-ring on the card itself. The
+   CUSTOM pill in the meta + the selected step ring in the ladder
+   already communicate detached state; the outer ring just shouts
+   over the card content. T2 keeps it because T2 rows are dense
+   and the ring helps spot custom rows in a long column. */
+.ev2-pc[data-pc-tier="t1"][data-detached="true"]{
+  border-color:var(--surface-base-outline);
+  box-shadow:none;
+}
 .ev2-pc-sw{
   position:relative;
   width:32px;height:32px;
@@ -1288,6 +1297,9 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 }
 .ev2-pc[data-expanded="true"][data-detached="true"]{
   border-color:var(--brand-component-bg-default,#3366f0);
+}
+.ev2-pc[data-pc-tier="t1"][data-expanded="true"][data-detached="true"]{
+  border-color:var(--surface-base-cm-outline-hover,#C8D0D8);
 }
 .ev2-pc-main{min-width:0}
 .ev2-pc-name{
