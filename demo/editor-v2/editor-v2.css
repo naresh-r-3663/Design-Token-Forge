@@ -1757,6 +1757,71 @@ body.ev2-modal-open{overflow:hidden}
 /* When in save-mode, the title gets a "saving" tone via a data attr */
 .ev2-deploy-dialog[data-mode="save"] .ev2-deploy-section-tag{background:var(--brand-content-default,#286CE5)}
 
+/* ── Wizard stepper (Save → Push to Figma) ──────────────
+   Two numbered pills with a connecting hairline. Active step uses
+   brand fill; completed step gets a check + brand outline; upcoming
+   step is muted. Only renders when the dialog is in wizard mode. */
+.ev2-wizard-steps{
+  list-style:none;margin:0;padding:14px 24px;border-bottom:1px solid var(--ev2-chrome-outline);
+  display:flex;align-items:stretch;gap:0;background:var(--ev2-chrome-subtle);
+}
+.ev2-wizard-steps li{
+  flex:1;display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:6px;
+  font-size:12px;color:var(--ev2-chrome-ct-subtle);position:relative;
+}
+.ev2-wizard-steps li + li::before{
+  content:"";position:absolute;left:-8px;top:50%;width:16px;height:1px;background:var(--ev2-chrome-outline);
+}
+.ev2-wizard-num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;
+  background:var(--ev2-chrome-bg);border:1px solid var(--ev2-chrome-outline);
+  color:var(--ev2-chrome-ct-faint);flex-shrink:0;
+}
+.ev2-wizard-label{font-weight:600;color:var(--ev2-chrome-ct-strong)}
+.ev2-wizard-hint{font-size:10px;color:var(--ev2-chrome-ct-faint);margin-left:auto}
+.ev2-wizard-steps li[aria-current="step"] .ev2-wizard-num{
+  background:var(--brand-component-bg-default,#3366f0);color:#fff;border-color:transparent;
+}
+.ev2-wizard-steps li[data-state="done"] .ev2-wizard-num{
+  background:var(--success-component-bg-default,#16A34A);color:#fff;border-color:transparent;
+}
+.ev2-wizard-steps li[data-state="done"] .ev2-wizard-num::before{
+  content:"✓";font-size:13px;
+}
+.ev2-wizard-steps li[data-state="done"] .ev2-wizard-num > :not(::before){display:none}
+
+/* ── Figma push panel (wizard step 2) ───────────────────
+   Shown after the snapshot is committed. Renders a status pill +
+   a numbered list of the manual steps the user needs to take in
+   Figma. The status pill is driven by data-state from JS. */
+.ev2-figma-push{padding:16px 24px;border-bottom:1px solid var(--ev2-chrome-outline)}
+.ev2-figma-push-status{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;
+  background:var(--success-container-bg,rgba(22,163,74,.08));
+  border:1px solid var(--success-component-outline-default,rgba(22,163,74,.3));
+  margin-bottom:12px;
+}
+.ev2-figma-push-status[data-state="idle"]{
+  background:var(--brand-container-bg,rgba(40,108,229,.08));
+  border-color:var(--brand-component-outline-default,rgba(40,108,229,.3));
+}
+.ev2-figma-push-status[data-state="error"]{
+  background:var(--danger-container-bg,rgba(220,38,38,.08));
+  border-color:var(--danger-component-outline-default,rgba(220,38,38,.3));
+}
+.ev2-figma-push-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--success-component-bg-default,#16A34A);flex-shrink:0;
+}
+.ev2-figma-push-status[data-state="idle"] .ev2-figma-push-dot{background:var(--brand-component-bg-default,#3366f0)}
+.ev2-figma-push-status[data-state="error"] .ev2-figma-push-dot{background:var(--danger-component-bg-default,#DC2626)}
+.ev2-figma-push-msg{font-size:12px;font-weight:600;color:var(--ev2-chrome-ct-strong)}
+.ev2-figma-push-steps{
+  margin:0;padding:0 0 0 20px;font-size:12px;color:var(--ev2-chrome-ct-subtle);line-height:1.55;
+  display:flex;flex-direction:column;gap:6px;
+}
+.ev2-figma-push-steps strong{color:var(--ev2-chrome-ct-strong);font-weight:600}
+
 /* ── WCAG sentinel popover ──────────────────────────────
    Click-stable panel anchored under a .ev2-pc-wcag chip. Shows the
    failing pair previewed, the plain-language why, and a one-click

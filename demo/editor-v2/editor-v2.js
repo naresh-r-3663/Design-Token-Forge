@@ -3561,8 +3561,35 @@
     return (cfg && cfg.latestVersion && cfg.latestVersion.version) || 'v0.0.0';
   }
 
+  /* ── Wizard helpers ───────────────────────────────────
+     The publish flow is a two-step wizard:
+       1. Save snapshot  → commits to GitHub
+       2. Push to Figma  → tells the user how to refresh the plugin
+     Either step can be entered first (topbar "Save as default"
+     opens at step 1; topbar "Deploy to Figma" opens at step 2).
+     After a successful save we auto-advance to step 2, but the
+     user can also Cancel from anywhere. */
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function defaultSnapshotName(d) {
+    d = d || new Date();
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[d.getMonth()] + d.getDate() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+
+  function setWizardStep(step) {
+    var stepsEl = document.getElementById('ev2WizardSteps');
+    if (!stepsEl) return;
+    stepsEl.querySelectorAll('li').forEach(function (li) {
+      var s = li.getAttribute('data-step');
+      if (s === step) { li.setAttribute('aria-current', 'step'); li.removeAttribute('data-state'); }
+      else if (s === 'save' && step === 'deploy') { li.removeAttribute('aria-current'); li.setAttribute('data-state', 'done'); }
+      else { li.removeAttribute('aria-current'); li.removeAttribute('data-state'); }
+    });
+  }
+
   /* ── Unified open/close ──────────────────────────────── */
-  function openDialog(mode) {
+  function openDialog(mode, opts) {
+    opts = opts || {};
     var dlg = document.getElementById('ev2DeployDialog');
     if (!dlg) return;
     dlg.setAttribute('data-mode', mode);
@@ -3576,15 +3603,27 @@
     var title = document.getElementById('ev2DeployTitle');
     var confirmBtn = document.getElementById('ev2DeployConfirm');
     var saveForm = document.getElementById('ev2SaveForm');
+    var figmaPush = document.getElementById('ev2FigmaPush');
+    var wizardSteps = document.getElementById('ev2WizardSteps');
+    var backBtn = document.getElementById('ev2WizardBack');
+
+    // Wizard mode is on whenever we entered via the Save flow (or were
+    // auto-advanced into deploy from save). The standalone "Deploy to
+    // Figma" topbar still works without the stepper for simplicity.
+    var inWizard = !!opts.wizard;
+    if (wizardSteps) wizardSteps.hidden = !inWizard;
+    if (backBtn) backBtn.hidden = !(inWizard && mode === 'deploy');
+    setWizardStep(mode);
 
     var projId = getActiveProjectId() || '';
     var projLabel = projId ? projectName(projId) : 'No project (defaults)';
 
     if (isSave) {
-      title.textContent = 'Save as project default';
+      title.textContent = inWizard ? 'Step 1 · Save snapshot' : 'Save as project default';
       sub.textContent = 'Snapshot every mapping below as the new default for this project. The next time anyone opens "' + projLabel + '", they\u2019ll see exactly this.';
       saveForm.hidden = false;
-      confirmBtn.textContent = 'Save as default';
+      if (figmaPush) figmaPush.hidden = true;
+      confirmBtn.textContent = inWizard ? 'Save & continue' : 'Save as default';
       hint.innerHTML = 'Writes the snapshot to the project folder on GitHub. Requires a Personal Access Token with <code>repo</code> scope.';
 
       // Wire metadata form defaults
@@ -3597,15 +3636,45 @@
       });
       var nameInput = document.getElementById('ev2SaveName');
       var descInput = document.getElementById('ev2SaveDesc');
-      nameInput.value = '';
-      descInput.value = '';
+      // Prefill name with a timestamp so the user can just hit Save.
+      // We don't clobber a name they already typed (e.g. opening the
+      // dialog twice in a row).
+      if (!nameInput.value || nameInput.dataset.autofilled === '1') {
+        nameInput.value = defaultSnapshotName();
+        nameInput.dataset.autofilled = '1';
+      }
+      // If the user edits the field, drop the autofilled flag so we
+      // never overwrite their text.
+      if (!nameInput._wiredAutofill) {
+        nameInput.addEventListener('input', function () { nameInput.dataset.autofilled = '0'; });
+        nameInput._wiredAutofill = true;
+      }
+      descInput.value = descInput.value || '';
       nameInput.removeAttribute('data-invalid');
     } else {
-      title.textContent = 'Deploy to Figma';
-      sub.textContent = 'Review every change before pushing to Figma. Deploys are tracked but cannot be undone in-place.';
+      // Deploy step
+      title.textContent = inWizard ? 'Step 2 · Push to Figma' : 'Deploy to Figma';
+      sub.textContent = inWizard
+        ? 'Your snapshot was committed. Now refresh the Figma plugin so designers see the new values.'
+        : 'Review every change before pushing to Figma. Deploys are tracked but cannot be undone in-place.';
       saveForm.hidden = true;
-      confirmBtn.textContent = 'Deploy to Figma';
-      hint.innerHTML = 'After deploy, every consumer of these tokens (other Figma files, Storybook, your apps) will see the new values within seconds.';
+      if (figmaPush) figmaPush.hidden = !inWizard;
+      confirmBtn.textContent = inWizard ? 'Done' : 'Deploy to Figma';
+      hint.innerHTML = inWizard
+        ? 'GitHub Pages will rebuild the token payload within ~30s.'
+        : 'After deploy, every consumer of these tokens (other Figma files, Storybook, your apps) will see the new values within seconds.';
+
+      // Reset the push status panel each time we enter step 2
+      var statusEl = document.getElementById('ev2FigmaPushStatus');
+      if (statusEl) {
+        statusEl.setAttribute('data-state', 'idle');
+        var msgEl = statusEl.querySelector('.ev2-figma-push-msg');
+        if (msgEl) {
+          msgEl.textContent = inWizard
+            ? 'Snapshot committed. Open Figma to pull the new tokens.'
+            : 'Ready to refresh the Figma plugin.';
+        }
+      }
     }
 
     var metaBits = [
@@ -3620,14 +3689,20 @@
     meta.innerHTML = metaBits.join('');
 
     if (isSave) {
-      // Save mode: confirm is always enabled (you can save the project's
-      // current state even with no draft edits \u2014 useful for "baseline now").
       body.innerHTML = summary.sections.length
         ? summary.sections.map(renderSummarySection).join('')
         : '<div class="ev2-deploy-section-empty">Nothing to snapshot yet \u2014 the project has no editable mappings.</div>';
       confirmBtn.disabled = false;
     } else {
-      if (summary.total === 0) {
+      // In wizard's deploy step the summary is informational; never
+      // disable the Done button because the actual work (commit) is
+      // already finished.
+      if (inWizard) {
+        body.innerHTML = summary.total === 0
+          ? '<div class="ev2-deploy-section-empty">No outstanding changes \u2014 the published snapshot matches what designers will see.</div>'
+          : summary.sections.map(renderSummarySection).join('');
+        confirmBtn.disabled = false;
+      } else if (summary.total === 0) {
         body.innerHTML = '<div class="ev2-deploy-section-empty">No changes to deploy. Make some edits first.</div>';
         confirmBtn.disabled = true;
       } else {
@@ -3637,6 +3712,9 @@
     }
     dlg.hidden = false;
     document.body.classList.add('ev2-modal-open');
+    // Remember whether we are in wizard so the confirm handler knows
+    // whether to advance to step 2 after a successful save.
+    dlg._wizard = inWizard;
   }
   function renderSummarySection(s) {
     return '<section class="ev2-deploy-section">'
@@ -3649,10 +3727,10 @@
     + '</section>';
   }
   function openDeployDialog() { openDialog('deploy'); }
-  function openSaveDefaultDialog() { openDialog('save'); }
+  function openSaveDefaultDialog() { openDialog('save', { wizard: true }); }
   function closeDeployDialog() {
     var dlg = document.getElementById('ev2DeployDialog');
-    if (dlg) { dlg.hidden = true; }
+    if (dlg) { dlg.hidden = true; dlg._wizard = false; }
     document.body.classList.remove('ev2-modal-open');
   }
 
@@ -3724,6 +3802,26 @@
       });
   }
 
+  /* Trigger the deploy-tokens.yml workflow via workflow_dispatch so
+     the Pages site (and therefore the Figma plugin's tokens.json
+     endpoint) rebuilds with the freshly-committed snapshot ASAP.
+     Best-effort: 404 / 403 (e.g. PAT missing `workflow` scope) is
+     non-fatal — the commit itself already triggers Pages on push. */
+  function triggerPagesRebuild() {
+    var user = getGhUser();
+    if (!user || !getGhPat()) return Promise.reject(new Error('Not authenticated'));
+    return ghFetch('/repos/' + user + '/' + GH_REPO_NAME + '/actions/workflows/deploy-tokens.yml/dispatches', {
+      method: 'POST', body: { ref: 'main' }
+    }).then(function () {
+      var statusEl = document.getElementById('ev2FigmaPushStatus');
+      if (statusEl) {
+        statusEl.setAttribute('data-state', 'success');
+        var msgEl = statusEl.querySelector('.ev2-figma-push-msg');
+        if (msgEl) msgEl.textContent = 'Pages rebuild queued. Designers can refresh the plugin in ~30s.';
+      }
+    });
+  }
+
   function ensureGhCredentials() {
     var pat = getGhPat();
     var user = getGhUser();
@@ -3752,10 +3850,10 @@
     var descInput = document.getElementById('ev2SaveDesc');
     var name = (nameInput.value || '').trim();
     if (!name) {
-      nameInput.setAttribute('data-invalid', '');
-      nameInput.focus();
-      if (window.ev2Toast) window.ev2Toast('Snapshot needs a name', 'warn');
-      return;
+      // Fall back to a timestamp instead of blocking — the name is
+      // metadata, not a unique key, so an autogenerated label is fine.
+      name = defaultSnapshotName();
+      nameInput.value = name;
     }
     nameInput.removeAttribute('data-invalid');
     var description = (descInput.value || '').trim();
@@ -3805,7 +3903,6 @@
     }).then(function () {
       confirmBtn.textContent = 'Save as default';
       confirmBtn.disabled = false;
-      closeDeployDialog();
       if (window.ev2Toast) window.ev2Toast('Published ' + nextVer + ' to ' + projId, 'ok');
       // Promote current state to the new baseline so "Discard" reverts
       // to what we just published instead of the pre-edit state.
@@ -3814,6 +3911,20 @@
         State.t1Baseline = JSON.parse(JSON.stringify(State.t1));
         if (typeof refreshChangeBar === 'function') refreshChangeBar();
       } catch (e) { /* baseline reset is best-effort */ }
+      // Wizard: advance to step 2 (Push to Figma) instead of closing.
+      // Direct-mode (non-wizard) save: just close the dialog.
+      var dlg = document.getElementById('ev2DeployDialog');
+      if (dlg && dlg._wizard) {
+        // Kick off the deploy step. The user can then either close or
+        // optionally trigger the workflow_dispatch via the "Done" button.
+        openDialog('deploy', { wizard: true });
+        // Best-effort: trigger the Pages rebuild workflow so the plugin
+        // gets fresh tokens.json sooner. Failures are silent — the on-
+        // commit trigger already covers the happy path.
+        triggerPagesRebuild().catch(function () { /* silent */ });
+      } else {
+        closeDeployDialog();
+      }
     }).catch(function (err) {
       confirmBtn.textContent = 'Save as default';
       confirmBtn.disabled = false;
@@ -3845,13 +3956,45 @@
     deployConfirmBtn.addEventListener('click', function () {
       var dlg = document.getElementById('ev2DeployDialog');
       var mode = dlg ? (dlg.getAttribute('data-mode') || 'deploy') : 'deploy';
+      var inWizard = !!(dlg && dlg._wizard);
       if (mode === 'save') {
         saveAsDefault();
-      } else {
-        // Deploy-to-Figma hook \u2014 server integration TBD.
+      } else if (inWizard) {
+        // Step 2 of wizard — the snapshot is already committed; the
+        // "Done" button just dismisses the dialog. The push status
+        // panel has already told the user what to do in Figma.
         closeDeployDialog();
-        if (window.ev2Toast) window.ev2Toast('Deploy queued (server integration TBD)', 'ok');
+      } else {
+        // Standalone deploy-to-Figma button on the topbar. We trigger
+        // a Pages rebuild so the plugin sees the latest tokens.json
+        // ASAP. If the user has no PAT, fall back to a friendly
+        // instruction toast and bounce them into the save flow.
+        var hasPat = !!getGhPat();
+        if (!hasPat) {
+          if (window.ev2Toast) window.ev2Toast('Save a snapshot first — Deploy uses the committed version.', 'warn');
+          openDialog('save', { wizard: true });
+          return;
+        }
+        var btn = document.getElementById('ev2DeployConfirm');
+        btn.disabled = true;
+        btn.textContent = 'Triggering rebuild\u2026';
+        triggerPagesRebuild().then(function () {
+          closeDeployDialog();
+          if (window.ev2Toast) window.ev2Toast('Pages rebuild queued — refresh the Figma plugin in ~30s', 'ok');
+        }).catch(function (err) {
+          btn.disabled = false;
+          btn.textContent = 'Deploy to Figma';
+          var msg = (err && err.message) ? err.message : String(err);
+          if (window.ev2Toast) window.ev2Toast('Deploy failed: ' + msg, 'err');
+        });
       }
+    });
+  }
+  // Wizard back button: step 2 → step 1
+  var wizardBackBtn = document.getElementById('ev2WizardBack');
+  if (wizardBackBtn) {
+    wizardBackBtn.addEventListener('click', function () {
+      openDialog('save', { wizard: true });
     });
   }
   // Version-bump pills (delegated for tolerance to re-renders)

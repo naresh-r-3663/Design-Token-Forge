@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../shared.css">
 
   <!-- Editor v2 specific layout -->
-  <link rel="stylesheet" href="./editor-v2.css?v=107">
+  <link rel="stylesheet" href="./editor-v2.css?v=108">
 
   <!-- Palette engine (browser IIFE — exposes window.PaletteEngine) -->
   <script src="../palette-engine.js?v=85" defer></script>
@@ -238,7 +238,6 @@
   <div class="ev2-deploy-dialog" id="ev2DeployDialog" hidden role="dialog" aria-modal="true" aria-labelledby="ev2DeployTitle" data-mode="deploy">
     <div class="ev2-modal-backdrop" data-deploy-dismiss></div>
     <div class="ev2-deploy-card" role="document">
-      <button class="ev2-modal-close" type="button" data-deploy-dismiss aria-label="Close dialog">&times;</button>
       <header class="ev2-deploy-head">
         <div class="ev2-deploy-headtxt">
           <h3 class="ev2-deploy-title" id="ev2DeployTitle">Deploy to Figma</h3>
@@ -247,14 +246,21 @@
         <div class="ev2-deploy-meta" id="ev2DeployMeta"></div>
       </header>
 
+      <!-- Two-step wizard indicator. Hidden until you enter the save flow;
+           the deploy-only path keeps the legacy single-screen look. -->
+      <ol class="ev2-wizard-steps" id="ev2WizardSteps" hidden aria-label="Publish steps">
+        <li data-step="save"   aria-current="step"><span class="ev2-wizard-num">1</span><span class="ev2-wizard-label">Save snapshot</span><span class="ev2-wizard-hint">Commit to your GitHub fork</span></li>
+        <li data-step="deploy"><span class="ev2-wizard-num">2</span><span class="ev2-wizard-label">Push to Figma</span><span class="ev2-wizard-hint">Refresh the plugin</span></li>
+      </ol>
+
       <!-- Save-mode only: name / description / semver. Hidden in deploy mode. -->
       <section class="ev2-save-form" id="ev2SaveForm" hidden>
         <h4 class="ev2-save-form-title">Snapshot details</h4>
         <p class="ev2-save-form-sub">These are written to the repo so collaborators can see what changed and when.</p>
         <div class="ev2-save-form-grid">
           <label class="ev2-save-field ev2-save-field--name">
-            <span class="ev2-save-field-label">Name <em>(required)</em></span>
-            <input type="text" id="ev2SaveName" maxlength="60" placeholder="e.g. Tightened neutral mid-tones" autocomplete="off" spellcheck="false">
+            <span class="ev2-save-field-label">Name <em>(prefilled — edit if you want)</em></span>
+            <input type="text" id="ev2SaveName" maxlength="60" placeholder="e.g. May16 08:57" autocomplete="off" spellcheck="false">
           </label>
           <div class="ev2-save-field ev2-save-field--ver">
             <span class="ev2-save-field-label">Version</span>
@@ -276,17 +282,31 @@
         </div>
       </section>
 
+      <!-- Step 2 only: Figma-push status panel, populated by wizard JS. -->
+      <section class="ev2-figma-push" id="ev2FigmaPush" hidden>
+        <div class="ev2-figma-push-status" id="ev2FigmaPushStatus" data-state="idle">
+          <span class="ev2-figma-push-dot" aria-hidden="true"></span>
+          <span class="ev2-figma-push-msg">Ready to refresh the Figma plugin.</span>
+        </div>
+        <ol class="ev2-figma-push-steps">
+          <li><strong>Open your Figma file</strong> with the Design Token Forge plugin installed.</li>
+          <li>Run the plugin and click <strong>Sync from server</strong> (or close + re-open) to pull the snapshot you just published.</li>
+          <li>If you don’t see your changes yet, give GitHub Pages ~30s to rebuild and try again.</li>
+        </ol>
+      </section>
+
       <div class="ev2-deploy-body" id="ev2DeployBody"></div>
       <footer class="ev2-deploy-actions">
         <span class="ev2-deploy-hint" id="ev2DeployHint"></span>
         <div class="ev2-deploy-btns">
-          <button class="ev2-modal-btn" type="button" data-deploy-dismiss>Cancel</button>
+          <button class="ev2-modal-btn" type="button" id="ev2WizardBack" hidden>← Back to snapshot</button>
+          <button class="ev2-modal-btn" type="button" data-deploy-dismiss id="ev2WizardCancel">Cancel</button>
           <button class="ev2-modal-btn ev2-modal-btn-primary" type="button" id="ev2DeployConfirm">Deploy to Figma</button>
         </div>
       </footer>
     </div>
   </div>
 
-  <script src="./editor-v2.js?v=110" defer></script>
+  <script src="./editor-v2.js?v=111" defer></script>
 </body>
 </html>
