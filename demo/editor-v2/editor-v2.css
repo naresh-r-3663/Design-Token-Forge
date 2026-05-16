@@ -1297,6 +1297,22 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   line-height:1.2;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
+/* T1 lever cards use a friendly label ("Component fill") instead of
+   a monospaced CSS variable name. Switch font + size accordingly. */
+.ev2-pc[data-pc-tier="t1"] .ev2-pc-name{
+  font-family:inherit;
+  font-size:13.5px;
+  font-weight:700;
+  letter-spacing:-.005em;
+  color:var(--surface-base-ct-default);
+}
+.ev2-pc-sub{
+  font-size:11.5px;
+  color:var(--surface-base-ct-subtle);
+  line-height:1.35;
+  margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
 .ev2-pc-meta{display:flex;align-items:center;gap:8px;margin-top:3px}
 .ev2-pc-step{
   font-size:11px;font-weight:600;
@@ -1427,6 +1443,33 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   outline:2px solid var(--brand-component-bg-default,#3366f0);
   outline-offset:1px;
   z-index:4;
+}
+/* Per-step pass/fail dimming. T1 ladder marks each of the 22 steps
+   with its WCAG outcome against the current lever's baseline — the
+   point is to see at a glance which steps satisfy AA. Failing steps
+   get a subtle diagonal strikethrough + reduced opacity. T2 doesn't
+   set data-pass so this rule is inert there. */
+.ev2-pc-ladder-step[data-pass="false"]{opacity:.55}
+.ev2-pc-ladder-step[data-pass="false"]::before{
+  content:'';
+  position:absolute;inset:2px;
+  background:linear-gradient(135deg, transparent 47%, rgba(0,0,0,.35) 47%, rgba(0,0,0,.35) 53%, transparent 53%);
+  pointer-events:none;
+  border-radius:3px;
+}
+
+/* T1 always-expanded cards: the swatch is decorative (no toggle
+   target). Drop the hover scale + cursor so users don't think
+   it's clickable. */
+.ev2-pc-sw[data-pc-noninteractive="true"]{
+  cursor:default;
+}
+.ev2-pc-sw[data-pc-noninteractive="true"]:hover{
+  transform:none;
+  border-color:var(--surface-base-outline);
+}
+.ev2-pc[data-pc-tier="t1"][data-detached="true"] .ev2-pc-sw{
+  border-style:solid;
 }
 
 @media (max-width: 1100px){

@@ -1243,6 +1243,38 @@
     pushPreview();
   }
 
+  /* ── T1 lever write path ─────────────────────────────
+     Mirrors setT2Step / clearT2Override so the Property Card
+     primitive's stepper / reset / ladder-pick handlers can dispatch
+     by tier. T1 state shape is { mode: { roleId: { fill, content,
+     container } } } — there's no separate override map (unlike T2),
+     so "detached" just means "different from default". */
+  function setT1Lever(roleId, leverId, mode, newStep) {
+    if (ALL_STEPS.indexOf(newStep) < 0) return;
+    var t = t1For(roleId, mode);
+    if (!t || t[leverId] === newStep) return;
+    t[leverId] = newStep;
+    scheduleAutosave();
+    refreshChangeBar();
+    renderT1();
+    pushPreview();
+  }
+  function clearT1Lever(roleId, leverId, mode) {
+    var def = defaultT1ForRole(roleId, mode);
+    var t = t1For(roleId, mode);
+    if (!t || !def || t[leverId] === def[leverId]) return;
+    t[leverId] = def[leverId];
+    scheduleAutosave();
+    refreshChangeBar();
+    renderT1();
+    pushPreview();
+  }
+  function t1LeverIsDetached(roleId, leverId, mode) {
+    var t = t1For(roleId, mode);
+    var d = defaultT1ForRole(roleId, mode);
+    return !!(t && d && t[leverId] !== d[leverId]);
+  }
+
   /* ── T2 bulk ops ─────────────────────────────────────
      Three high-frequency designer shortcuts wired into a per-row
      overflow menu. All write through the same setT2Step path so
@@ -1323,6 +1355,45 @@
     + '</div>';
   }
 
+  /* T1 ladder variant — same DOM shape as pcLadderHTML so the
+     primitive's click handler (`[data-pc-ladder-pick]`) routes us
+     here via the data-pc-tier branch. Extras over T2:
+       - `data-pass` on each step (true/false) so failing steps can
+         be visually dimmed; T1 is THE contrast-tuning surface, so
+         seeing the pass/fail of every step inline is core info.
+       - Uses the role's own palette ladder + lever-aware judge.
+       - data-pc-ladder-role / -lever so the click handler can
+         dispatch even though renderT1 only knows about one role.
+  */
+  function t1LeverLadderHTML(roleId, leverId, mode) {
+    var ladderHex = ladderFor(roleId);
+    var t = t1For(roleId, mode);
+    var current = t[leverId];
+    var def     = (defaultT1ForRole(roleId, mode) || {})[leverId];
+    return '<div class="ev2-pc-ladder" data-pc-ladder-role="' + roleId + '" data-pc-ladder-lever="' + leverId + '">'
+      + ALL_STEPS.map(function (step) {
+          var hex   = ladderHex[step] || '#000';
+          var isCur = step === current;
+          var isDef = step === def;
+          var j     = DTFSolver.judgeStepForLever(ladderHex, leverId, step, t, mode);
+          var pass  = j.pass ? 'true' : 'false';
+          var tip   = 'step ' + step + ' \u2022 ' + hex.toUpperCase()
+                    + ' \u00b7 ' + j.ratio.toFixed(2) + ':1 (' + (j.pass ? j.grade : 'Fail') + ')'
+                    + (isDef ? ' \u2022 default' : '')
+                    + (isCur ? ' \u2022 selected' : '');
+          return '<button type="button" class="ev2-pc-ladder-step"'
+            + ' data-pc-ladder-pick="' + step + '"'
+            + ' data-current="' + isCur + '"'
+            + ' data-default="' + isDef + '"'
+            + ' data-pass="' + pass + '"'
+            + ' data-tip="' + tip + '"'
+            + ' aria-label="' + tip + '"'
+            + ' style="background:' + hex + '">'
+          + '</button>';
+        }).join('')
+    + '</div>';
+  }
+
   function propertyCardHTML(opts) {
     // opts: { tokenName, swatchHex, step, isDetached, sentinel?,
     //         dataAttrs?, expanded?, level?, parentLabel?, deltaSigned? }
@@ -1353,18 +1424,28 @@
     if (opts.dataAttrs) Object.keys(opts.dataAttrs).forEach(function (k) {
       attrs += ' data-' + k + '="' + String(opts.dataAttrs[k]).replace(/"/g,'&quot;') + '"';
     });
-    var expanded = !!opts.expanded;
+    var tier = opts.tier || 't2';
+    attrs += ' data-pc-tier="' + tier + '"';
+    var alwaysExpanded = !!opts.alwaysExpanded;
+    var expanded = alwaysExpanded || !!opts.expanded;
     var ladderHTML = '';
     var actionsHTML = '';
-    if (expanded && opts.dataAttrs && opts.dataAttrs['pc-surface'] && opts.dataAttrs['pc-prop']) {
+    if (opts.ladderHTML) {
+      // Caller supplied a precomputed ladder (T1 uses this — per-step
+      // WCAG marks need a judge callback we don't want to thread through
+      // the primitive). Render it iff the card is expanded.
+      if (expanded) ladderHTML = opts.ladderHTML;
+    } else if (expanded && opts.dataAttrs && opts.dataAttrs['pc-surface'] && opts.dataAttrs['pc-prop']) {
       var _surfaceId = opts.dataAttrs['pc-surface'];
       var _propId    = opts.dataAttrs['pc-prop'];
       ladderHTML = pcLadderHTML(_surfaceId, _propId, State.editingMode);
+    }
+    if (opts.dataAttrs && opts.dataAttrs['pc-surface'] && opts.dataAttrs['pc-prop']) {
       // Horizontal action bar — only renders chips that are useful
       // for the row's current state. Apply-* chips need a detached
       // step to bulk-apply; Reset family needs dirty descendants.
       // When neither applies we render no bar at all (no empty rail).
-      actionsHTML = pcActionsHTML(_surfaceId, _propId, State.editingMode, !!opts.isDetached, !!opts.hasDirtyDescendants);
+      actionsHTML = pcActionsHTML(opts.dataAttrs['pc-surface'], opts.dataAttrs['pc-prop'], State.editingMode, !!opts.isDetached, !!opts.hasDirtyDescendants);
     }
     // Build meta strip. For child rows we show "step N · +d from parent"
     // when linked, and "step N · custom" when the user has pinned it.
@@ -1376,21 +1457,33 @@
       metaBits += '<span class="ev2-pc-chip ev2-pc-chip-link" data-tip="Linked to ' + opts.parentLabel + ' — step changes follow">'
         + sign + opts.deltaSigned + ' from ' + opts.parentLabel
       + '</span>';
-    } else {
+    } else if (!opts.suppressBaseChip) {
       metaBits += '<span class="ev2-pc-chip ev2-pc-chip-muted">base</span>';
     }
+    if (opts.metaExtra) metaBits += opts.metaExtra;
     var lvl = opts.level || 0;
+    // T1 ladder is always-open by design (small surface, 3 levers per
+    // role); the swatch + disclose toggle don't apply there. Hide
+    // the disclose chevron and make the swatch non-interactive
+    // when alwaysExpanded is true.
+    var swExtra = alwaysExpanded
+      ? ' tabindex="-1" aria-hidden="true" data-pc-noninteractive="true"'
+      : ' data-pc-toggle aria-expanded="' + (expanded ? 'true' : 'false') + '" data-tip="' + (expanded ? 'Hide steps' : 'Pick a step') + '" aria-label="' + (expanded ? 'Hide steps' : 'Pick a step') + ' — swatch (also opens picker)"';
+    var discloseHTML = alwaysExpanded ? ''
+      : '<button type="button" class="ev2-pc-disclose" data-pc-toggle aria-expanded="' + (expanded ? 'true' : 'false') + '" data-tip="' + (expanded ? 'Hide steps' : 'Pick a step') + '" aria-label="' + (expanded ? 'Hide steps' : 'Pick a step') + '"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>';
+    var subHTML = opts.subtitle ? '<div class="ev2-pc-sub">' + opts.subtitle + '</div>' : '';
     return '<div class="ev2-pc" data-detached="' + (opts.isDetached ? 'true' : 'false') + '" data-expanded="' + (expanded ? 'true' : 'false') + '" data-level="' + lvl + '"' + attrs + '>'
-      + '<button type="button" class="ev2-pc-sw" style="' + swSt + '" data-pc-toggle aria-expanded="' + (expanded ? 'true' : 'false') + '" data-tip="' + (expanded ? 'Hide steps' : 'Pick a step') + '" aria-label="' + (expanded ? 'Hide steps' : 'Pick a step') + ' — swatch (also opens picker)"></button>'
+      + '<button type="button" class="ev2-pc-sw" style="' + swSt + '"' + swExtra + '></button>'
       + '<div class="ev2-pc-main">'
         + '<div class="ev2-pc-name">' + opts.tokenName + '</div>'
+        + subHTML
         + '<div class="ev2-pc-meta">' + metaBits + '</div>'
       + '</div>'
       + sentHTML
       + '<div class="ev2-pc-controls">'
         + '<button type="button" class="ev2-pc-step-btn" data-pc-step="-1" data-tip="Step lighter" aria-label="Step lighter">\u2212</button>'
         + '<button type="button" class="ev2-pc-step-btn" data-pc-step="+1" data-tip="Step darker" aria-label="Step darker">+</button>'
-        + '<button type="button" class="ev2-pc-disclose" data-pc-toggle aria-expanded="' + (expanded ? 'true' : 'false') + '" data-tip="' + (expanded ? 'Hide steps' : 'Pick a step') + '" aria-label="' + (expanded ? 'Hide steps' : 'Pick a step') + '"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'
+        + discloseHTML
         + '<button type="button" class="ev2-pc-reset" data-pc-reset' + (opts.isDetached ? '' : ' disabled') + ' data-tip="Reset to default" aria-label="Reset to default">\u21BA</button>'
       + '</div>'
       + ladderHTML
@@ -1689,49 +1782,42 @@
     var pageBg = surfaceBgFor(mode);
     var ladder = ladderFor(role.id);
 
-    /* Per-lever palette strip: 20 swatches (one per ladder step) act
-       as the picker. The currently-picked step gets the brand ring,
-       AA-failing steps get a dimmed mark, and clicking commits. */
+    /* Per-lever Property Card. Same primitive as T2; T1-specific
+       behaviour comes from `tier: 't1'` (which the click handlers
+       branch on) + `alwaysExpanded: true` (no disclose toggle, the
+       ladder is the primary control) + a precomputed
+       `ladderHTML` that decorates each step with its WCAG pass/fail
+       against the lever's role (T1 is THE contrast-tuning surface). */
     var leversHTML = T1_LEVERS.map(function (lever) {
       var current = t1[lever.id];
       var curHex  = ladder[current] || '#000';
-      // Header WCAG read-out for the current pick
+      var def     = (defaultT1ForRole(role.id, mode) || {})[lever.id];
+      var detached = current !== def;
+      // Header sentinel chip — current pick's contrast vs its baseline.
       var hJudge = DTFSolver.judgeStepForLever(ladder, lever.id, current, t1, mode);
-      var hCls   = hJudge.pass ? (hJudge.grade === 'AAA' ? 'aaa' : 'aa') : 'fail';
-      var hTxt   = hJudge.pass ? hJudge.grade : 'Fail';
-      var swatchesHTML = ALL_STEPS.map(function (step) {
-        var hex = ladder[step] || '#000';
-        var isSel = step === current;
-        var j = DTFSolver.judgeStepForLever(ladder, lever.id, step, t1, mode);
-        var pass = j.pass ? 'true' : 'false';
-        var tip  = 'Step ' + step + ' \u2014 ' + hex.toUpperCase()
-                 + ' \u00b7 ' + j.ratio.toFixed(2) + ':1 (' + (j.pass ? j.grade : 'Fail') + ')';
-        return '<button type="button" class="ev2-pal-sw" '
-             + 'role="radio" aria-checked="' + isSel + '" '
-             + 'data-t1-lever="' + lever.id + '" data-step="' + step + '" '
-             + 'data-pass="' + pass + '" '
-             + 'style="background:' + hex + '" '
-             + 'data-tip="' + tip + '" '
-             + 'aria-label="Step ' + step + ', ' + (j.pass ? j.grade : 'fails AA') + '">'
-             + '<span class="ev2-pal-sw-step" aria-hidden="true">' + step + '</span>'
-             + '</button>';
-      }).join('');
-      return '<div class="ev2-lever-block" data-lever="' + lever.id + '">'
-        + '<div class="ev2-lever-head">'
-          + '<span class="ev2-lever-title">' + lever.label + '</span>'
-          + '<span class="ev2-lever-sub">' + lever.sub + '</span>'
-          + '<span class="ev2-lever-step" aria-live="polite">'
-            + '<span class="ev2-lever-step-chip" style="background:' + curHex + '" aria-hidden="true"></span>'
-            + 'Step <strong>' + current + '</strong>'
-            + ' \u00b7 ' + hJudge.ratio.toFixed(2) + ':1'
-            + ' <span class="ev2-seg-wcag" data-grade="' + hCls + '" aria-hidden="true">'
-            + (hJudge.pass ? '\u2713 ' : '\u26A0 ') + hTxt + '</span>'
-          + '</span>'
-        + '</div>'
-        + '<div class="ev2-pal" role="radiogroup" aria-label="' + lever.label + ' \u2014 pick a step">'
-          + swatchesHTML
-        + '</div>'
-      + '</div>';
+      var sentinel = {
+        ratio: hJudge.ratio,
+        large: false,
+        intent: 'text',
+        judge: { pass: hJudge.pass, grade: hJudge.grade }
+      };
+      return propertyCardHTML({
+        tier: 't1',
+        alwaysExpanded: true,
+        tokenName: lever.label,
+        subtitle: lever.sub,
+        swatchHex: curHex,
+        step: current,
+        isDetached: detached,
+        sentinel: sentinel,
+        suppressBaseChip: true,
+        ladderHTML: t1LeverLadderHTML(role.id, lever.id, mode),
+        dataAttrs: {
+          'pc-role':  role.id,
+          'pc-lever': lever.id,
+          'lever':    lever.id    /* legacy hook for mouseenter focus preview */
+        }
+      });
     }).join('');
 
     /* Contrast summary + auto-derived 2\u00d72 (on-comp, on-cont, border, separator). */
@@ -1854,7 +1940,7 @@
         saveUIState();
       });
     });
-    document.querySelectorAll('.ev2-lever-block').forEach(function (block) {
+    document.querySelectorAll('.ev2-pc[data-pc-tier="t1"]').forEach(function (block) {
       block.addEventListener('mouseenter', function () {
         var lever = block.getAttribute('data-lever');
         State.focusedLever = lever;
@@ -1865,20 +1951,9 @@
         focusPreview(null);
       });
     });
-    document.querySelectorAll('[data-t1-lever]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var lever = b.getAttribute('data-t1-lever');
-        var step  = b.getAttribute('data-step');
-        if (!step) return;
-        t1For(State.activeRole)[lever] = step;
-        pushPreview();
-        refreshChangeBar();
-        scheduleAutosave();
-        renderT1();
-        // Highlight + scroll matching preview section into view
-        focusPreview(lever, true);
-      });
-    });
+    /* (removed) per-swatch [data-t1-lever] binding — the T1 ladder
+       is now a Property Card ladder so picks are dispatched through
+       the shared [data-pc-ladder-pick] handler with a t1 branch. */
   }
 
   /* Delegated handler for the Snap-to-AA button. Bound once at
@@ -2091,39 +2166,60 @@
       return;
     }
     // Property Card expand/collapse toggle (the swatch is the affordance).
+    // T1 cards are always-expanded so toggle is a no-op there.
     var toggleBtn = e.target.closest && e.target.closest('[data-pc-toggle]');
     if (toggleBtn) {
       var tcard = toggleBtn.closest('.ev2-pc');
       if (!tcard) return;
+      if (tcard.getAttribute('data-pc-tier') === 't1') return;
       var key = tcard.getAttribute('data-pc-surface') + '/' + tcard.getAttribute('data-pc-prop');
       __expandedT2 = (__expandedT2 === key) ? null : key;
       renderT2();
       return;
     }
     // Picked a step from the inline ladder — same write path as the
-    // ± stepper. setT2Step's auto-default-drop logic keeps the
-    // override map minimal if the user re-picks the default step.
+    // ± stepper. T1 + T2 share the DOM hook; dispatch by tier.
     var pickBtn = e.target.closest && e.target.closest('[data-pc-ladder-pick]');
     if (pickBtn) {
       var pcard = pickBtn.closest('.ev2-pc');
       if (!pcard) return;
       var picked = pickBtn.getAttribute('data-pc-ladder-pick');
-      setT2Step(
-        pcard.getAttribute('data-pc-surface'),
-        pcard.getAttribute('data-pc-prop'),
-        State.editingMode,
-        picked
-      );
+      if (pcard.getAttribute('data-pc-tier') === 't1') {
+        setT1Lever(
+          pcard.getAttribute('data-pc-role'),
+          pcard.getAttribute('data-pc-lever'),
+          State.editingMode,
+          picked
+        );
+      } else {
+        setT2Step(
+          pcard.getAttribute('data-pc-surface'),
+          pcard.getAttribute('data-pc-prop'),
+          State.editingMode,
+          picked
+        );
+      }
       return;
     }
     var stepBtn = e.target.closest && e.target.closest('[data-pc-step]');
     if (stepBtn) {
       var card = stepBtn.closest('.ev2-pc');
       if (!card) return;
+      var delta = parseInt(stepBtn.getAttribute('data-pc-step'), 10) || 0;
+      if (card.getAttribute('data-pc-tier') === 't1') {
+        // T1 stepper: walk in the perceived-tonal direction so "+"
+        // always goes darker on-screen, regardless of mode.
+        var roleId  = card.getAttribute('data-pc-role');
+        var leverId = card.getAttribute('data-pc-lever');
+        if (!roleId || !leverId) return;
+        var t1cur = t1For(roleId, State.editingMode)[leverId];
+        var t1nx  = stepRel(t1cur, delta * tonalDir(State.editingMode));
+        if (t1nx !== t1cur) setT1Lever(roleId, leverId, State.editingMode, t1nx);
+        return;
+      }
       var surfaceId = card.getAttribute('data-pc-surface');
       var propId    = card.getAttribute('data-pc-prop');
       if (!surfaceId || !propId) return;
-      var delta = parseInt(stepBtn.getAttribute('data-pc-step'), 10) || 0;
       // Walk in the tonal direction the user perceives: clicking "+"
       // (darker) in light mode goes UP the ladder; in dark mode the
       // visible darker direction is the opposite so we mirror via
@@ -2137,6 +2233,14 @@
     if (resetBtn && !resetBtn.disabled) {
       var card2 = resetBtn.closest('.ev2-pc');
       if (!card2) return;
+      if (card2.getAttribute('data-pc-tier') === 't1') {
+        clearT1Lever(
+          card2.getAttribute('data-pc-role'),
+          card2.getAttribute('data-pc-lever'),
+          State.editingMode
+        );
+        return;
+      }
       clearT2Override(
         card2.getAttribute('data-pc-surface'),
         card2.getAttribute('data-pc-prop'),
