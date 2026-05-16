@@ -1346,7 +1346,7 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   pointer-events:none;
 }
 .ev2-pc-controls{display:inline-flex;align-items:center;gap:4px}
-.ev2-pc-step-btn,.ev2-pc-reset,.ev2-pc-disclose,.ev2-pc-more{
+.ev2-pc-step-btn,.ev2-pc-reset,.ev2-pc-disclose{
   display:inline-flex;align-items:center;justify-content:center;
   width:28px;height:28px;
   border:1px solid var(--surface-base-outline);
@@ -1356,14 +1356,14 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   font:inherit;font-size:13px;cursor:pointer;
   transition:background 120ms,border-color 120ms,transform 160ms;
 }
-.ev2-pc-step-btn:hover,.ev2-pc-reset:not(:disabled):hover,.ev2-pc-disclose:hover,.ev2-pc-more:hover{background:var(--surface-base-subtle);border-color:var(--surface-base-cm-outline-hover,#C8D0D8)}
-.ev2-pc-step-btn:focus-visible,.ev2-pc-reset:focus-visible,.ev2-pc-disclose:focus-visible,.ev2-pc-more:focus-visible{
+.ev2-pc-step-btn:hover,.ev2-pc-reset:not(:disabled):hover,.ev2-pc-disclose:hover{background:var(--surface-base-subtle);border-color:var(--surface-base-cm-outline-hover,#C8D0D8)}
+.ev2-pc-step-btn:focus-visible,.ev2-pc-reset:focus-visible,.ev2-pc-disclose:focus-visible{
   outline:2px solid var(--brand-component-bg-default,#3366f0);
   outline-offset:1px;
 }
 .ev2-pc-reset:disabled{opacity:.35;cursor:default}
-.ev2-pc-more{font-size:15px;line-height:1;letter-spacing:.05em;color:var(--surface-base-ct-subtle,#5b6068)}
-.ev2-pc-more[aria-expanded="true"]{background:var(--surface-base-subtle);border-color:var(--surface-base-cm-outline-default)}
+.ev2-pc-more{font-size:15px;line-height:1;letter-spacing:.05em;color:var(--surface-base-ct-subtle,#5b6068);display:none}
+.ev2-pc-more[aria-expanded="true"]{display:none}
 .ev2-pc-disclose svg{transition:transform 160ms}
 .ev2-pc[data-expanded="true"] .ev2-pc-disclose svg{transform:rotate(180deg)}
 .ev2-pc[data-expanded="true"] .ev2-pc-disclose{
@@ -1691,46 +1691,49 @@ body.ev2-modal-open{overflow:hidden}
   line-height:1.5;
 }
 
-/* ── T2 row overflow menu ────────────────────────────────
-   Singleton popup anchored to the ⋯ button on a Property Card.
-   Each menu item shows: optional swatch + label + dim meta line. */
-.ev2-pc-menu{
-  position:fixed;z-index:10005;
-  min-width:240px;max-width:300px;
-  background:var(--surface-float-bg,#fff);
-  border:1px solid var(--surface-float-outline,rgba(0,0,0,.12));
-  border-radius:8px;
-  box-shadow:0 6px 22px rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.08);
-  padding:4px;
-  display:flex;flex-direction:column;
+/* ── T2 row inline action chips ──────────────────────────
+   Horizontal bar inside the expanded Property Card, below the
+   step ladder. Replaces the old ⋯ overflow menu — chips only
+   exist when the card is open AND there's something useful to
+   do (detached row → Apply chips; dirty descendants → Reset
+   family chip). Keeps the resting row chrome to (− label + ↺)
+   and surfaces bulk ops in context. */
+.ev2-pc-actions{
+  grid-column:1 / -1;
+  display:flex;flex-wrap:wrap;gap:6px;
+  margin-top:8px;padding-top:8px;
+  border-top:1px dashed var(--surface-base-cm-separator,rgba(0,0,0,.08));
 }
-.ev2-pc-menu-item{
-  display:flex;align-items:center;gap:10px;
-  padding:8px 10px;
-  border:0;background:transparent;
-  border-radius:6px;
-  cursor:pointer;
-  text-align:left;
+.ev2-pc-action{
+  display:inline-flex;align-items:center;gap:6px;
+  height:26px;padding:0 10px;
+  border:1px solid var(--surface-base-outline,#D6DCE3);
+  border-radius:13px;
+  background:var(--surface-base-bg,#fff);
   color:var(--surface-base-ct-default,#1F2330);
-  font:inherit;
-}
-.ev2-pc-menu-item:hover,
-.ev2-pc-menu-item:focus-visible{
-  background:var(--surface-base-subtle,rgba(0,0,0,.04));
-  outline:none;
-}
-.ev2-pc-menu-item[data-danger="true"]{color:var(--danger-content-default,#C72D38)}
-.ev2-pc-menu-item[data-danger="true"]:hover{background:var(--danger-container-bg,rgba(199,45,56,.08))}
-.ev2-pc-menu-sw{
-  flex:0 0 auto;width:18px;height:18px;
-  border-radius:4px;
-  border:1px solid rgba(0,0,0,.12);
-}
-.ev2-pc-menu-sw-ph{background:transparent;border-color:transparent}
-.ev2-pc-menu-txt{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
-.ev2-pc-menu-lbl{font-size:12.5px;font-weight:600;line-height:1.25}
-.ev2-pc-menu-meta{
-  font-size:10.5px;font-weight:500;
-  color:var(--surface-base-ct-subtle,#5b6068);
+  font:inherit;font-size:11.5px;font-weight:600;
   letter-spacing:.01em;
+  cursor:pointer;
+  transition:background .12s, border-color .12s, color .12s;
+}
+.ev2-pc-action:hover{
+  background:var(--surface-base-subtle,rgba(0,0,0,.04));
+  border-color:var(--surface-base-cm-outline-hover,#C8D0D8);
+}
+.ev2-pc-action:focus-visible{
+  outline:2px solid var(--brand-content-default,#3D5EFC);
+  outline-offset:2px;
+}
+.ev2-pc-action-sw{
+  flex:0 0 auto;width:12px;height:12px;
+  border-radius:3px;
+  border:1px solid rgba(0,0,0,.14);
+}
+.ev2-pc-action[data-danger="true"]{
+  color:var(--danger-content-default,#C72D38);
+  border-color:var(--danger-cm-outline-default,rgba(199,45,56,.32));
+}
+.ev2-pc-action[data-danger="true"]:hover{
+  background:var(--danger-container-bg,rgba(199,45,56,.08));
+  border-color:var(--danger-content-default,#C72D38);
 }

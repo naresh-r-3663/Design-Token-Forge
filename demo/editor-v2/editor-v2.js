@@ -1370,8 +1370,16 @@
     });
     var expanded = !!opts.expanded;
     var ladderHTML = '';
+    var actionsHTML = '';
     if (expanded && opts.dataAttrs && opts.dataAttrs['pc-surface'] && opts.dataAttrs['pc-prop']) {
-      ladderHTML = pcLadderHTML(opts.dataAttrs['pc-surface'], opts.dataAttrs['pc-prop'], State.editingMode);
+      var _surfaceId = opts.dataAttrs['pc-surface'];
+      var _propId    = opts.dataAttrs['pc-prop'];
+      ladderHTML = pcLadderHTML(_surfaceId, _propId, State.editingMode);
+      // Horizontal action bar — only renders chips that are useful
+      // for the row's current state. Apply-* chips need a detached
+      // step to bulk-apply; Reset family needs dirty descendants.
+      // When neither applies we render no bar at all (no empty rail).
+      actionsHTML = pcActionsHTML(_surfaceId, _propId, State.editingMode, !!opts.isDetached, !!opts.hasDirtyDescendants);
     }
     // Build meta strip. For child rows we show "step N · +d from parent"
     // when linked, and "step N · custom" when the user has pinned it.
@@ -1399,9 +1407,65 @@
         + '<button type="button" class="ev2-pc-step-btn" data-pc-step="+1" data-tip="Step darker" aria-label="Step darker">+</button>'
         + '<button type="button" class="ev2-pc-disclose" data-pc-toggle aria-expanded="' + (expanded ? 'true' : 'false') + '" data-tip="' + (expanded ? 'Hide steps' : 'Pick a step') + '" aria-label="' + (expanded ? 'Hide steps' : 'Pick a step') + '"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'
         + '<button type="button" class="ev2-pc-reset" data-pc-reset' + (opts.isDetached ? '' : ' disabled') + ' data-tip="Reset to default" aria-label="Reset to default">\u21BA</button>'
-        + (opts.showMore ? '<button type="button" class="ev2-pc-more" data-pc-more data-tip="More\u2026" aria-label="More actions" aria-haspopup="menu" aria-expanded="false">\u22EF</button>' : '')
       + '</div>'
       + ladderHTML
+      + actionsHTML
+    + '</div>';
+  }
+
+  /* ── Inline action bar (T2 row, expanded) ─────────────
+     Replaces the per-row "⋯" overflow menu. Lives inside the card
+     below the step ladder, so the chips only exist when the card
+     is open — keeps the resting row chrome to (− label + ↺) and
+     surfaces bulk ops contextually only when the user is already
+     thinking about this row. Chips reuse data-pc-bulk so the
+     existing handleT2RowBulk handler dispatches to the same bulk
+     helpers. */
+  function pcActionsHTML(surfaceId, propId, mode, isDetached, hasDirtyDescendants) {
+    var otherMode = (mode === 'light') ? 'dark' : 'light';
+    var step      = resolveT2Step(surfaceId, propId, mode);
+    var stepHex   = t2HexFor(surfaceId, propId, mode);
+    var chips = [];
+    if (isDetached) {
+      chips.push({
+        key:  'apply-other-mode',
+        sw:   stepHex,
+        lbl:  'Apply to ' + otherMode + ' mode',
+        tip:  'Mirror step ' + step + ' onto ' + otherMode + ' mode for this surface + prop.'
+      });
+      chips.push({
+        key:  'apply-all-surfaces',
+        sw:   stepHex,
+        lbl:  'Apply to all surfaces',
+        tip:  'Write step ' + step + ' to every other surface in ' + mode + ' mode.'
+      });
+    }
+    if (hasDirtyDescendants) {
+      var bag = (State.t2[mode] && State.t2[mode][surfaceId]) || {};
+      var descCount = descendantPropIds(propId).filter(function (d) { return bag[d] && bag[d].step; }).length;
+      var total = descCount + (isDetached ? 1 : 0);
+      chips.push({
+        key:    'reset-family',
+        danger: true,
+        lbl:    'Reset family (' + total + ')',
+        tip:    'Clear this row + ' + descCount + ' descendant override' + (descCount === 1 ? '' : 's') + ' in ' + mode + ' mode.'
+      });
+    }
+    if (!chips.length) return '';
+    return '<div class="ev2-pc-actions" role="group" aria-label="Bulk actions for this row">'
+      + chips.map(function (c) {
+          var swHTML = c.sw
+            ? '<span class="ev2-pc-action-sw" style="background:' + c.sw + '" aria-hidden="true"></span>'
+            : '';
+          return '<button type="button" class="ev2-pc-action"'
+            + ' data-pc-bulk="' + c.key + '"'
+            + ' data-surface="' + surfaceId + '" data-prop="' + propId + '"'
+            + (c.danger ? ' data-danger="true"' : '')
+            + ' data-tip="' + c.tip.replace(/"/g, '&quot;') + '">'
+            + swHTML
+            + '<span class="ev2-pc-action-lbl">' + c.lbl + '</span>'
+          + '</button>';
+        }).join('')
     + '</div>';
   }
 
@@ -1454,7 +1518,6 @@
       var hasDirtyDescendants = descendantPropIds(prop.id).some(function (d) {
         return bag[d] && bag[d].step;
       });
-      var showMore = isDetached || hasDirtyDescendants;
       return propertyCardHTML({
         tokenName: '--surface-' + surface.id + '-' + prop.id,
         swatchHex: swatchHex,
@@ -1465,7 +1528,6 @@
         level: prop.level,
         parentLabel: parentLabel,
         deltaSigned: deltaSigned,
-        showMore: showMore,
         hasDirtyDescendants: hasDirtyDescendants,
         dataAttrs: {
           'pc-surface': surface.id,
@@ -2121,16 +2183,9 @@
       );
       return;
     }
-    var moreBtn = e.target.closest && e.target.closest('[data-pc-more]');
-    if (moreBtn) {
-      var mcard = moreBtn.closest('.ev2-pc');
-      if (!mcard) return;
-      openT2RowMenu(moreBtn, mcard);
-      return;
-    }
-    var menuItem = e.target.closest && e.target.closest('[data-pc-bulk]');
-    if (menuItem) {
-      handleT2RowBulk(menuItem);
+    var bulkBtn = e.target.closest && e.target.closest('[data-pc-bulk]');
+    if (bulkBtn) {
+      handleT2RowBulk(bulkBtn);
       return;
     }
   });
@@ -2704,125 +2759,27 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hide(); });
   })();
 
-  /* ── T2 row overflow menu (singleton) ──────────────────
-     The ⋯ button on a Property Card pops a small menu of bulk ops:
-       - Apply to {other mode}
-       - Apply to all surfaces (current mode)
-       - Reset family   (this prop + descendants in current mode)
-     All ops resolve at action time (not at menu-open time) via
-     resolveT2Step + the bulkApply* helpers. Outside click / Esc /
-     scroll close. */
-  var __t2RowMenu = null;
-  function closeT2RowMenu() {
-    if (!__t2RowMenu) return;
-    __t2RowMenu.menu.remove();
-    var trig = __t2RowMenu.trigger;
-    if (trig) trig.setAttribute('aria-expanded', 'false');
-    __t2RowMenu = null;
-  }
-  function openT2RowMenu(triggerBtn, card) {
-    if (__t2RowMenu && __t2RowMenu.trigger === triggerBtn) { closeT2RowMenu(); return; }
-    closeT2RowMenu();
-    var surfaceId = card.getAttribute('data-pc-surface');
-    var propId    = card.getAttribute('data-pc-prop');
-    var mode      = State.editingMode;
-    var otherMode = (mode === 'light') ? 'dark' : 'light';
-    var ov = State.t2[mode][surfaceId] && State.t2[mode][surfaceId][propId];
-    var isDetached = !!(ov && ov.step);
-    var bag = (State.t2[mode] && State.t2[mode][surfaceId]) || {};
-    var hasDirtyDescendants = descendantPropIds(propId).some(function (d) {
-      return bag[d] && bag[d].step;
-    });
-    var step = resolveT2Step(surfaceId, propId, mode);
-    // Step preview hex so each "Apply" item shows the literal value
-    // the action will write.
-    var stepHex = t2HexFor(surfaceId, propId, mode);
-
-    var items = [];
-    if (isDetached) {
-      items.push({
-        key: 'apply-other-mode',
-        label: 'Apply to ' + otherMode + ' mode',
-        meta: 'mirror step ' + step,
-        sw: stepHex
-      });
-      items.push({
-        key: 'apply-all-surfaces',
-        label: 'Apply to all surfaces',
-        meta: 'this mode \u2014 step ' + step,
-        sw: stepHex
-      });
-    }
-    if (hasDirtyDescendants || isDetached) {
-      var descCount = descendantPropIds(propId).filter(function (d) { return bag[d] && bag[d].step; }).length;
-      var resetLabel = hasDirtyDescendants
-        ? 'Reset family (' + (descCount + (isDetached ? 1 : 0)) + ' overrides)'
-        : 'Reset just this row';
-      items.push({
-        key: 'reset-family',
-        label: resetLabel,
-        meta: hasDirtyDescendants ? 'this row + descendants, this mode' : 'this mode',
-        danger: true
-      });
-    }
-    if (!items.length) return;
-
-    var menu = document.createElement('div');
-    menu.className = 'ev2-pc-menu';
-    menu.setAttribute('role', 'menu');
-    menu.innerHTML = items.map(function (it) {
-      var swHTML = it.sw ? '<span class="ev2-pc-menu-sw" style="background:' + it.sw + '"></span>' : '<span class="ev2-pc-menu-sw ev2-pc-menu-sw-ph" aria-hidden="true"></span>';
-      var dangerAttr = it.danger ? ' data-danger="true"' : '';
-      return '<button type="button" class="ev2-pc-menu-item" role="menuitem"'
-        + ' data-pc-bulk="' + it.key + '"'
-        + ' data-surface="' + surfaceId + '" data-prop="' + propId + '"'
-        + dangerAttr + '>'
-        + swHTML
-        + '<span class="ev2-pc-menu-txt">'
-          + '<span class="ev2-pc-menu-lbl">' + it.label + '</span>'
-          + '<span class="ev2-pc-menu-meta">' + it.meta + '</span>'
-        + '</span>'
-      + '</button>';
-    }).join('');
-    document.body.appendChild(menu);
-
-    var r = triggerBtn.getBoundingClientRect();
-    var mw = menu.offsetWidth, mh = menu.offsetHeight;
-    var vw = window.innerWidth, vh = window.innerHeight;
-    var top = r.bottom + 6;
-    if (top + mh > vh - 8) top = Math.max(8, r.top - mh - 6);
-    var left = Math.round(r.right - mw);
-    left = Math.max(8, Math.min(vw - mw - 8, left));
-    menu.style.top = Math.round(top) + 'px';
-    menu.style.left = left + 'px';
-    triggerBtn.setAttribute('aria-expanded', 'true');
-    __t2RowMenu = { menu: menu, trigger: triggerBtn };
-  }
+  /* ── T2 row bulk-op dispatcher ─────────────────────────
+     Chips inside the expanded Property Card (pcActionsHTML) carry
+     data-pc-bulk; this dispatcher routes them to the right helper.
+     Replaces the earlier overflow-menu popover (which paid for one
+     extra resting-state button per detached row); now the bulk ops
+     are inline beneath the step ladder and only exist when the
+     designer has opened the card to think about the row. */
   function handleT2RowBulk(itemBtn) {
     var key       = itemBtn.getAttribute('data-pc-bulk');
     var surfaceId = itemBtn.getAttribute('data-surface');
     var propId    = itemBtn.getAttribute('data-prop');
     var mode      = State.editingMode;
-    closeT2RowMenu();
-    if (key === 'apply-other-mode')   bulkApplyToOtherMode(surfaceId, propId, mode);
+    if (key === 'apply-other-mode')        bulkApplyToOtherMode(surfaceId, propId, mode);
     else if (key === 'apply-all-surfaces') bulkApplyToAllSurfaces(surfaceId, propId, mode);
-    else if (key === 'reset-family')  bulkResetFamily(surfaceId, propId, mode);
+    else if (key === 'reset-family')       bulkResetFamily(surfaceId, propId, mode);
   }
-  document.addEventListener('click', function (e) {
-    if (!__t2RowMenu) return;
-    if (e.target.closest && e.target.closest('[data-pc-more]')) return; // own trigger handled above
-    if (__t2RowMenu.menu.contains(e.target)) return; // own item handled above
-    closeT2RowMenu();
-  }, true);
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && __t2RowMenu) {
-      var trig = __t2RowMenu.trigger;
-      closeT2RowMenu();
-      if (trig && trig.focus) trig.focus();
-    }
-  });
-  window.addEventListener('scroll', function () { if (__t2RowMenu) closeT2RowMenu(); }, true);
-  window.addEventListener('resize', function () { if (__t2RowMenu) closeT2RowMenu(); });
+
+  /* ── (removed) T2 row overflow menu ───────────────────
+     The old ⋯ popover was deleted in favor of pcActionsHTML's
+     inline action chips. handleT2RowBulk above is the only piece
+     that survived because the inline chips reuse data-pc-bulk. */
 
   /* ── WCAG sentinel popover ──────────────────────────────
      Click a .ev2-pc-wcag chip on a Property Card → opens a click-
