@@ -794,6 +794,34 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 
 /* T1 Roles — lever blocks + segmented controls + slots table */
 .ev2-levers{display:flex;flex-direction:column;gap:10px}
+/* Derived cards live in a sibling section below the 3 primary
+   levers. Slightly tighter gap + a visual divider so the eye reads
+   "primary picks" then "derived from those picks". */
+.ev2-levers-derived{
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px dashed var(--surface-base-outline);
+  gap:10px;
+}
+.ev2-levers-derived::before{
+  content:'Derived \2014 auto-computed, override any below';
+  display:block;
+  font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--surface-base-ct-subtle);
+  margin-bottom:8px;
+}
+/* onComponent has a 2-swatch "ladder" (white/black). Center the
+   two swatches and keep them large enough to read at a glance —
+   otherwise they look like an accidental near-empty row. */
+.ev2-pc-ladder[data-pc-ladder-compact="true"]{
+  grid-template-columns:repeat(2, 56px);
+  justify-content:start;
+  gap:8px;
+}
+.ev2-pc-ladder[data-pc-ladder-compact="true"] .ev2-pc-ladder-step{
+  aspect-ratio:1;
+  width:56px;
+}
 .ev2-lever-block{
   border:1px solid var(--surface-base-outline);
   border-radius:var(--radius-md,8px);

@@ -460,6 +460,24 @@
     { id: 'container', label: 'Container',      sub: 'Soft tinted surfaces (alert bg, banners)' }
   ];
 
+  /* Auto-derived cards on T1. Each ships with a sensible default
+     computed from the three primary levers, BUT every one is
+     overridable from its Property Card (stepper, ladder, reset).
+       - border / separator: walk container ± offset in the mode-
+         direction with headroom (stepRelToward).
+       - on-component: white-or-black, whichever beats the fill.
+       - on-container: nearest content step that AA-passes vs the
+         container; falls back to the closest available step.
+     State keys (per mode per role):
+       borderStep, separatorStep, onComponent, onContainerStep
+     Each is undefined when following the derivation. */
+  var T1_DERIVED = [
+    { id: 'border',       label: 'Container border',    sub: 'Outline drawn around the container surface' },
+    { id: 'separator',    label: 'Container separator', sub: 'Dividers inside the container surface' },
+    { id: 'onComponent',  label: 'On-component',        sub: 'Text + icons drawn on the component fill' },
+    { id: 'onContainer',  label: 'On-container',        sub: 'Text drawn on the container surface' }
+  ];
+
   function isChanged(roleId) {
     return State.proposed[roleId].toUpperCase() !== State.baseline[roleId].toUpperCase();
   }
@@ -468,7 +486,8 @@
     var b = (State.t1Baseline && State.t1Baseline[mode] && State.t1Baseline[mode][roleId])
          || defaultT1ForRole(roleId, mode);
     return t.fill !== b.fill || t.content !== b.content || t.container !== b.container
-        || !!t.borderStep || !!t.separatorStep;
+        || !!t.borderStep || !!t.separatorStep
+        || !!t.onComponent || !!t.onContainerStep;
   }
   function isT1Changed(roleId) {
     return isT1ChangedInMode(roleId, 'light') || isT1ChangedInMode(roleId, 'dark');
@@ -487,13 +506,21 @@
       ['fill','content','container'].forEach(function (lever) {
         if (t[lever] !== b[lever]) diffs.push({ mode: mode, lever: lever, fromStep: b[lever], toStep: t[lever] });
       });
+      if (t.borderStep)      diffs.push({ mode: mode, lever: 'border',      fromStep: 'auto', toStep: t.borderStep });
+      if (t.separatorStep)   diffs.push({ mode: mode, lever: 'separator',   fromStep: 'auto', toStep: t.separatorStep });
+      if (t.onComponent)     diffs.push({ mode: mode, lever: 'onComponent', fromStep: 'auto', toStep: t.onComponent });
+      if (t.onContainerStep) diffs.push({ mode: mode, lever: 'onContainer', fromStep: 'auto', toStep: t.onContainerStep });
     });
     return diffs;
   }
   function badgeTipFor(roleId) {
     var diffs = summarizeRoleChanges(roleId);
     if (!diffs.length) return '';
-    var labels = { fill:'Fill', content:'Content', container:'Container' };
+    var labels = {
+      fill:'Fill', content:'Content', container:'Container',
+      border:'Border', separator:'Separator',
+      onComponent:'On-component', onContainer:'On-container'
+    };
     return diffs.map(function (d) {
       var modeLabel = d.mode === 'dark' ? 'Dark' : 'Light';
       return modeLabel + ' · ' + labels[d.lever] + ': step ' + d.fromStep + ' → step ' + d.toStep;
@@ -539,21 +566,38 @@
   }
 
   // Auto-pair: pick black or white text for a filled component fill,
-  // whichever has higher WCAG contrast.
+  // whichever has higher WCAG contrast. User override = `t.onComponent`
+  // ('white' | 'black') wins when present.
   function onComponentColor(roleId, mode) {
-    if (!roleId) return '#FFFFFF'; // legacy callers (preserved for safety)
+    if (!roleId) return '#FFFFFF';
     var t = State.t1[mode || State.editingMode][roleId];
+    if (t.onComponent === 'white') return '#FFFFFF';
+    if (t.onComponent === 'black') return '#0A0A0A';
     var fillHex = stepHexByName(roleId, t.fill) || '#000';
     return DTFSolver.deriveOnComponent(fillHex);
   }
   // Auto-pair: pick the ladder step (closest to the user's chosen
   // content-default) that passes AA against the active container.
+  // User override = `t.onContainerStep` (a step name) wins when set.
   function onContainerColor(roleId, mode) {
     mode = mode || State.editingMode;
     var t = State.t1[mode][roleId];
     var ladder = ladderFor(roleId);
+    if (t.onContainerStep && ALL_STEPS.indexOf(t.onContainerStep) >= 0) {
+      return ladder[t.onContainerStep] || ladder[t.content] || '#000';
+    }
     var containerHex = ladder[t.container] || surfaceBgFor(mode);
     return DTFSolver.deriveOnContainer(ladder, t.content, containerHex).hex;
+  }
+  // Step name that on-container currently resolves to (for the
+  // Property Card's "current step" badge and the ladder's data-current).
+  function onContainerStepName(roleId, mode) {
+    mode = mode || State.editingMode;
+    var t = State.t1[mode][roleId];
+    if (t.onContainerStep && ALL_STEPS.indexOf(t.onContainerStep) >= 0) return t.onContainerStep;
+    var ladder = ladderFor(roleId);
+    var containerHex = ladder[t.container] || surfaceBgFor(mode);
+    return DTFSolver.deriveOnContainer(ladder, t.content, containerHex).step;
   }
 
   /* Aggregate contrast for the 3 currently-picked levers of a role */
@@ -1301,6 +1345,50 @@
     return !!(t && d && t[leverId] !== d[leverId]);
   }
 
+  /* Write/restore an override for a derived T1 value. onComponent
+     stores the picked step name verbatim ('white' | 'black');
+     everything else stores a step from ALL_STEPS. Clearing falls
+     back to the auto-derivation. */
+  function setT1Derived(roleId, derivedId, mode, newStep) {
+    var t = t1For(roleId, mode);
+    if (!t) return;
+    if (derivedId === 'onComponent') {
+      if (newStep !== 'white' && newStep !== 'black') return;
+      if (t.onComponent === newStep) return;
+      t.onComponent = newStep;
+    } else if (derivedId === 'border') {
+      if (ALL_STEPS.indexOf(newStep) < 0) return;
+      if (t.borderStep === newStep) return;
+      t.borderStep = newStep;
+    } else if (derivedId === 'separator') {
+      if (ALL_STEPS.indexOf(newStep) < 0) return;
+      if (t.separatorStep === newStep) return;
+      t.separatorStep = newStep;
+    } else if (derivedId === 'onContainer') {
+      if (ALL_STEPS.indexOf(newStep) < 0) return;
+      if (t.onContainerStep === newStep) return;
+      t.onContainerStep = newStep;
+    } else { return; }
+    scheduleAutosave();
+    refreshChangeBar();
+    renderT1();
+    pushPreview();
+  }
+  function clearT1Derived(roleId, derivedId, mode) {
+    var t = t1For(roleId, mode);
+    if (!t) return;
+    var changed = false;
+    if (derivedId === 'border' && t.borderStep) { delete t.borderStep; changed = true; }
+    else if (derivedId === 'separator' && t.separatorStep) { delete t.separatorStep; changed = true; }
+    else if (derivedId === 'onComponent' && t.onComponent) { delete t.onComponent; changed = true; }
+    else if (derivedId === 'onContainer' && t.onContainerStep) { delete t.onContainerStep; changed = true; }
+    if (!changed) return;
+    scheduleAutosave();
+    refreshChangeBar();
+    renderT1();
+    pushPreview();
+  }
+
   /* T1 equivalents of t2Sentinel / t2SuggestStep — let the WCAG
      popover open from a T1 lever chip exactly like a T2 prop chip.
      Per-lever baseline mirrors the solver's judgeStepForLever:
@@ -1492,6 +1580,154 @@
           var pass  = j.pass ? 'true' : 'false';
           var tip   = 'step ' + step + ' \u2022 ' + hex.toUpperCase()
                     + ' \u00b7 ' + j.ratio.toFixed(2) + ':1 (' + (j.pass ? j.grade : 'Fail') + ')'
+                    + (isDef ? ' \u2022 default' : '')
+                    + (isCur ? ' \u2022 selected' : '');
+          return '<button type="button" class="ev2-pc-ladder-step"'
+            + ' data-pc-ladder-pick="' + step + '"'
+            + ' data-current="' + isCur + '"'
+            + ' data-default="' + isDef + '"'
+            + ' data-pass="' + pass + '"'
+            + ' data-tip="' + tip + '"'
+            + ' aria-label="' + tip + '"'
+            + ' style="background:' + hex + '">'
+          + '</button>';
+        }).join('')
+    + '</div>';
+  }
+
+  /* ── T1 derived (border / separator / on-component / on-container) ──
+     Each derived card has its own:
+       • current() — what is being rendered today (override or default)
+       • defaultStep() — what the auto-derivation would pick
+       • baselineHex() — what its step is judged AGAINST (for WCAG)
+       • intent — 'edge' or 'text' (drives the sentinel chip + popover)
+       • setStep(step) / clearStep() — write/restore the override
+     This lets the existing Property Card primitive, the WCAG popover,
+     the stepper, and the reset chip all dispatch through one shape. */
+
+  // Step name currently rendered for a given derived id.
+  function t1DerivedStep(roleId, derivedId, mode) {
+    var t = State.t1[mode][roleId];
+    if (derivedId === 'border')      return t.borderStep ? t.borderStep : stepRelToward(t.container, 6, mode);
+    if (derivedId === 'separator')   return t.separatorStep ? t.separatorStep : stepRelToward(t.container, 2, mode);
+    if (derivedId === 'onComponent') {
+      if (t.onComponent === 'white' || t.onComponent === 'black') return t.onComponent;
+      var fillHex = stepHexByName(roleId, t.fill) || '#000';
+      var deriv   = DTFSolver.deriveOnComponent(fillHex);
+      return deriv === '#FFFFFF' ? 'white' : 'black';
+    }
+    if (derivedId === 'onContainer') return onContainerStepName(roleId, mode);
+    return null;
+  }
+  // What the derivation would pick if no override were set.
+  function t1DerivedDefault(roleId, derivedId, mode) {
+    var t = State.t1[mode][roleId];
+    if (derivedId === 'border')    return stepRelToward(t.container, 6, mode);
+    if (derivedId === 'separator') return stepRelToward(t.container, 2, mode);
+    if (derivedId === 'onComponent') {
+      var fillHex = stepHexByName(roleId, t.fill) || '#000';
+      return DTFSolver.deriveOnComponent(fillHex) === '#FFFFFF' ? 'white' : 'black';
+    }
+    if (derivedId === 'onContainer') {
+      var ladder = ladderFor(roleId);
+      var containerHex = ladder[t.container] || surfaceBgFor(mode);
+      return DTFSolver.deriveOnContainer(ladder, t.content, containerHex).step;
+    }
+    return null;
+  }
+  // True when user has overridden this derived value.
+  function t1DerivedIsDetached(roleId, derivedId, mode) {
+    var t = State.t1[mode][roleId];
+    if (derivedId === 'border')      return !!t.borderStep;
+    if (derivedId === 'separator')   return !!t.separatorStep;
+    if (derivedId === 'onComponent') return t.onComponent === 'white' || t.onComponent === 'black';
+    if (derivedId === 'onContainer') return !!t.onContainerStep;
+    return false;
+  }
+  // Hex currently painted by a derived id.
+  function t1DerivedHex(roleId, derivedId, mode) {
+    var step = t1DerivedStep(roleId, derivedId, mode);
+    if (derivedId === 'onComponent') return step === 'white' ? '#FFFFFF' : '#0A0A0A';
+    var ladder = ladderFor(roleId);
+    return ladder[step] || '#000';
+  }
+  // Baseline hex (what the derived's contrast is judged against)
+  // + intent + token name. Used by Property Card sentinel chip + popover.
+  function t1DerivedBaseline(roleId, derivedId, mode) {
+    var ladder = ladderFor(roleId);
+    var t = State.t1[mode][roleId];
+    var role = ROLES.find(function (r) { return r.id === roleId; });
+    var prefix = role ? role.prefix : roleId;
+    if (derivedId === 'border' || derivedId === 'separator') {
+      var contHex = ladder[t.container] || surfaceBgFor(mode);
+      return {
+        hex: contHex,
+        token: '--' + prefix + '-container-bg',
+        intent: 'edge',
+        large: true
+      };
+    }
+    if (derivedId === 'onComponent') {
+      var fillHex = stepHexByName(roleId, t.fill) || '#000';
+      return {
+        hex: fillHex,
+        token: '--' + prefix + '-component-bg-default',
+        intent: 'text',
+        large: false
+      };
+    }
+    // onContainer
+    var contHex2 = ladder[t.container] || surfaceBgFor(mode);
+    return {
+      hex: contHex2,
+      token: '--' + prefix + '-container-bg',
+      intent: 'text',
+      large: false
+    };
+  }
+  function t1DerivedTokenName(roleId, derivedId) {
+    var role = ROLES.find(function (r) { return r.id === roleId; });
+    var prefix = role ? role.prefix : roleId;
+    if (derivedId === 'border')      return '--' + prefix + '-container-outline';
+    if (derivedId === 'separator')   return '--' + prefix + '-container-separator';
+    if (derivedId === 'onComponent') return '--' + prefix + '-on-component';
+    if (derivedId === 'onContainer') return '--' + prefix + '-on-container';
+    return '--' + prefix + '-' + derivedId;
+  }
+  // Per-step pass mark for the ladder, mirroring t1LeverLadderHTML.
+  function t1DerivedJudgeStep(roleId, derivedId, mode, step) {
+    var base = t1DerivedBaseline(roleId, derivedId, mode);
+    var hex;
+    if (derivedId === 'onComponent') {
+      hex = step === 'white' ? '#FFFFFF' : '#0A0A0A';
+    } else {
+      hex = ladderFor(roleId)[step] || '#000';
+    }
+    var r = contrastRatio(hex, base.hex);
+    return { ratio: r, judge: wcagJudge(r, base.large) };
+  }
+  /* Ladder HTML for a derived card. onComponent gets a tiny
+     2-step "ladder" of just white + black; everything else uses
+     the standard 22-step palette. */
+  function t1DerivedLadderHTML(roleId, derivedId, mode) {
+    var steps = (derivedId === 'onComponent') ? ['white', 'black'] : ALL_STEPS;
+    var ladderHex = ladderFor(roleId);
+    var current = t1DerivedStep(roleId, derivedId, mode);
+    var def     = t1DerivedDefault(roleId, derivedId, mode);
+    return '<div class="ev2-pc-ladder" data-pc-ladder-role="' + roleId + '"'
+      + ' data-pc-ladder-derived="' + derivedId + '"'
+      + (derivedId === 'onComponent' ? ' data-pc-ladder-compact="true"' : '')
+      + '>'
+      + steps.map(function (step) {
+          var hex   = (derivedId === 'onComponent')
+            ? (step === 'white' ? '#FFFFFF' : '#0A0A0A')
+            : (ladderHex[step] || '#000');
+          var isCur = step === current;
+          var isDef = step === def;
+          var jr    = t1DerivedJudgeStep(roleId, derivedId, mode, step);
+          var pass  = jr.judge.pass ? 'true' : 'false';
+          var tip   = 'step ' + step + ' \u2022 ' + hex.toUpperCase()
+                    + ' \u00b7 ' + jr.ratio.toFixed(2) + ':1 (' + (jr.judge.pass ? jr.judge.grade : 'Fail') + ')'
                     + (isDef ? ' \u2022 default' : '')
                     + (isCur ? ' \u2022 selected' : '');
           return '<button type="button" class="ev2-pc-ladder-step"'
@@ -1918,8 +2154,40 @@
       });
     }).join('');
 
-    /* Auto-derived 2\u00d72 (on-comp, on-cont, border, separator). */
-    var pairedHTML = renderWcagPairsHTML(role, mode).pairedHTML;
+    /* Auto-derived Property Cards: border / separator / on-component
+       / on-container. Each shares the T1 lever chrome (alwaysExpanded
+       ladder, WCAG chip, stepper, reset). Defaults follow the
+       derivation rules; user overrides write to state via setT1Derived. */
+    var derivedHTML = T1_DERIVED.map(function (d) {
+      var curStep   = t1DerivedStep(role.id, d.id, mode);
+      var defStep   = t1DerivedDefault(role.id, d.id, mode);
+      var detached  = t1DerivedIsDetached(role.id, d.id, mode);
+      var curHex    = t1DerivedHex(role.id, d.id, mode);
+      var base      = t1DerivedBaseline(role.id, d.id, mode);
+      var jr        = t1DerivedJudgeStep(role.id, d.id, mode, curStep);
+      var sentinel  = {
+        ratio: jr.ratio,
+        large: base.large,
+        intent: base.intent,
+        judge: jr.judge
+      };
+      return propertyCardHTML({
+        tier: 't1',
+        alwaysExpanded: true,
+        tokenName: d.label,
+        subtitle: d.sub,
+        swatchHex: curHex,
+        step: curStep,
+        isDetached: detached,
+        sentinel: sentinel,
+        suppressBaseChip: true,
+        ladderHTML: t1DerivedLadderHTML(role.id, d.id, mode),
+        dataAttrs: {
+          'pc-role':    role.id,
+          'pc-derived': d.id
+        }
+      });
+    }).join('');
 
     $body.innerHTML =
       '<div class="ev2-roles" role="tablist">'
@@ -1957,7 +2225,7 @@
         + '</div>'
         + '<div class="ev2-intent-body">'
           + '<div class="ev2-levers">' + leversHTML + '</div>'
-          + pairedHTML
+          + '<div class="ev2-levers ev2-levers-derived" data-pc-group="derived">' + derivedHTML + '</div>'
           + '<div class="ev2-disc"' + (State.disclosure['t1:slots'] ? ' data-open' : '') + ' data-disc="t1:slots">'
             + '<div class="ev2-disc-head">'
               + '<span>Resulting slots</span>'
@@ -2268,12 +2536,17 @@
       if (!pcard) return;
       var picked = pickBtn.getAttribute('data-pc-ladder-pick');
       if (pcard.getAttribute('data-pc-tier') === 't1') {
-        setT1Lever(
-          pcard.getAttribute('data-pc-role'),
-          pcard.getAttribute('data-pc-lever'),
-          State.editingMode,
-          picked
-        );
+        var pcDerived = pcard.getAttribute('data-pc-derived');
+        if (pcDerived) {
+          setT1Derived(pcard.getAttribute('data-pc-role'), pcDerived, State.editingMode, picked);
+        } else {
+          setT1Lever(
+            pcard.getAttribute('data-pc-role'),
+            pcard.getAttribute('data-pc-lever'),
+            State.editingMode,
+            picked
+          );
+        }
       } else {
         setT2Step(
           pcard.getAttribute('data-pc-surface'),
@@ -2293,6 +2566,20 @@
         // T1 stepper: walk in the perceived-tonal direction so "+"
         // always goes darker on-screen, regardless of mode.
         var roleId  = card.getAttribute('data-pc-role');
+        var derivedId = card.getAttribute('data-pc-derived');
+        if (derivedId) {
+          // onComponent is binary — flip between white/black.
+          if (derivedId === 'onComponent') {
+            var curOC = t1DerivedStep(roleId, derivedId, State.editingMode);
+            var nxOC = curOC === 'white' ? 'black' : 'white';
+            setT1Derived(roleId, derivedId, State.editingMode, nxOC);
+            return;
+          }
+          var curD = t1DerivedStep(roleId, derivedId, State.editingMode);
+          var nxD  = stepRel(curD, delta * tonalDir(State.editingMode));
+          if (nxD !== curD) setT1Derived(roleId, derivedId, State.editingMode, nxD);
+          return;
+        }
         var leverId = card.getAttribute('data-pc-lever');
         if (!roleId || !leverId) return;
         var t1cur = t1For(roleId, State.editingMode)[leverId];
@@ -2317,6 +2604,11 @@
       var card2 = resetBtn.closest('.ev2-pc');
       if (!card2) return;
       if (card2.getAttribute('data-pc-tier') === 't1') {
+        var derivedR = card2.getAttribute('data-pc-derived');
+        if (derivedR) {
+          clearT1Derived(card2.getAttribute('data-pc-role'), derivedR, State.editingMode);
+          return;
+        }
         clearT1Lever(
           card2.getAttribute('data-pc-role'),
           card2.getAttribute('data-pc-lever'),
@@ -3041,13 +3333,49 @@
       var sent, sug, tokenName, applyAttrs, propIdHint = null, flashProp = null;
       if (tier === 't1') {
         var roleId  = card.getAttribute('data-pc-role');
-        var leverId = card.getAttribute('data-pc-lever');
-        sent = t1Sentinel(roleId, leverId, mode);
-        if (!sent) return;
-        sug  = t1SuggestStep(roleId, leverId, mode);
-        tokenName = t1TokenName(roleId, leverId);
-        pop.__cellHex = t1HexFor(roleId, leverId, mode);
-        applyAttrs = ' data-pc-wcag-tier="t1" data-pc-wcag-role="' + roleId + '" data-pc-wcag-lever="' + leverId + '"';
+        var derivedId = card.getAttribute('data-pc-derived');
+        if (derivedId) {
+          // Build sentinel + suggestion for a T1 derived card.
+          var base = t1DerivedBaseline(roleId, derivedId, mode);
+          var curStep = t1DerivedStep(roleId, derivedId, mode);
+          var jr = t1DerivedJudgeStep(roleId, derivedId, mode, curStep);
+          sent = {
+            intent: base.intent, large: base.large,
+            baselineHex: base.hex, baseline: base.token,
+            ratio: jr.ratio, judge: jr.judge
+          };
+          // Suggestion: walk both directions, pick first passing
+          // step in the derived's allowed step set.
+          (function () {
+            var steps = (derivedId === 'onComponent') ? ['white','black'] : ALL_STEPS;
+            var threshold = base.large ? 3 : 4.5;
+            if (jr.judge.pass) { sug = null; return; }
+            var curIdx = steps.indexOf(curStep);
+            function tryIdx(idx) {
+              var j = t1DerivedJudgeStep(roleId, derivedId, mode, steps[idx]);
+              return j.judge.pass ? { step: steps[idx], hex: (derivedId === 'onComponent' ? (steps[idx]==='white'?'#FFFFFF':'#0A0A0A') : ladderFor(roleId)[steps[idx]]), ratio: j.ratio, judge: j.judge } : null;
+            }
+            var pick = null;
+            for (var d = 1; d < steps.length; d++) {
+              var fwd = curIdx + d, bwd = curIdx - d;
+              var rF = (fwd < steps.length) ? tryIdx(fwd) : null;
+              var rB = (bwd >= 0) ? tryIdx(bwd) : null;
+              if (rF || rB) { pick = (rF && rB) ? (rF.ratio >= rB.ratio ? rF : rB) : (rF || rB); break; }
+            }
+            sug = pick;
+          })();
+          tokenName = t1DerivedTokenName(roleId, derivedId);
+          pop.__cellHex = t1DerivedHex(roleId, derivedId, mode);
+          applyAttrs = ' data-pc-wcag-tier="t1d" data-pc-wcag-role="' + roleId + '" data-pc-wcag-derived="' + derivedId + '"';
+        } else {
+          var leverId = card.getAttribute('data-pc-lever');
+          sent = t1Sentinel(roleId, leverId, mode);
+          if (!sent) return;
+          sug  = t1SuggestStep(roleId, leverId, mode);
+          tokenName = t1TokenName(roleId, leverId);
+          pop.__cellHex = t1HexFor(roleId, leverId, mode);
+          applyAttrs = ' data-pc-wcag-tier="t1" data-pc-wcag-role="' + roleId + '" data-pc-wcag-lever="' + leverId + '"';
+        }
       } else {
         var surfaceId = card.getAttribute('data-pc-surface');
         var propId    = card.getAttribute('data-pc-prop');
@@ -3141,6 +3469,10 @@
           var rId = applyBtn.getAttribute('data-pc-wcag-role');
           var lId = applyBtn.getAttribute('data-pc-wcag-lever');
           setT1Lever(rId, lId, State.editingMode, step);
+        } else if (btnTier === 't1d') {
+          var rId2 = applyBtn.getAttribute('data-pc-wcag-role');
+          var dId  = applyBtn.getAttribute('data-pc-wcag-derived');
+          setT1Derived(rId2, dId, State.editingMode, step);
         } else {
           var sId = applyBtn.getAttribute('data-surface');
           var pId = applyBtn.getAttribute('data-prop');
