@@ -1379,6 +1379,10 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-pc-wcag[data-grade="aa"]{background:var(--success-container-bg,#E8F5EB);color:var(--success-content-default,#0B8D28)}
 .ev2-pc-wcag[data-grade="aa-large"]{background:var(--info-container-bg,#EAF4FF);color:var(--info-content-default,#0E6FE0)}
 .ev2-pc-wcag[data-grade="fail"]{background:var(--danger-container-bg,#FDEAEB);color:var(--danger-content-default,#D61D20)}
+/* Edge-intent (outline / cm-outline) below 3:1 is informational —
+   the border is fine as long as it's paired with shadow/spacing.
+   Show as a neutral note, not a red alarm. */
+.ev2-pc-wcag[data-grade="edge-soft"]{background:var(--warning-container-bg,#FFF3D6);color:var(--warning-content-default,#A66208)}
 
 /* Inline 20-step ladder picker (Property Card accordion). Appears
    as a second row when the user clicks the swatch. Click any step

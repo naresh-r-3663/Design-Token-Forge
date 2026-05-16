@@ -1054,22 +1054,28 @@
     var prop = T2_PROP_DEFS.find(function (p) { return p.id === propId; });
     if (!prop) return null;
     var cellHex = t2HexFor(surfaceId, propId, mode);
-    var baselineProp, large = false;
-    // Match the matrix in docs \u00a77.
+    var baselineProp, large = false, intent = 'text';
+    // intent is 'text' (WCAG 1.4.3) or 'edge' (1.4.11). 'edge' is
+    // informational: 3:1 is only mandatory when the border alone
+    // identifies the region; shadow/spacing can substitute.
     if (prop.family === 'content') {
       baselineProp = 'bg';
       large = (propId === 'ct-subtle' || propId === 'ct-faint');
+      intent = 'text';
     } else if (propId === 'cm-outline' || propId === 'cm-outline-hover' || propId === 'cm-outline-pressed') {
-      baselineProp = 'cm-bg';   // outline vs adjacent component bg
-      large = true;             // 3:1 is the AA threshold for non-text
-    } else if (propId === 'cm-bg' || propId === 'cm-bg-hover' || propId === 'cm-bg-pressed' ||
-               propId === 'outline') {
+      baselineProp = 'cm-bg';
+      large = true;
+      intent = 'edge';
+    } else if (propId === 'outline') {
       baselineProp = 'bg';
       large = true;
+      intent = 'edge';
     } else {
-      // subtle, strong, separator, cm-separator, bg \u2014 no sentinel
-      // per docs \u00a77 (informational tints / decorative dividers).
-      // bg has no sentinel because it IS the baseline.
+      // subtle, strong, separator, cm-separator, bg, cm-bg trio --
+      // no sentinel. Tints + dividers are informational; cm-bg trio
+      // encodes elevation/state, not page-region contrast (paired
+      // with shadow in practice). The old check that pitted cm-bg
+      // against page bg @ 3:1 was a category error.
       return null;
     }
     var baselineHex = t2HexFor(surfaceId, baselineProp, mode);
@@ -1080,7 +1086,8 @@
       baselineHex: baselineHex,
       ratio: ratio,
       judge: judge,
-      large: large
+      large: large,
+      intent: intent
     };
   }
 
@@ -1094,6 +1101,19 @@
     var threshold = sent.large ? 3 : 4.5;
     var ratio = sent.ratio.toFixed(2) + ':1';
     var baselineShort = sent.baseline.replace(/^--surface-[^-]+-/, '');
+    // Edge intent (outline / cm-outline trio): 3:1 is ONLY required
+    // when the border identifies the region by itself. Most designs
+    // pair a faint border with shadow or spacing, in which case a
+    // sub-3:1 ratio is perfectly fine. We reframe the chip instead
+    // of crying "FAIL".
+    if (sent.intent === 'edge') {
+      if (sent.judge.pass) {
+        return (ratio + ' against ' + baselineShort + ' — clears the 3:1 minimum, so this border can identify the region on its own.').replace(/"/g, '&quot;');
+      }
+      return (ratio + ' against ' + baselineShort + '. Below the 3:1 minimum for borders that stand alone (WCAG 1.4.11) — fine if you pair this border with a shadow or spacing, otherwise step it ' + role.direction + '.').replace(/"/g, '&quot;');
+    }
+    // Text intent (content family) — strict pass/fail, prescriptive
+    // remedy when below threshold.
     var lead = sent.judge.pass
       ? 'Passes — '
       : (sent.ratio >= threshold - 0.5 ? 'Just below — ' : 'Fails — ');
@@ -1116,8 +1136,6 @@
                                        return { what:'This body text',    usage:'body copy (WCAG 1.4.3)',  direction:'darker' };
     if (prop === 'ct-subtle' || prop === 'ct-faint')
                                        return { what:'This support text', usage:'large/secondary text',     direction:'darker' };
-    if (prop === 'cm-bg' || prop === 'cm-bg-hover' || prop === 'cm-bg-pressed')
-                                       return { what:'This component fill', usage:'component surface (WCAG 1.4.11)', direction:'darker or lighter to separate from the page bg' };
     if (prop === 'cm-outline' || prop === 'cm-outline-hover' || prop === 'cm-outline-pressed')
                                        return { what:'This component border', usage:'UI borders (WCAG 1.4.11)', direction:'darker' };
     return { what:'This color', usage:'UI elements', direction:'further away from the baseline' };
@@ -1195,8 +1213,18 @@
     var sent = opts.sentinel;
     var sentHTML = '';
     if (sent) {
-      var grade = sent.judge.pass ? (sent.judge.grade === 'AAA' ? 'aaa' : (sent.large ? 'aa-large' : 'aa')) : 'fail';
-      var sym   = sent.judge.pass ? '\u2713' : '\u26A0';
+      // Edge-intent below threshold = "fine if paired with shadow"
+      // soft note (amber, ⓘ), NOT a hard red fail. Edge-intent ≥
+      // threshold = green pass. Text-intent uses the canonical
+      // pass / aa / aaa / fail grades.
+      var grade, sym;
+      if (sent.intent === 'edge') {
+        if (sent.judge.pass) { grade = 'aa-large'; sym = '\u2713'; }
+        else                  { grade = 'edge-soft'; sym = '\u24D8'; }
+      } else {
+        grade = sent.judge.pass ? (sent.judge.grade === 'AAA' ? 'aaa' : (sent.large ? 'aa-large' : 'aa')) : 'fail';
+        sym   = sent.judge.pass ? '\u2713' : '\u26A0';
+      }
       sentHTML = '<div class="ev2-pc-wcag" data-grade="' + grade + '"'
         + ' data-tip="' + wcagTipText(sent, opts.tokenName) + '">'
         + sym + ' ' + sent.ratio.toFixed(2) + ':1'
