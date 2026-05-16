@@ -56,7 +56,7 @@ grep -l '="m[0-9]' *.html         # Garbled attribute values
 grep -l '<a href.*<a href' *.html  # Doubled anchor tags on same line
 ```
 
-- [ ] Every demo page (except editor.html and index.html) has exactly 1 occurrence of the new link
+- [ ] Every demo page (except editor-v1-archive.html and index.html) has exactly 1 occurrence of the new link
 - [ ] No corrupted HTML found by verification grep
 - [ ] Each page's own link still has `aria-current="page"` intact
 
