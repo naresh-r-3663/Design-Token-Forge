@@ -188,11 +188,6 @@
 
 <div class="wizard-container">
 
-  <div class="wizard-header">
-    <h1 id="wizardTitle">🚀 Start Your Own Project</h1>
-    <p id="wizardDesc">Add your project to Design Token Forge. Configure your brand colors & connect GitHub — your tokens will deploy automatically.</p>
-  </div>
-
   <!-- Steps indicator -->
   <div class="wizard-steps">
     <div class="step-pill active" data-step="1">1. Project &amp; Colors</div>
@@ -263,6 +258,7 @@
 
   <!-- ── Navigation buttons ─────────────────────────── -->
   <div class="wizard-actions">
+    <button class="btn btn-secondary" id="cancelBtn" type="button">Cancel</button>
     <button class="btn btn-secondary" id="prevBtn" style="display:none">← Back</button>
     <div style="flex:1"></div>
     <button class="btn btn-primary" id="nextBtn">Next →</button>
@@ -364,6 +360,23 @@
   prevBtn.addEventListener('click', () => {
     if (currentStep > 1) goToStep(currentStep - 1);
   });
+  // Cancel: return to the page that opened the wizard. Fallbacks
+  // cover (a) direct visits via typed URL (no referrer) and (b)
+  // cross-origin referrers \u2014 land on the projects hub in both cases.
+  const cancelBtn = document.getElementById('cancelBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      let target = 'index.html';
+      try {
+        const ref = document.referrer;
+        if (ref && new URL(ref).origin === location.origin && !ref.endsWith('/onboard.html')) {
+          target = ref;
+        }
+      } catch (e) {}
+      if (window.history.length > 1 && target === document.referrer) window.history.back();
+      else window.location.href = target;
+    });
+  }
   steps.forEach(s => s.addEventListener('click', () => {
     const target = parseInt(s.dataset.step);
     if (target < currentStep) goToStep(target);
