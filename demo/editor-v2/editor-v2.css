@@ -2370,6 +2370,16 @@ body.ev2-modal-open{overflow:hidden}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ev2-history-meta{font-size:10px;color:var(--ev2-chrome-ct-faint);display:flex;gap:6px;flex-wrap:wrap}
 .ev2-history-meta-sep{opacity:.5}
+.ev2-history-flag{
+  display:inline-flex;align-items:center;
+  padding:0 6px;
+  border-radius:999px;
+  background:var(--ev2-chrome-bg);
+  border:1px solid var(--ev2-chrome-outline);
+  color:var(--ev2-chrome-ct-subtle);
+  font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+  cursor:help;
+}
 .ev2-history-desc{font-size:11px;color:var(--ev2-chrome-ct-subtle);line-height:1.4;margin-top:2px;
   overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .ev2-history-restore{

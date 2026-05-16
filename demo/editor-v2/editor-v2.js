@@ -3821,13 +3821,13 @@
       var hasInline = s.json && s.json.files && !Array.isArray(s.json.files) && typeof s.json.files === 'object';
       var btnAttrs = hasInline
         ? 'data-restore="' + escapeAttr(ver) + '"'
-        : 'disabled data-tip="Snapshot predates inline file storage. Restore is unavailable for this version."';
+        : 'disabled data-tip="This snapshot was published before inline file storage was added, so its contents aren\u2019t available to restore. Publish a new version to make future restores possible."';
       var btnLabel = isCurrent ? 'Live' : 'Restore';
       var btnDisabledAttr = isCurrent ? 'disabled' : '';
       var metaBits = [];
       if (when) metaBits.push(escapeHTML(when));
       if (who)  metaBits.push(escapeHTML('@' + who));
-      if (!hasInline) metaBits.push('legacy snapshot');
+      if (!hasInline) metaBits.push('<span class="ev2-history-flag" data-tip="This snapshot only stored metadata (filenames), not file contents, so it can\u2019t be restored.">metadata only</span>');
       var metaLine = metaBits.join(' <span class="ev2-history-meta-sep">\u00b7</span> ');
       return '<div class="ev2-history-row" data-current="' + (isCurrent ? 'true' : 'false') + '">'
         + '<div class="ev2-history-ver">'
