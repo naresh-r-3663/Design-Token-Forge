@@ -3557,6 +3557,7 @@
     renderActiveTier();
     refreshChangeBar();
     initProjectWidget();
+    initMigrationBanner();
     if (hadDraft) {
       refreshDraftStatus('saved');
       if (window.ev2Toast) {
@@ -3698,6 +3699,136 @@
       // Inform AFFECTS so the role card shows a meaningful component
       // hint instead of "undefined".
       AFFECTS[cr.id] = AFFECTS[cr.id] || ['Custom (project role)'];
+    });
+  }
+
+  /* ── First-boot migration banner ───────────────────────
+     Mirrors scripts/migrate-v2/audit.cjs logic in-browser.
+     Surfaces unresolved migration items at the top of v2 chrome
+     until the user acknowledges (writes localStorage flag) or
+     dismisses for the session. Acknowledge is local-only —
+     editing config.json from file:// isn't possible; the audit
+     script remains the canonical source of truth.
+     ──────────────────────────────────────────────────── */
+  var MIGRATION_TARGET_SCHEMA = 2;
+  var MIGRATION_STANDARD_ROLES = ['brand','danger','warning','info','success'];
+
+  function migrationAckKey(projectId) {
+    return 'dtf-migration-ack-' + projectId;
+  }
+  function migrationDismissKey(projectId) {
+    return 'dtf-migration-dismiss-' + projectId;
+  }
+
+  function runMigrationAuditInBrowser() {
+    var id = getActiveProjectId();
+    if (!id) return null;
+    var cfg = readProjectConfigSync();
+    if (!cfg) return null;
+    var schemaVersion = cfg.schemaVersion || 1;
+    var declaredKeys  = Object.keys(cfg.paletteKeys || {});
+    var customRoles   = Array.isArray(cfg.customRoles) ? cfg.customRoles : [];
+
+    // Palette inventory drift: discover palettes from the loaded
+    // primitives by scanning :root CSS variables.
+    var palettesInCSS = [];
+    try {
+      var rootCS = getComputedStyle(document.documentElement);
+      var seen = {};
+      // CSSOM doesn't enumerate custom properties; scan all stylesheets.
+      for (var i = 0; i < document.styleSheets.length; i++) {
+        var rules;
+        try { rules = document.styleSheets[i].cssRules; } catch (e) { continue; }
+        if (!rules) continue;
+        for (var j = 0; j < rules.length; j++) {
+          var rule = rules[j];
+          if (!rule.style) continue;
+          for (var k = 0; k < rule.style.length; k++) {
+            var prop = rule.style[k];
+            var m = /^--prim-([a-z][a-z0-9-]*)-\d+$/i.exec(prop);
+            if (m && !seen[m[1]]) { seen[m[1]] = 1; palettesInCSS.push(m[1]); }
+          }
+        }
+      }
+    } catch (e) { /* sandboxed file:// — best effort */ }
+
+    var undeclaredPalettes = palettesInCSS.filter(function (p) {
+      return declaredKeys.indexOf(p) === -1;
+    });
+
+    var customRoleIds = customRoles.map(function (cr) { return cr && cr.id; }).filter(Boolean);
+
+    return {
+      projectId: id,
+      schemaVersion: schemaVersion,
+      targetSchema: MIGRATION_TARGET_SCHEMA,
+      undeclaredPalettes: undeclaredPalettes,
+      customRoleIds: customRoleIds,
+      hasWork: (schemaVersion < MIGRATION_TARGET_SCHEMA)
+            || (undeclaredPalettes.length > 0)
+            || (customRoleIds.length > 0)
+    };
+  }
+
+  function initMigrationBanner() {
+    var $banner   = document.getElementById('migrateBanner');
+    var $title    = document.getElementById('migrateBannerTitle');
+    var $sub      = document.getElementById('migrateBannerSub');
+    var $info     = document.getElementById('migrateBannerInfo');
+    var $ack      = document.getElementById('migrateBannerAck');
+    var $dismiss  = document.getElementById('migrateBannerDismiss');
+    if (!$banner) return;
+
+    var audit = runMigrationAuditInBrowser();
+    if (!audit || !audit.hasWork) return;
+
+    var ackd     = localStorage.getItem(migrationAckKey(audit.projectId)) === String(audit.targetSchema);
+    var dismissd = sessionStorage.getItem(migrationDismissKey(audit.projectId)) === '1';
+    if (ackd || dismissd) return;
+
+    // Build subtitle from actionable items.
+    var bits = [];
+    if (audit.schemaVersion < audit.targetSchema) {
+      bits.push('schema v' + audit.schemaVersion + ' → v' + audit.targetSchema);
+    }
+    if (audit.customRoleIds.length) {
+      bits.push(audit.customRoleIds.length + ' custom role'
+        + (audit.customRoleIds.length === 1 ? '' : 's')
+        + ' (' + audit.customRoleIds.join(', ') + ') promoted to T1');
+    }
+    if (audit.undeclaredPalettes.length) {
+      bits.push(audit.undeclaredPalettes.length + ' palette'
+        + (audit.undeclaredPalettes.length === 1 ? '' : 's')
+        + ' undeclared in config.paletteKeys');
+    }
+    $title.textContent = 'Project "' + audit.projectId + '" — migration available';
+    $sub.textContent   = bits.join(' · ');
+
+    $banner.hidden = false;
+
+    $info.addEventListener('click', function () {
+      // Open the audit script docs as a markdown blob in a new tab.
+      // Falls back to a simple alert if the browser blocks Blob+open.
+      var summary = '# Audit summary for "' + audit.projectId + '"\n\n'
+        + '- schema: ' + audit.schemaVersion + ' → ' + audit.targetSchema + '\n'
+        + '- custom roles awaiting T1: ' + (audit.customRoleIds.join(', ') || 'none') + '\n'
+        + '- undeclared palettes: ' + (audit.undeclaredPalettes.join(', ') || 'none') + '\n\n'
+        + 'Run `pnpm audit:migration` for the full per-project report.';
+      try {
+        var blob = new Blob([summary], { type: 'text/markdown' });
+        var url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } catch (e) { alert(summary); }
+    });
+
+    $ack.addEventListener('click', function () {
+      localStorage.setItem(migrationAckKey(audit.projectId), String(audit.targetSchema));
+      $banner.hidden = true;
+    });
+
+    $dismiss.addEventListener('click', function () {
+      sessionStorage.setItem(migrationDismissKey(audit.projectId), '1');
+      $banner.hidden = true;
     });
   }
   function getKnownProjects() {

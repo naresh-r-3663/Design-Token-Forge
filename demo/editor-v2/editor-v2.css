@@ -2086,3 +2086,45 @@ body.ev2-modal-open{overflow:hidden}
 /* Row-head meta + actions layout for custom palette rows */
 .ev2-sp-row .ev2-sp-rowhead{display:flex;align-items:center;gap:8px}
 .ev2-sp-row .ev2-sp-meta{margin-right:auto}
+
+/* ── First-boot migration banner ──────────────────────── */
+.ev2-migrate-banner{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:10px 16px;
+  background:var(--warning-container-bg,#FEF3C7);
+  border-bottom:1px solid var(--warning-container-outline,#F59E0B);
+  color:var(--warning-on-container,#78350F);
+  font-size:12px;line-height:1.4;
+}
+.ev2-migrate-banner[hidden]{display:none}
+.ev2-migrate-icon{flex:0 0 auto;color:var(--warning-content-default,#B45309);margin-top:1px}
+.ev2-migrate-body{flex:1 1 auto;min-width:0}
+.ev2-migrate-title{font-weight:600;color:var(--warning-content-strong,#78350F);margin-bottom:1px}
+.ev2-migrate-sub{font-size:11.5px;opacity:.9}
+.ev2-migrate-actions{flex:0 0 auto;display:flex;align-items:center;gap:8px}
+.ev2-migrate-link,
+.ev2-migrate-ack{
+  font:inherit;font-size:11.5px;font-weight:600;
+  padding:5px 10px;
+  border-radius:var(--radius-sm,4px);
+  cursor:pointer;
+  border:1px solid var(--warning-component-outline-default,#D97706);
+  background:transparent;
+  color:var(--warning-content-strong,#78350F);
+  transition:all 120ms ease;
+}
+.ev2-migrate-ack{
+  background:var(--warning-component-bg-default,#D97706);
+  color:var(--warning-on-component,#fff);
+  border-color:var(--warning-component-bg-default,#D97706);
+}
+.ev2-migrate-link:hover{background:var(--warning-container-hover,#FDE68A)}
+.ev2-migrate-ack:hover{background:var(--warning-component-bg-hover,#B45309);border-color:var(--warning-component-bg-hover,#B45309)}
+.ev2-migrate-dismiss{
+  width:24px;height:24px;border:0;background:transparent;
+  color:var(--warning-content-default,#B45309);
+  font-size:20px;line-height:1;cursor:pointer;
+  border-radius:var(--radius-sm,4px);
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.ev2-migrate-dismiss:hover{background:var(--warning-container-hover,#FDE68A)}

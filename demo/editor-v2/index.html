@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../shared.css">
 
   <!-- Editor v2 specific layout -->
-  <link rel="stylesheet" href="./editor-v2.css?v=102">
+  <link rel="stylesheet" href="./editor-v2.css?v=103">
 
   <!-- Palette engine (browser IIFE — exposes window.PaletteEngine) -->
   <script src="../palette-engine.js?v=85" defer></script>
@@ -92,6 +92,22 @@
         </div>
       </div>
     </nav>
+
+    <!-- First-boot migration banner (populated by JS; hidden by default) -->
+    <aside class="ev2-migrate-banner" id="migrateBanner" role="status" hidden>
+      <div class="ev2-migrate-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12" y2="16"/></svg>
+      </div>
+      <div class="ev2-migrate-body">
+        <div class="ev2-migrate-title" id="migrateBannerTitle">Migration available</div>
+        <div class="ev2-migrate-sub" id="migrateBannerSub"></div>
+      </div>
+      <div class="ev2-migrate-actions">
+        <button class="ev2-migrate-link" id="migrateBannerInfo" type="button">Audit report</button>
+        <button class="ev2-migrate-ack" id="migrateBannerAck" type="button">Acknowledge</button>
+        <button class="ev2-migrate-dismiss" id="migrateBannerDismiss" type="button" aria-label="Dismiss for this session">×</button>
+      </div>
+    </aside>
 
     <!-- BOTTOM: list + resizer + preview -->
     <div class="ev2-panes">
@@ -234,6 +250,6 @@
     </div>
   </div>
 
-  <script src="./editor-v2.js?v=102" defer></script>
+  <script src="./editor-v2.js?v=103" defer></script>
 </body>
 </html>
