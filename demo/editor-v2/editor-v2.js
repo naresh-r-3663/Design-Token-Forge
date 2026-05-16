@@ -1250,27 +1250,12 @@
      (e.g. applying step that equals the dark-mode default for that
      surface won't pollute State.t2.dark). */
 
-  /* Mirror the current step pick in `mode` onto the OTHER mode for
-     the same surface/prop. The mode-mirroring is naive — same
-     literal step name, no tonal flip. That matches designer mental
-     model ("I want step 600 in both"), and works correctly because
-     the per-mode default also uses literal steps. */
-  function bulkApplyToOtherMode(surfaceId, propId, mode) {
-    var step = resolveT2Step(surfaceId, propId, mode);
-    var other = (mode === 'light') ? 'dark' : 'light';
-    setT2Step(surfaceId, propId, other, step);
-  }
-
-  /* Push the current step pick to every OTHER surface in the
-     current mode. Useful when a designer dials in a content/border
-     tone they want consistent across the whole surface family. */
-  function bulkApplyToAllSurfaces(surfaceId, propId, mode) {
-    var step = resolveT2Step(surfaceId, propId, mode);
-    T2_SURFACES.forEach(function (s) {
-      if (s.id === surfaceId) return;
-      setT2Step(s.id, propId, mode, step);
-    });
-  }
+  /* (removed) bulkApplyToOtherMode + bulkApplyToAllSurfaces.
+     The per-row chips that drove these were rejected: both shipped
+     silently with no per-target preview and no undo, so they
+     created more cleanup work than they saved. If we bring them
+     back they need a snapshot-undo toast first — see session
+     notes on rejected bulk-apply chips. */
 
   /* Clear THIS prop's override + every descendant prop's override
      in the current surface + mode. Lets the user roll back an
@@ -1414,58 +1399,34 @@
   }
 
   /* ── Inline action bar (T2 row, expanded) ─────────────
-     Replaces the per-row "⋯" overflow menu. Lives inside the card
-     below the step ladder, so the chips only exist when the card
-     is open — keeps the resting row chrome to (− label + ↺) and
-     surfaces bulk ops contextually only when the user is already
-     thinking about this row. Chips reuse data-pc-bulk so the
-     existing handleT2RowBulk handler dispatches to the same bulk
-     helpers. */
+     Lives inside the expanded Property Card, below the step
+     ladder. We rejected the cross-mode / cross-surface "Apply"
+     chips because both ship silently with no per-target preview
+     and no undo path — at 8 surfaces × 16 props they create more
+     cleanup work than they save. Only Reset family survives: it's
+     a pure undo (clears overrides; designer can always re-step
+     individual rows back), and the (N) count gives a preview of
+     scope. If apply-style ops come back, they need snapshot-undo
+     toast + a per-target diff preview first. */
   function pcActionsHTML(surfaceId, propId, mode, isDetached, hasDirtyDescendants) {
-    var otherMode = (mode === 'light') ? 'dark' : 'light';
-    var step      = resolveT2Step(surfaceId, propId, mode);
-    var stepHex   = t2HexFor(surfaceId, propId, mode);
-    var chips = [];
-    if (isDetached) {
-      chips.push({
-        key:  'apply-other-mode',
-        sw:   stepHex,
-        lbl:  'Apply to ' + otherMode + ' mode',
-        tip:  'Mirror step ' + step + ' onto ' + otherMode + ' mode for this surface + prop.'
-      });
-      chips.push({
-        key:  'apply-all-surfaces',
-        sw:   stepHex,
-        lbl:  'Apply to all surfaces',
-        tip:  'Write step ' + step + ' to every other surface in ' + mode + ' mode.'
-      });
-    }
-    if (hasDirtyDescendants) {
-      var bag = (State.t2[mode] && State.t2[mode][surfaceId]) || {};
-      var descCount = descendantPropIds(propId).filter(function (d) { return bag[d] && bag[d].step; }).length;
-      var total = descCount + (isDetached ? 1 : 0);
-      chips.push({
-        key:    'reset-family',
-        danger: true,
-        lbl:    'Reset family (' + total + ')',
-        tip:    'Clear this row + ' + descCount + ' descendant override' + (descCount === 1 ? '' : 's') + ' in ' + mode + ' mode.'
-      });
-    }
-    if (!chips.length) return '';
+    if (!hasDirtyDescendants) return '';
+    var bag = (State.t2[mode] && State.t2[mode][surfaceId]) || {};
+    var descCount = descendantPropIds(propId).filter(function (d) { return bag[d] && bag[d].step; }).length;
+    var total = descCount + (isDetached ? 1 : 0);
+    var chip = {
+      key:    'reset-family',
+      danger: true,
+      lbl:    'Reset family (' + total + ')',
+      tip:    'Clear this row + ' + descCount + ' descendant override' + (descCount === 1 ? '' : 's') + ' in ' + mode + ' mode.'
+    };
     return '<div class="ev2-pc-actions" role="group" aria-label="Bulk actions for this row">'
-      + chips.map(function (c) {
-          var swHTML = c.sw
-            ? '<span class="ev2-pc-action-sw" style="background:' + c.sw + '" aria-hidden="true"></span>'
-            : '';
-          return '<button type="button" class="ev2-pc-action"'
-            + ' data-pc-bulk="' + c.key + '"'
-            + ' data-surface="' + surfaceId + '" data-prop="' + propId + '"'
-            + (c.danger ? ' data-danger="true"' : '')
-            + ' data-tip="' + c.tip.replace(/"/g, '&quot;') + '">'
-            + swHTML
-            + '<span class="ev2-pc-action-lbl">' + c.lbl + '</span>'
-          + '</button>';
-        }).join('')
+      + '<button type="button" class="ev2-pc-action"'
+        + ' data-pc-bulk="' + chip.key + '"'
+        + ' data-surface="' + surfaceId + '" data-prop="' + propId + '"'
+        + ' data-danger="true"'
+        + ' data-tip="' + chip.tip.replace(/"/g, '&quot;') + '">'
+        + '<span class="ev2-pc-action-lbl">' + chip.lbl + '</span>'
+      + '</button>'
     + '</div>';
   }
 
@@ -2771,9 +2732,7 @@
     var surfaceId = itemBtn.getAttribute('data-surface');
     var propId    = itemBtn.getAttribute('data-prop');
     var mode      = State.editingMode;
-    if (key === 'apply-other-mode')        bulkApplyToOtherMode(surfaceId, propId, mode);
-    else if (key === 'apply-all-surfaces') bulkApplyToAllSurfaces(surfaceId, propId, mode);
-    else if (key === 'reset-family')       bulkResetFamily(surfaceId, propId, mode);
+    if (key === 'reset-family') bulkResetFamily(surfaceId, propId, mode);
   }
 
   /* ── (removed) T2 row overflow menu ───────────────────
