@@ -127,7 +127,7 @@
      and no inline `± constant` ever leaks in (decision D4). */
   var T2_SURFACES = [
     { id:'bright',    label:'Bright',    palette:'neutral', desc:'Brightest page background' },
-    { id:'base',      label:'Base',      palette:'neutral', desc:'Default page background'   },
+    { id:'base',      label:'Base',      palette:'neutral', desc:'Base page background'      },
     { id:'dim',       label:'Dim',       palette:'neutral', desc:'Recessed background'       },
     { id:'deep',      label:'Deep',      palette:'neutral', desc:'Most recessed background'  },
     { id:'accent',    label:'Accent',    palette:'brand',   desc:'Branded panels'            },
@@ -1161,7 +1161,7 @@
         + sign + opts.deltaSigned + ' from ' + opts.parentLabel
       + '</span>';
     } else {
-      metaBits += '<span class="ev2-pc-chip ev2-pc-chip-muted">default</span>';
+      metaBits += '<span class="ev2-pc-chip ev2-pc-chip-muted">base</span>';
     }
     var lvl = opts.level || 0;
     return '<div class="ev2-pc" data-detached="' + (opts.isDetached ? 'true' : 'false') + '" data-expanded="' + (expanded ? 'true' : 'false') + '" data-level="' + lvl + '"' + attrs + '>'
@@ -2037,6 +2037,22 @@
     try { $frame.contentWindow.postMessage({ type: 'ev2-theme', mode: mode }, '*'); } catch (e) {}
     try { $frame.contentWindow.postMessage({ type: 'ev2-active-role', role: State.activeRole }, '*'); } catch (e) {}
     pushPreview();
+  });
+
+  // Preview asks the editor to switch the active T2 surface when the
+  // user clicks a tile in the preview's surface-system strip. Single
+  // source of truth stays in the editor; preview is a dumb mirror.
+  window.addEventListener('message', function (e) {
+    var d = e && e.data || {};
+    if (d.type === 'ev2-request-active-surface' && d.surface) {
+      if (State.activeTier !== 't2') return; // only meaningful on T2
+      if (d.surface === State.activeSurface) return;
+      State.activeSurface = d.surface;
+      __expandedT2 = null;
+      saveUIState();
+      renderT2();
+      pushActiveSurface();
+    }
   });
 
   var draftStatus = document.getElementById('draftStatus');

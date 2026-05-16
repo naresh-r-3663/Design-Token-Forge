@@ -124,146 +124,404 @@
        chip shifts. The "canvas" wrapper IS the surface bg, so
        the user sees their edit on the surface itself, not on
        a generic page bg. */
+    /* ---- T2 active-surface canvas ----
+       Renders a realistic mini app on the surface the user is
+       editing. Everything inside reads --surface-active-* which is
+       aliased by the editor (postMessage payload below) to whichever
+       surface tab is selected. So editing any token in T2 visibly
+       repaints real components — buttons, card, alert, input, list
+       — instead of abstract swatches. */
     .pv-canvas{
       margin-bottom:24px;
-      border-radius:10px;
-      border:1px solid var(--surface-base-outline);
-      background:var(--surface-base-bg);
+      border-radius:12px;
+      border:1px solid var(--surface-active-outline);
+      background:var(--surface-active-bg);
+      color:var(--surface-active-ct-default);
       overflow:hidden;
     }
     .pv-canvas-head{
       display:flex;align-items:center;justify-content:space-between;gap:10px;
       padding:10px 14px;
-      border-bottom:1px solid var(--surface-base-separator);
-      font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
-      color:var(--surface-base-ct-strong);
+      border-bottom:1px solid var(--surface-active-separator);
+      font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+      color:var(--surface-active-ct-strong);
+      background:var(--surface-active-subtle);
     }
     .pv-canvas-name{display:inline-flex;align-items:center;gap:6px}
     .pv-canvas-name code{
       font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
       font-size:10px;text-transform:none;letter-spacing:0;font-weight:600;
       padding:2px 6px;border-radius:3px;
-      background:var(--surface-base-subtle);
-      color:var(--surface-base-ct-default);
+      background:var(--surface-active-strong);
+      color:var(--surface-active-ct-strong);
     }
-    .pv-canvas-body{padding:14px;display:flex;flex-direction:column;gap:10px}
-    /* Canvas itself IS --…-bg. Subtle and strong show as cards ON
-       TOP of the canvas so the user reads the contrast jump from
-       the underlying page bg — the whole point of those tokens. */
-    .pv-canvas-bg-label{
-      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-      font-size:10px;font-weight:600;opacity:.7;
-      color:var(--surface-base-ct-subtle);
-      letter-spacing:.02em;
+    .pv-canvas-head-meta{
+      font-size:9.5px;font-weight:500;text-transform:none;letter-spacing:0;
+      color:var(--surface-active-ct-faint);
     }
-    .pv-canvas-bg-label .lbl{font-size:10.5px;opacity:.55;font-weight:500;margin-left:6px}
-    .pv-canvas-tile{
-      padding:12px;border-radius:6px;
-      display:flex;flex-direction:column;gap:4px;
-      min-height:48px;
+    .pv-canvas-body{
+      padding:16px;display:flex;flex-direction:column;gap:14px;
     }
-    .pv-canvas-tile-name{
-      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-      font-size:10.5px;font-weight:600;opacity:.85;
+
+    /* Mini-app: top nav strip */
+    .pv-mini-nav{
+      display:flex;align-items:center;gap:10px;
+      padding:8px 10px;border-radius:8px;
+      background:var(--surface-active-cm-bg);
+      border:1px solid var(--surface-active-cm-outline);
     }
-    .pv-canvas-tile-val{font-size:11px;opacity:.7}
-    /* Tint regions */
-    .pv-canvas-tile.t-bg     {background:var(--surface-base-bg);     color:var(--surface-base-ct-default); border:1px solid var(--surface-base-outline)}
-    .pv-canvas-tile.t-subtle {background:var(--surface-base-subtle); color:var(--surface-base-ct-default)}
-    .pv-canvas-tile.t-strong {background:var(--surface-base-strong); color:var(--surface-base-ct-default)}
-    /* Content sample */
-    .pv-canvas-text{
-      padding:10px;border-radius:6px;
-      background:var(--surface-base-bg);
-      border:1px dashed var(--surface-base-outline);
-      display:flex;flex-direction:column;gap:3px;
-    }
-    .pv-canvas-text-cap{
-      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-      font-size:9.5px;font-weight:600;opacity:.7;margin-bottom:4px;
-      color:var(--surface-base-ct-default);
-    }
-    .pv-canvas-text .l1{font-size:13px;font-weight:700;color:var(--surface-base-ct-strong);line-height:1.25}
-    .pv-canvas-text .l2{font-size:11.5px;color:var(--surface-base-ct-default);line-height:1.3}
-    .pv-canvas-text .l3{font-size:10.5px;color:var(--surface-base-ct-subtle);line-height:1.3}
-    .pv-canvas-text .l4{font-size:10px;color:var(--surface-base-ct-faint);line-height:1.3}
-    /* Component-on-surface mini */
-    .pv-canvas-comp{
-      display:flex;align-items:center;gap:8px;
-      padding:8px 10px;border-radius:6px;
-      background:var(--surface-base-cm-bg);
-      border:1px solid var(--surface-base-cm-outline);
-      min-width:0;
-    }
-    .pv-canvas-comp-dot{
+    .pv-mini-nav-logo{
+      width:22px;height:22px;border-radius:5px;
+      background:var(--surface-active-ct-strong);
       flex:0 0 auto;
-      width:18px;height:18px;border-radius:50%;
-      background:var(--surface-base-cm-bg-hover);
-      border:1px solid var(--surface-base-cm-outline-hover);
     }
-    .pv-canvas-comp-txt{font-size:10.5px;color:var(--surface-base-ct-default);min-width:0;overflow:hidden}
-    .pv-canvas-comp-txt strong{font-size:11px;display:block;color:var(--surface-base-ct-strong)}
-    .pv-canvas-comp-txt code{
-      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-      font-size:9.5px;padding:1px 4px;border-radius:3px;
-      background:var(--surface-base-subtle);
+    .pv-mini-nav-title{
+      font-size:11px;font-weight:700;color:var(--surface-active-ct-strong);
+      letter-spacing:.01em;
     }
-    /* Separator demo */
-    .pv-canvas-sep{height:1px;background:var(--surface-base-separator)}
-    .pv-canvas-cm-sep{height:1px;background:var(--surface-base-cm-separator)}
-    .pv-canvas-sep-row{
+    .pv-mini-nav-links{
+      display:flex;gap:4px;margin-left:auto;
+    }
+    .pv-mini-nav-link{
+      font-size:10.5px;padding:4px 8px;border-radius:5px;
+      color:var(--surface-active-ct-subtle);
+    }
+    .pv-mini-nav-link[aria-current="page"]{
+      background:var(--surface-active-cm-bg-hover);
+      color:var(--surface-active-ct-strong);
+      font-weight:600;
+    }
+
+    /* Mini-app: alert/banner */
+    .pv-mini-alert{
+      display:flex;align-items:flex-start;gap:10px;
+      padding:10px 12px;border-radius:8px;
+      background:var(--surface-active-subtle);
+      border:1px solid var(--surface-active-outline);
+      border-left:3px solid var(--surface-active-ct-strong);
+    }
+    .pv-mini-alert-icon{
+      width:18px;height:18px;border-radius:50%;flex:0 0 auto;
+      background:var(--surface-active-cm-bg-pressed);
+      border:1px solid var(--surface-active-cm-outline-pressed);
+      margin-top:1px;
+    }
+    .pv-mini-alert-body{min-width:0;flex:1}
+    .pv-mini-alert-title{
+      font-size:11.5px;font-weight:700;color:var(--surface-active-ct-strong);
+      margin-bottom:2px;
+    }
+    .pv-mini-alert-msg{
+      font-size:11px;color:var(--surface-active-ct-default);line-height:1.4;
+    }
+
+    /* Mini-app: content card with title, copy, actions */
+    .pv-mini-card{
+      padding:14px;border-radius:8px;
+      background:var(--surface-active-cm-bg);
+      border:1px solid var(--surface-active-cm-outline);
+      display:flex;flex-direction:column;gap:8px;
+    }
+    .pv-mini-card-eyebrow{
+      font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+      color:var(--surface-active-ct-faint);
+    }
+    .pv-mini-card-title{
+      font-size:14px;font-weight:700;color:var(--surface-active-ct-strong);
+      line-height:1.25;
+    }
+    .pv-mini-card-body{
+      font-size:11.5px;color:var(--surface-active-ct-default);line-height:1.45;
+    }
+    .pv-mini-card-meta{
+      font-size:10.5px;color:var(--surface-active-ct-subtle);
       display:flex;align-items:center;gap:8px;
-      font-size:9.5px;opacity:.7;
-      color:var(--surface-base-ct-faint);
+    }
+    .pv-mini-card-meta::before{
+      content:"";width:4px;height:4px;border-radius:50%;
+      background:var(--surface-active-ct-faint);
+    }
+    .pv-mini-card-divider{
+      height:1px;background:var(--surface-active-cm-separator);
+      margin:2px -2px;
+    }
+    .pv-mini-card-actions{
+      display:flex;gap:8px;align-items:center;
+    }
+    .pv-mini-btn{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:7px 12px;border-radius:6px;
+      font-size:11px;font-weight:600;
+      border:1px solid transparent;cursor:default;
+      transition:background 120ms,border-color 120ms;
+    }
+    .pv-mini-btn.is-primary{
+      background:var(--surface-active-ct-strong);
+      color:var(--surface-active-bg);
+    }
+    .pv-mini-btn.is-secondary{
+      background:transparent;
+      color:var(--surface-active-ct-strong);
+      border-color:var(--surface-active-cm-outline);
+    }
+    .pv-mini-btn.is-ghost{
+      background:transparent;
+      color:var(--surface-active-ct-subtle);
+    }
+
+    /* Mini-app: input row */
+    .pv-mini-field{
+      display:flex;flex-direction:column;gap:4px;
+    }
+    .pv-mini-field-label{
+      font-size:10.5px;font-weight:600;
+      color:var(--surface-active-ct-strong);
+    }
+    .pv-mini-input{
+      padding:7px 10px;border-radius:6px;
+      font-size:11.5px;
+      background:var(--surface-active-cm-bg);
+      border:1px solid var(--surface-active-cm-outline);
+      color:var(--surface-active-ct-default);
+    }
+    .pv-mini-input-hint{
+      font-size:10px;color:var(--surface-active-ct-faint);
+    }
+
+    /* Mini-app: list with separators */
+    .pv-mini-list{
+      border:1px solid var(--surface-active-cm-outline);
+      border-radius:8px;overflow:hidden;
+      background:var(--surface-active-cm-bg);
+    }
+    .pv-mini-list-row{
+      display:flex;align-items:center;gap:10px;
+      padding:9px 12px;
+    }
+    .pv-mini-list-row + .pv-mini-list-row{
+      border-top:1px solid var(--surface-active-cm-separator);
+    }
+    .pv-mini-list-row[aria-selected="true"]{
+      background:var(--surface-active-cm-bg-hover);
+    }
+    .pv-mini-list-avatar{
+      width:24px;height:24px;border-radius:50%;flex:0 0 auto;
+      background:var(--surface-active-strong);
+      border:1px solid var(--surface-active-cm-outline-hover);
+    }
+    .pv-mini-list-text{min-width:0;flex:1}
+    .pv-mini-list-name{
+      font-size:11.5px;font-weight:600;color:var(--surface-active-ct-strong);
+      line-height:1.2;
+    }
+    .pv-mini-list-meta{
+      font-size:10.5px;color:var(--surface-active-ct-subtle);line-height:1.3;
+    }
+    .pv-mini-list-tag{
+      font-size:9.5px;font-weight:700;
+      padding:2px 7px;border-radius:99px;
+      background:var(--surface-active-subtle);
+      color:var(--surface-active-ct-default);
+      border:1px solid var(--surface-active-outline);
+    }
+
+    /* Token legend strip */
+    .pv-mini-legend{
+      display:flex;flex-wrap:wrap;gap:6px 10px;
+      padding-top:4px;
+      border-top:1px dashed var(--surface-active-separator);
+      font-size:9.5px;color:var(--surface-active-ct-faint);
       font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
     }
-    .pv-canvas-sep-row > span{flex:0 0 auto}
-    .pv-canvas-sep-row > .pv-canvas-sep,
-    .pv-canvas-sep-row > .pv-canvas-cm-sep{flex:1}
+    .pv-mini-legend > span{display:inline-flex;align-items:center;gap:4px}
+    .pv-mini-legend i{
+      display:inline-block;width:10px;height:10px;border-radius:2px;
+      border:1px solid var(--surface-active-outline);
+    }
+    .pv-mini-legend i.l-bg{background:var(--surface-active-bg)}
+    .pv-mini-legend i.l-sub{background:var(--surface-active-subtle)}
+    .pv-mini-legend i.l-str{background:var(--surface-active-strong)}
+    .pv-mini-legend i.l-cm{background:var(--surface-active-cm-bg)}
+    .pv-mini-legend i.l-out{background:var(--surface-active-outline);border-color:var(--surface-active-ct-faint)}
+
+    /* ---- T2 surface-system strip ----
+       Sits ABOVE the active-surface canvas; shows every surface as
+       a small painted tile so the user can see how this surface
+       compares to the rest of the system. Active surface is ringed.
+       Each tile carries content tone + outline so it's an honest
+       miniature, not just a swatch. */
+    .pv-surfaces-strip{
+      margin-bottom:14px;
+      padding:10px;border-radius:10px;
+      border:1px dashed var(--surface-base-outline);
+      background:transparent;
+    }
+    .pv-surfaces-strip-cap{
+      font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+      color:var(--surface-base-ct-faint);
+      margin-bottom:8px;display:flex;justify-content:space-between;
+    }
+    .pv-surfaces-strip-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:6px;
+    }
+    .pv-surfaces-strip-tile{
+      display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;
+      gap:4px;
+      padding:8px;
+      min-height:54px;
+      border-radius:6px;
+      border:1px solid;
+      transition:transform 120ms,box-shadow 120ms;
+      font-size:10px;font-weight:600;
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    }
+    .pv-surfaces-strip-tile[data-active="true"]{
+      outline:2px solid var(--brand-component-bg-default,#286CE5);
+      outline-offset:1px;
+    }
+    .pv-surfaces-strip-tile-name{font-size:10.5px;font-weight:700}
+    .pv-surfaces-strip-tile-meta{font-size:9px;opacity:.7}
+    /* Each tile fills with its own surface's tokens. Painted via
+       inline custom props so we only need to push the surface table
+       to :root and these auto-update. */
+    .pv-surfaces-strip-tile[data-surface="bright"]   {background:var(--surface-bright-bg);   color:var(--surface-bright-ct-strong);   border-color:var(--surface-bright-outline)}
+    .pv-surfaces-strip-tile[data-surface="base"]     {background:var(--surface-base-bg);     color:var(--surface-base-ct-strong);     border-color:var(--surface-base-outline)}
+    .pv-surfaces-strip-tile[data-surface="dim"]      {background:var(--surface-dim-bg);      color:var(--surface-dim-ct-strong);      border-color:var(--surface-dim-outline)}
+    .pv-surfaces-strip-tile[data-surface="deep"]     {background:var(--surface-deep-bg);     color:var(--surface-deep-ct-strong);     border-color:var(--surface-deep-outline)}
+    .pv-surfaces-strip-tile[data-surface="accent"]   {background:var(--surface-accent-bg);   color:var(--surface-accent-ct-strong);   border-color:var(--surface-accent-outline)}
+    .pv-surfaces-strip-tile[data-surface="container"]{background:var(--surface-container-bg);color:var(--surface-container-ct-strong);border-color:var(--surface-container-outline)}
+    .pv-surfaces-strip-tile[data-surface="float"]    {background:var(--surface-float-bg);    color:var(--surface-float-ct-strong);    border-color:var(--surface-float-outline)}
+    .pv-surfaces-strip-tile[data-surface="inverse"]  {background:var(--surface-inverse-bg);  color:var(--surface-inverse-ct-strong);  border-color:var(--surface-inverse-outline)}
+
+    /* ---- Tier gating ----
+       When the editor is on T2 the preview becomes a surface-only
+       experience: the role spotlight and compare-roles panels (both
+       designed for T1 work) collapse out of the layout. The pv-canvas
+       + pv-surfaces-strip take their place as the entire preview.
+       When on T0/T1/T3, those two panels return and the T2 strip
+       hides (the canvas already hides via JS). */
+    body[data-active-tier="t2"] .pv-spotlight,
+    body[data-active-tier="t2"] .pv-compare{display:none !important}
+    body:not([data-active-tier="t2"]) .pv-surfaces-strip{display:none}
   </style>
 </head>
 <body>
 
-  <!-- Surface canvas: hidden by default; shown when editor is on T2.
-       Every tile/text-line/component-bg consumes a --surface-base-*
-       alias so the editor's alias-bridge override instantly repaints
-       this whole panel as the user steps through tokens. -->
+  <!-- T2 surface-system strip: shows every surface as a small tile
+       so the user can see the whole system at a glance and how the
+       one they're editing compares to the rest. Hidden on T0/T1/T3. -->
+  <section class="pv-surfaces-strip" id="pv-surfaces-strip" aria-label="All surfaces">
+    <div class="pv-surfaces-strip-cap">
+      <span>Surface system</span>
+      <span style="opacity:.6;font-weight:500;text-transform:none;letter-spacing:0">8 surfaces · light/dark mirror</span>
+    </div>
+    <div class="pv-surfaces-strip-grid">
+      <div class="pv-surfaces-strip-tile" data-surface="bright"><span class="pv-surfaces-strip-tile-name">Bright</span></div>
+      <div class="pv-surfaces-strip-tile" data-surface="base"><span class="pv-surfaces-strip-tile-name">Base</span></div>
+      <div class="pv-surfaces-strip-tile" data-surface="dim"><span class="pv-surfaces-strip-tile-name">Dim</span></div>
+      <div class="pv-surfaces-strip-tile" data-surface="deep"><span class="pv-surfaces-strip-tile-name">Deep</span></div>
+      <div class="pv-surfaces-strip-tile" data-surface="accent"><span class="pv-surfaces-strip-tile-name">Accent</span></div>
+      <div class="pv-surfaces-strip-tile" data-surface="container"><span class="pv-surfaces-strip-tile-name">Container</span></div>
+      <div class="pv-surfaces-strip-tile" data-surface="float"><span class="pv-surfaces-strip-tile-name">Float</span></div>
+      <div class="pv-surfaces-strip-tile" data-surface="inverse"><span class="pv-surfaces-strip-tile-name">Inverse</span></div>
+    </div>
+  </section>
+
+  <!-- Active surface canvas — renders a realistic mini app painted
+       entirely with --surface-active-* tokens. The editor aliases
+       those to whichever surface the user clicked, so editing any
+       T2 token visibly repaints real UI here (buttons, alert, card,
+       input, list) instead of abstract swatches. -->
   <section class="pv-canvas" id="pv-canvas" hidden aria-label="Active surface canvas">
     <div class="pv-canvas-head">
       <span class="pv-canvas-name">
         <span>Surface</span>
         <code id="pv-canvas-name-code">base</code>
       </span>
-      <span style="font-size:9px;opacity:.7">repaints as you edit</span>
+      <span class="pv-canvas-head-meta">Live UI · repaints as you edit</span>
     </div>
     <div class="pv-canvas-body">
-      <!-- bg = the canvas itself; show it as a label, not a tile.
-           Avoids the bg-on-bg invisible tile. -->
-      <div class="pv-canvas-bg-label">--…-bg <span class="lbl">— this canvas</span></div>
-      <div class="pv-canvas-tile t-subtle">
-        <div class="pv-canvas-tile-name">--…-subtle</div>
-        <div class="pv-canvas-tile-val">Soft tint region</div>
-      </div>
-      <div class="pv-canvas-tile t-strong">
-        <div class="pv-canvas-tile-name">--…-strong</div>
-        <div class="pv-canvas-tile-val">Strong tint region</div>
-      </div>
-      <div class="pv-canvas-text">
-        <div class="pv-canvas-text-cap">--…-ct-strong / default / subtle / faint</div>
-        <div class="l1">Strong heading</div>
-        <div class="l2">Default body text on this surface.</div>
-        <div class="l3">Subtle metadata line.</div>
-        <div class="l4">Faint caption line.</div>
-      </div>
-      <div class="pv-canvas-comp">
-        <div class="pv-canvas-comp-dot"></div>
-        <div class="pv-canvas-comp-txt">
-          <strong>Component on surface</strong>
-          <code>--…-cm-bg</code> + <code>--…-cm-outline</code>
+
+      <!-- Top app nav -->
+      <nav class="pv-mini-nav" aria-label="Mini app nav">
+        <span class="pv-mini-nav-logo" aria-hidden="true"></span>
+        <span class="pv-mini-nav-title">Acme Console</span>
+        <span class="pv-mini-nav-links">
+          <span class="pv-mini-nav-link" aria-current="page">Overview</span>
+          <span class="pv-mini-nav-link">Library</span>
+          <span class="pv-mini-nav-link">Settings</span>
+        </span>
+      </nav>
+
+      <!-- Banner / alert -->
+      <div class="pv-mini-alert" role="status">
+        <span class="pv-mini-alert-icon" aria-hidden="true"></span>
+        <div class="pv-mini-alert-body">
+          <div class="pv-mini-alert-title">3 design tokens updated</div>
+          <div class="pv-mini-alert-msg">The Figma library has the latest values. Review the changes before publishing.</div>
         </div>
       </div>
-      <div class="pv-canvas-sep-row"><span>separator</span><div class="pv-canvas-sep"></div></div>
-      <div class="pv-canvas-sep-row"><span>cm-separator</span><div class="pv-canvas-cm-sep"></div></div>
+
+      <!-- Content card -->
+      <article class="pv-mini-card">
+        <div class="pv-mini-card-eyebrow">Project</div>
+        <div class="pv-mini-card-title">Surface system redesign</div>
+        <div class="pv-mini-card-body">A consistent foundation for every screen — light and dark, eight stops, fully derivable from a single brand color.</div>
+        <div class="pv-mini-card-meta">Updated 4 min ago · 12 tokens</div>
+        <div class="pv-mini-card-divider"></div>
+        <div class="pv-mini-card-actions">
+          <span class="pv-mini-btn is-primary">Publish</span>
+          <span class="pv-mini-btn is-secondary">Preview</span>
+          <span class="pv-mini-btn is-ghost">Discard</span>
+        </div>
+      </article>
+
+      <!-- Input field -->
+      <div class="pv-mini-field">
+        <label class="pv-mini-field-label">Theme name</label>
+        <div class="pv-mini-input">Aurora · Light</div>
+        <span class="pv-mini-input-hint">Used as the variable-collection name in Figma.</span>
+      </div>
+
+      <!-- Selectable list -->
+      <ul class="pv-mini-list" role="listbox" aria-label="Team members">
+        <li class="pv-mini-list-row" aria-selected="true">
+          <span class="pv-mini-list-avatar" aria-hidden="true"></span>
+          <div class="pv-mini-list-text">
+            <div class="pv-mini-list-name">Avery Cho</div>
+            <div class="pv-mini-list-meta">Design systems · last seen 1h</div>
+          </div>
+          <span class="pv-mini-list-tag">Owner</span>
+        </li>
+        <li class="pv-mini-list-row">
+          <span class="pv-mini-list-avatar" aria-hidden="true"></span>
+          <div class="pv-mini-list-text">
+            <div class="pv-mini-list-name">Mara Singh</div>
+            <div class="pv-mini-list-meta">Brand · last seen 5m</div>
+          </div>
+          <span class="pv-mini-list-tag">Editor</span>
+        </li>
+        <li class="pv-mini-list-row">
+          <span class="pv-mini-list-avatar" aria-hidden="true"></span>
+          <div class="pv-mini-list-text">
+            <div class="pv-mini-list-name">Theo Park</div>
+            <div class="pv-mini-list-meta">Engineering · last seen 2d</div>
+          </div>
+          <span class="pv-mini-list-tag">Viewer</span>
+        </li>
+      </ul>
+
+      <!-- Token legend -->
+      <div class="pv-mini-legend" aria-label="Tokens in use">
+        <span><i class="l-bg"></i>bg</span>
+        <span><i class="l-sub"></i>subtle</span>
+        <span><i class="l-str"></i>strong</span>
+        <span><i class="l-cm"></i>cm-bg</span>
+        <span><i class="l-out"></i>outline</span>
+      </div>
+
     </div>
   </section>
 
@@ -394,6 +652,19 @@
       });
     })();
 
+    // Clicking a tile in the surface-system strip asks the editor to
+    // make that surface the active T2 tab. Editor owns surface state;
+    // preview just announces intent. Parent will reply with a fresh
+    // ev2-active-surface message that flips the alias bridge.
+    document.querySelectorAll('.pv-surfaces-strip-tile').forEach(function (tile) {
+      tile.style.cursor = 'pointer';
+      tile.addEventListener('click', function () {
+        var s = tile.getAttribute('data-surface');
+        if (!s) return;
+        try { window.parent.postMessage({ type: 'ev2-request-active-surface', surface: s }, '*'); } catch (err) {}
+      });
+    });
+
     // Listen for messages from the editor to highlight the relevant pv-section.
     var clearTimer = null;
     var flashing = false;
@@ -465,26 +736,28 @@
           sheet.id = 'pv-active-surface-vars';
           document.head.appendChild(sheet);
         }
-        if (as === 'base') {
-          if (sheet.textContent !== '') sheet.textContent = '';
-        } else {
-          // Mirror the full 16-prop surface table from editor's
-          // T2_PROP_DEFS so any --surface-base-* the preview reads
-          // (now or after a future preview tweak) gets remapped.
-          var PROPS = [
-            'bg','subtle','strong','outline','separator',
-            'ct-default','ct-strong','ct-subtle','ct-faint',
-            'cm-bg','cm-bg-hover','cm-bg-pressed',
-            'cm-outline','cm-outline-hover','cm-outline-pressed',
-            'cm-separator'
-          ];
-          var body = PROPS.map(function (p) {
-            return '--surface-base-' + p + ': var(--surface-' + as + '-' + p + ');';
-          }).join('');
-          var next = ':root{' + body + '}';
-          if (sheet.textContent !== next) sheet.textContent = next;
-        }
+        // Always emit the --surface-active-* alias table so the
+        // canvas can paint itself using a single set of tokens that
+        // map to whichever surface the user is editing. Default to
+        // 'base' on non-T2 tiers so the alias still resolves.
+        var bridgeTarget = (d.tier === 't2') ? as : 'base';
+        var PROPS = [
+          'bg','subtle','strong','outline','separator',
+          'ct-default','ct-strong','ct-subtle','ct-faint',
+          'cm-bg','cm-bg-hover','cm-bg-pressed',
+          'cm-outline','cm-outline-hover','cm-outline-pressed',
+          'cm-separator'
+        ];
+        var body = PROPS.map(function (p) {
+          return '--surface-active-' + p + ': var(--surface-' + bridgeTarget + '-' + p + ');';
+        }).join('');
+        var next = ':root{' + body + '}';
+        if (sheet.textContent !== next) sheet.textContent = next;
         document.body.setAttribute('data-active-surface', as);
+        // Set tier attribute on body so CSS can gate which preview
+        // panels are visible. T2 = surface-only preview; everything
+        // else = role spotlight + compare panels.
+        if (d.tier) document.body.setAttribute('data-active-tier', d.tier);
         // Reveal the surface canvas only when the editor is on T2.
         // On any other tier, hide — the spotlight + compare-roles
         // panels are the right preview for T0/T1.
@@ -494,6 +767,10 @@
           var nm = document.getElementById('pv-canvas-name-code');
           if (nm) nm.textContent = as;
         }
+        // Mark the active surface tile in the strip.
+        document.querySelectorAll('.pv-surfaces-strip-tile').forEach(function (t) {
+          t.setAttribute('data-active', String(t.getAttribute('data-surface') === as));
+        });
         return;
       }
       if (d.type !== 'ev2-focus') return;

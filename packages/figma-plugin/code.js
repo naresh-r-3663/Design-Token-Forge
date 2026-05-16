@@ -1408,39 +1408,55 @@ async function generateComponentFromBlueprint(blueprint) {
 
   if (csCol) {
     var csModeId = csCol.modes[0].modeId;
+    /* All mode IDs in the comp-size collection. Plugin-created variables
+       MUST set a value for every mode — Figma's setValueForMode only
+       writes one mode at a time, and any unset mode defaults to type-zero
+       (0 for FLOAT). Without this loop, `button/radius-rounded` (9999)
+       only resolved to the pill value in the first comp-size mode (base);
+       in tiny/small/medium/large/etc the rounded variants resolved to 0
+       — visibly square pills at non-base sizes. */
+    var csAllModeIds = csCol.modes.map(function(m) { return m.modeId; });
     for (var rvi = 0; rvi < requiredVars.length; rvi++) {
       var reqName = requiredVars[rvi].name;
       var reqVal  = requiredVars[rvi].defaultVal;
       var longName = reqName.replace('button/', 'button/default/');
       var existing = compSizeVars[reqName] || compSizeVars[longName];
       if (existing) {
-        /* Variable already exists — enforce canonical value ONLY if the
-           current value is a plain literal that differs from the default.
-           If the value is a VARIABLE_ALIAS (i.e. the sync server already
-           bound it to a primitives-numbers token), DO NOT touch it.
-           Otherwise we'd clobber the proper per-mode aliases with our
-           literal fallback. This bug previously reset
-           split-button/chevron/padding (alias → spacing/3) back to
-           literal 8 every time Generate Components ran. */
-        try {
-          var curVal = existing.valuesByMode && existing.valuesByMode[csModeId];
-          var isAlias = curVal && typeof curVal === 'object' && curVal.type === 'VARIABLE_ALIAS';
-          if (!isAlias && curVal !== reqVal) {
-            existing.setValueForMode(csModeId, reqVal);
-            log('Updated ' + reqName + ': ' + curVal + ' → ' + reqVal);
-            stats.bindings++;
+        /* Variable already exists — enforce canonical value ONLY for modes
+           where the current value is a plain literal that differs from the
+           default. If a mode's value is a VARIABLE_ALIAS (i.e. the sync
+           server already bound it to a primitives-numbers token), DO NOT
+           touch it. Otherwise we'd clobber the proper per-mode aliases
+           with our literal fallback. Also fill in any mode that has no
+           value yet (undefined → would resolve to 0). */
+        for (var emi = 0; emi < csAllModeIds.length; emi++) {
+          var emModeId = csAllModeIds[emi];
+          try {
+            var curVal = existing.valuesByMode && existing.valuesByMode[emModeId];
+            var isAlias = curVal && typeof curVal === 'object' && curVal.type === 'VARIABLE_ALIAS';
+            if (isAlias) continue;
+            if (curVal === undefined || curVal === null || curVal !== reqVal) {
+              existing.setValueForMode(emModeId, reqVal);
+              log('Updated ' + reqName + ' [mode ' + emi + ']: ' + curVal + ' → ' + reqVal);
+              stats.bindings++;
+            }
+          } catch (uve) {
+            log('Failed to update variable ' + reqName + ' (mode ' + emi + '): ' + uve.message);
           }
-        } catch (uve) {
-          log('Failed to update variable ' + reqName + ': ' + uve.message);
         }
       } else {
         try {
           var newVar = figma.variables.createVariable(reqName, csCol, 'FLOAT');
-          newVar.setValueForMode(csModeId, reqVal);
+          /* Set value for EVERY mode so the variable resolves correctly
+             across the entire comp-size scale. Without this, any mode
+             beyond modes[0] silently resolves to 0. */
+          for (var nmi = 0; nmi < csAllModeIds.length; nmi++) {
+            try { newVar.setValueForMode(csAllModeIds[nmi], reqVal); } catch (e) {}
+          }
           compSizeVars[reqName] = newVar;
           /* Also create alias */
           compSizeVars[longName] = newVar;
-          log('Created missing variable: ' + reqName + ' = ' + reqVal);
+          log('Created missing variable: ' + reqName + ' = ' + reqVal + ' (across ' + csAllModeIds.length + ' modes)');
           stats.bindings++;
         } catch (cve) {
           log('Failed to create variable ' + reqName + ': ' + cve.message);
@@ -1506,6 +1522,13 @@ async function generateComponentFromBlueprint(blueprint) {
   }
   for (var ci2 = page.children.length - 1; ci2 >= 0; ci2--) {
     var child = page.children[ci2];
+    /* SHARED PRIMITIVES GUARD — Icon/Placeholder, Icon/Chevron, and the
+       'DTF — Primitives' showcase section belong to ALL blueprints.
+       Per-BP cleanup must never touch them. Check this FIRST before
+       any removal logic below. */
+    if (child.getPluginData && child.getPluginData('dtf-owner') === 'DTF-PRIMITIVES') {
+      continue;
+    }
     /* Remove DTF sections (contain all presentation).
        For wrapper kinds, only remove sections that mention THIS BP name
        (avoids deleting the button section that hosts our dependencies).
@@ -1533,18 +1556,6 @@ async function generateComponentFromBlueprint(blueprint) {
       child.remove(); continue;
     }
     if (child.type === 'COMPONENT_SET' && ownedByThisBP(child)) {
-      child.remove(); continue;
-    }
-    /* Icon placeholder is OWNED by button. Only the button generator
-       (non-wrapper kind) is allowed to remove it, and only if WE created it. */
-    if (!isWrapperKind && child.type === 'COMPONENT' &&
-        (child.name === 'Icon/Placeholder' || child.name === 'DTF/Icon/Placeholder') &&
-        (ownedByThisBP(child) || child.getPluginData('dtf-generated') === '1')) {
-      child.remove(); continue;
-    }
-    /* Chevron icon is OWNED by split-button. */
-    if (isWrapperKind && child.type === 'COMPONENT' && child.name === 'Icon/Chevron Down' &&
-        (ownedByThisBP(child) || child.getPluginData('dtf-generated') === '1')) {
       child.remove(); continue;
     }
     if (child.type === 'TEXT' && (child.name.indexOf('MASTER ') === 0 || child.name.indexOf('VARIANT ') === 0 || child.name === 'Icon Primitive' || child.name.indexOf('DTF-') === 0) &&
@@ -1801,7 +1812,7 @@ async function generateComponentFromBlueprint(blueprint) {
 
   /** Create a styled section — a FRAME with rounded corners, shadow, and token-bound fill.
       Returns { section: <frame>, innerX, innerY } */
-  function createSection(name, sectionWidth) {
+  function createSection(name, sectionWidth, ownerOverride) {
     var sw = sectionWidth || 1200;
     var frame = figma.createFrame();
     frame.name = name;
@@ -1821,8 +1832,15 @@ async function generateComponentFromBlueprint(blueprint) {
       try { frame.setExplicitVariableModeForCollection(t2Col, brightModeId); } catch (e) {}
     }
 
-    /* Stamp owner so cleanup on next run can safely remove this. */
-    stampOwner(frame);
+    /* Stamp owner so cleanup on next run can safely remove this.
+       Pass ownerOverride to mark a section as shared across BPs
+       (e.g. 'DTF-PRIMITIVES' for the icon/chevron showcase). */
+    if (ownerOverride && frame.setPluginData) {
+      frame.setPluginData('dtf-owner', ownerOverride);
+      frame.setPluginData('dtf-generated', '1');
+    } else {
+      stampOwner(frame);
+    }
 
     return { section: frame, innerX: 40, innerY: 40 };
   }
@@ -1862,6 +1880,28 @@ async function generateComponentFromBlueprint(blueprint) {
     log('Existing content detected on page (max X = ' + existingMaxX + '). Shifting new layout to X = ' + PAGE_X);
   }
 
+  /* ── Reserve a left column for the shared Primitives section ──
+     Primitives is a single shared showcase rendered once per page. If
+     it doesn't exist yet on the page, THIS BP run will create it. We
+     reserve a column on the LEFT for it so the BP's own column (Hero →
+     Tier 1 → Tier 2) flows uninterrupted to the right of it.
+     If a primitives section already exists on the page, existingMaxX
+     above has already shifted past it — no extra reservation needed. */
+  var PRIMITIVES_COL_W = 540; /* generous fixed width for the shared column */
+  var primitivesAlreadyOnPage = page.findOne(function(n) {
+    return (n.type === 'SECTION' || n.type === 'FRAME') &&
+           n.getPluginData && n.getPluginData('dtf-owner') === 'DTF-PRIMITIVES';
+  });
+  /* X at which the primitives section will be placed (captured BEFORE
+     we shift PAGE_X past it). Used later when we actually create the
+     section. Null means: don't reposition / use the existing section. */
+  var primitivesPlanX = null;
+  if (!primitivesAlreadyOnPage) {
+    primitivesPlanX = PAGE_X;
+    PAGE_X = PAGE_X + PRIMITIVES_COL_W + PAGE_MARGIN;
+    log('Reserved primitives column at X = ' + primitivesPlanX + '; BP column shifted to X = ' + PAGE_X);
+  }
+
   /* Pre-compute master names for use in hero section stats */
   var masterNames = Object.keys(BP.masters);
 
@@ -1875,14 +1915,18 @@ async function generateComponentFromBlueprint(blueprint) {
      button masters reference it by ID and we must not orphan them. */
   figma.ui.postMessage({ type: 'gen-progress', text: 'Building icon placeholder…' });
 
+  /* Icon/Placeholder is a SHARED primitive used by every blueprint as
+     the INSTANCE_SWAP target. Always reuse if it already exists on the
+     page (no per-BP gating) — this avoids redundant placeholder
+     components and keeps the shared primitives showcase coherent. */
   var iconPlaceholder = null;
-  if (BP.kind === 'wrapper-with-button-instance') {
-    iconPlaceholder = page.findOne(function(n) {
-      return n.type === 'COMPONENT' && (n.name === 'Icon/Placeholder' || n.name === 'DTF/Icon/Placeholder');
-    });
-    if (iconPlaceholder) log('Reusing existing icon placeholder: ' + iconPlaceholder.id);
-  }
+  var iconPlaceholderCreated = false;
+  iconPlaceholder = page.findOne(function(n) {
+    return n.type === 'COMPONENT' && (n.name === 'Icon/Placeholder' || n.name === 'DTF/Icon/Placeholder');
+  });
+  if (iconPlaceholder) log('Reusing existing icon placeholder: ' + iconPlaceholder.id);
   if (!iconPlaceholder) {
+    iconPlaceholderCreated = true;
     iconPlaceholder = figma.createComponent();
     iconPlaceholder.name = 'Icon/Placeholder';
     stampOwner(iconPlaceholder);
@@ -1913,6 +1957,12 @@ async function generateComponentFromBlueprint(blueprint) {
       stats.bindings++;
     }
     iconPlaceholder.appendChild(iconStar);
+    /* Mark as shared primitive (not BP-owned) so per-BP cleanup
+       never removes it. */
+    if (iconPlaceholder.setPluginData) {
+      iconPlaceholder.setPluginData('dtf-owner', 'DTF-PRIMITIVES');
+      iconPlaceholder.setPluginData('dtf-generated', '1');
+    }
     /* Don't append to page yet — will go inside section */
     log('Created icon placeholder component: ' + iconPlaceholder.id);
   }
@@ -1929,12 +1979,16 @@ async function generateComponentFromBlueprint(blueprint) {
      COMPONENT id), and chevronIconSet = the parent COMPONENT_SET. */
   var chevronIcon = null;
   var chevronIconSet = null;
+  var chevronCreated = false;
+  /* Always look for an existing chevron set across ALL BPs — it's a
+     shared primitive. Only the wrapper-kind BP (split-button) is
+     allowed to CREATE the set if missing; other BPs simply reuse it
+     when present (e.g. for documentation purposes in the shared
+     primitives showcase). */
+  chevronIconSet = page.findOne(function(n) {
+    return n.type === 'COMPONENT_SET' && n.name === 'Icon/Chevron';
+  });
   if (BP.kind === 'wrapper-with-button-instance') {
-    /* Look for an existing set first; if not, look for a stale
-       single Chevron Down component from older plugin versions. */
-    chevronIconSet = page.findOne(function(n) {
-      return n.type === 'COMPONENT_SET' && n.name === 'Icon/Chevron';
-    });
     /* Detect a broken / zero-size / wrong-arity set from a prior run and
        force recreation. Without this, a stale empty set keeps getting
        reused and the showcase preview keeps showing nothing. */
@@ -1982,6 +2036,7 @@ async function generateComponentFromBlueprint(blueprint) {
         Left:  'M 12.5 4 L 7.5 9 L 12.5 14',
         Right: 'M 7.5 4 L 12.5 9 L 7.5 14'
       };
+      chevronCreated = true;
       var chevronVariants = [];
       var chevronDirections = ['Down', 'Up', 'Left', 'Right'];
       for (var cdi = 0; cdi < chevronDirections.length; cdi++) {
@@ -2017,7 +2072,12 @@ async function generateComponentFromBlueprint(blueprint) {
       try {
         chevronIconSet = figma.combineAsVariants(chevronVariants, page);
         chevronIconSet.name = 'Icon/Chevron';
-        stampOwner(chevronIconSet);
+        /* Shared primitive — use shared owner stamp so per-BP cleanup
+           never removes it. */
+        if (chevronIconSet.setPluginData) {
+          chevronIconSet.setPluginData('dtf-owner', 'DTF-PRIMITIVES');
+          chevronIconSet.setPluginData('dtf-generated', '1');
+        }
         chevronIconSet.description = 'Directional chevron icon (Down / Up / Left / Right). Default = Down. Used by Split Button triggers; flip to Up for active/open state.';
         /* Auto-layout the variant grid so it presents cleanly. */
         try {
@@ -2224,24 +2284,93 @@ async function generateComponentFromBlueprint(blueprint) {
   cursorY += headerH + SECTION_GAP;
 
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     PRESENTATION: Icon Primitive (absolute positioning)
-     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-  var iconSec = createSection(BP.name + ' — Icon Primitive', 480);
+     PRESENTATION: Shared Primitives showcase
 
-  /* Card background */
+     Icon/Placeholder and Icon/Chevron are common to ALL blueprints.
+     The showcase section is rendered ONCE per page (stamped
+     'DTF-PRIMITIVES'); subsequent BP runs find the existing section
+     and skip re-rendering — eliminating per-BP redundancy.
+
+     If the section exists AND a new chevron was created in THIS run,
+     the chevron set is appended into the existing preview without
+     rebuilding the rest of the section.
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  var SHARED_PRIMITIVES_SECTION_NAME = 'Primitives';
+  /* Legacy name (pre-rename) — still detected so old files don't end
+     up with duplicate sections after this update. */
+  var LEGACY_PRIMITIVES_SECTION_NAME = 'DTF \u2014 Primitives';
+  var existingPrimitivesSection = page.findOne(function(n) {
+    return (n.type === 'SECTION' || n.type === 'FRAME') &&
+           (n.name === SHARED_PRIMITIVES_SECTION_NAME ||
+            n.name === LEGACY_PRIMITIVES_SECTION_NAME) &&
+           n.getPluginData && n.getPluginData('dtf-owner') === 'DTF-PRIMITIVES';
+  });
+  /* Normalize legacy name on this run. */
+  if (existingPrimitivesSection && existingPrimitivesSection.name === LEGACY_PRIMITIVES_SECTION_NAME) {
+    try { existingPrimitivesSection.name = SHARED_PRIMITIVES_SECTION_NAME; } catch (e) {}
+  }
+
+  if (existingPrimitivesSection && !iconPlaceholderCreated && !chevronCreated) {
+    /* Nothing new to add — skip re-rendering. This BP's column starts
+       directly with the hero/Tier sections, parallel to the existing
+       primitives section. */
+    log('Reusing shared primitives showcase: ' + existingPrimitivesSection.id);
+  } else if (existingPrimitivesSection && chevronCreated && chevronIconSet) {
+    /* Append the newly-created chevron set into the existing showcase
+       preview, then resize the showcase + card to fit. The card is
+       auto-layout (vertical), so it hugs the preview's new height
+       automatically. We only need to refresh the section bounds. */
+    try {
+      var existingPreview = existingPrimitivesSection.findOne(function(n) {
+        return n.name === 'icon-preview';
+      });
+      var existingCard = existingPrimitivesSection.findOne(function(n) {
+        return n.name === 'icon-card';
+      });
+      if (existingPreview) {
+        existingPreview.appendChild(chevronIconSet);
+        try { chevronIconSet.layoutSizingHorizontal = 'FIXED'; chevronIconSet.layoutSizingVertical = 'FIXED'; } catch (e) {}
+        /* Card is auto-layout HUG; it now reflects the new preview size.
+           Grow the section frame to fit the card. */
+        if (existingCard) {
+          var nIY = 40, nIX = 40, nPad = 32;
+          var newSecW = Math.max(existingPrimitivesSection.width, nIX + existingCard.width + nPad);
+          var newSecH = Math.max(existingPrimitivesSection.height, nIY + existingCard.height + nPad);
+          try { existingPrimitivesSection.resize(newSecW, newSecH); } catch (e) {}
+        }
+        log('Appended chevron set into existing primitives showcase.');
+      }
+    } catch (appErr) {
+      log('Failed to append chevron into existing showcase: ' + appErr.message);
+    }
+  } else {
+  var iconSec = createSection(SHARED_PRIMITIVES_SECTION_NAME, 480, 'DTF-PRIMITIVES');
+
+  /* Card background — auto-layout (VERTICAL, HUG) so it always wraps
+     its content. Previously the card had a fixed resize(400, 160) and
+     then we manually grew it after the chevron set was appended; that
+     math was fragile and the dashed preview ended up extending past
+     the card border. Auto-layout hug guarantees the card is exactly
+     the size of (title + desc + preview + paddings). */
   var iconCard = figma.createFrame();
   iconCard.name = 'icon-card';
-  iconCard.resize(400, 160);
   iconCard.cornerRadius = 12;
   iconCard.fills = [{ type: 'SOLID', color: COLOR_CARD_BG }];
   iconCard.strokes = [{ type: 'SOLID', color: COLOR_OUTLINE }];
   iconCard.strokeWeight = 1; iconCard.strokeAlign = 'INSIDE';
   iconCard.clipsContent = false;
+  iconCard.layoutMode = 'VERTICAL';
+  iconCard.primaryAxisSizingMode = 'AUTO';   /* hug height */
+  iconCard.counterAxisSizingMode = 'AUTO';   /* hug width  */
+  iconCard.counterAxisAlignItems = 'MIN';
+  iconCard.itemSpacing = 16;
+  iconCard.paddingLeft = 24; iconCard.paddingRight = 24;
+  iconCard.paddingTop = 20;  iconCard.paddingBottom = 24;
 
   var icTitle = createLabel('Icon Primitive', 16, true, COLOR_HEADING);
-  iconCard.appendChild(icTitle); icTitle.x = 24; icTitle.y = 20;
+  iconCard.appendChild(icTitle);
   var icDesc = createLabel('Default INSTANCE_SWAP target.\nReplace with your icon library.', 12, false, COLOR_BODY);
-  iconCard.appendChild(icDesc); icDesc.x = 24; icDesc.y = 44;
+  iconCard.appendChild(icDesc);
 
   /* Icon preview box — auto-layout so it hugs whatever children we
      append (placeholder alone, or placeholder + 4-direction chevron set). */
@@ -2261,21 +2390,18 @@ async function generateComponentFromBlueprint(blueprint) {
   icPreview.dashPattern = [4, 4];
   icPreview.clipsContent = false;
   iconCard.appendChild(icPreview);
-  icPreview.x = 24; icPreview.y = 82;
+  /* Preview hugs its own children — no manual x/y; parent auto-layout
+     positions it below desc with itemSpacing=16. */
+  try { icPreview.layoutSizingHorizontal = 'HUG'; icPreview.layoutSizingVertical = 'HUG'; } catch (e) {}
   icPreview.appendChild(iconPlaceholder);
   try { iconPlaceholder.layoutSizingHorizontal = 'FIXED'; iconPlaceholder.layoutSizingVertical = 'FIXED'; } catch (e) {}
 
   /* If a chevron icon set was created (split-button generation), place it
-     beside the placeholder. Auto-layout will grow icPreview to fit; we
-     then grow the outer iconCard to fit the new preview width/height. */
+     beside the placeholder. Auto-layout on both preview AND card means
+     no manual resize math is needed — everything hugs. */
   if (chevronIconSet) {
     icPreview.appendChild(chevronIconSet);
     try { chevronIconSet.layoutSizingHorizontal = 'FIXED'; chevronIconSet.layoutSizingVertical = 'FIXED'; } catch (e) {}
-    /* After auto-layout settles, icPreview.width/height reflect the real
-       hugged size. Grow iconCard accordingly. */
-    var newPreviewW = icPreview.width;
-    var newPreviewH = icPreview.height;
-    try { iconCard.resize(Math.max(iconCard.width, 24 + newPreviewW + 24), Math.max(iconCard.height, 82 + newPreviewH + 24)); } catch (e) {}
   } else if (chevronIcon && chevronIcon !== iconPlaceholder) {
     /* Fallback path when combineAsVariants failed — single chevron component */
     icPreview.appendChild(chevronIcon);
@@ -2306,9 +2432,15 @@ async function generateComponentFromBlueprint(blueprint) {
   var iconSecW = Math.max(480, iconSec.innerX + iconCard.width + 32);
   try { iconSec.section.resize(iconSecW, iconSecH); } catch (e) {}
   page.appendChild(iconSec.section);
-  iconSec.section.x = PAGE_X;
-  iconSec.section.y = cursorY;
-  cursorY += iconSecH + SECTION_GAP;
+  /* Place primitives in its own LEFT column (reserved earlier as
+     primitivesPlanX), anchored to the page top. The BP column has
+     already been shifted past this column, so its Hero/Tier sections
+     render alongside the primitives column rather than below it. */
+  iconSec.section.x = (primitivesPlanX !== null) ? primitivesPlanX : 100;
+  iconSec.section.y = 100;
+  /* cursorY is NOT advanced — Hero/Tier sections continue in the
+     BP column. */
+  } /* end shared-primitives-section creation branch */
 
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
      PRESENTATION: Tier 1 — Master Components (absolute positioning)
