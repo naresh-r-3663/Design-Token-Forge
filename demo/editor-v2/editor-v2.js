@@ -641,6 +641,18 @@
   var DRAFT_KEY = 'dtf-editor-v2-draft-v2';
   var UI_KEY    = 'dtf-editor-v2-ui-v1';
 
+  /* Per-project draft key. Drafts are project-scoped: editing
+     project A and then switching to project B must NOT carry A's
+     proposed.brand override into B. The global DRAFT_KEY remains
+     as a legacy fallback for sessions started before scoping
+     existed — read once, then promoted to the project-scoped key
+     on first save. */
+  function getDraftKey() {
+    var id = '';
+    try { id = localStorage.getItem('dtf-active-project') || ''; } catch (e) {}
+    return id ? (DRAFT_KEY + '--' + id) : DRAFT_KEY;
+  }
+
   /* ── UI state persistence (separate from draft — it survives Discard) ── */
   function saveUIState() {
     try {
@@ -1081,7 +1093,7 @@
           t2: State.t2,
           t2SurfacePalette: State.t2SurfacePalette
         };
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+        localStorage.setItem(getDraftKey(), JSON.stringify(payload));
         State.lastSavedAt = payload.ts;
         refreshDraftStatus('saved');
         refreshAutosaveLabel();
@@ -1094,7 +1106,21 @@
 
   function loadDraftFromStorage() {
     try {
-      var raw = localStorage.getItem(DRAFT_KEY);
+      var key = getDraftKey();
+      var raw = localStorage.getItem(key);
+      // Legacy fallback: a draft saved before per-project scoping
+      // existed lives at the bare DRAFT_KEY. Only honour it for the
+      // active project (NOT every project) by migrating it to the
+      // project-scoped key on read — prevents one project's draft
+      // from bleeding into every other project.
+      if (!raw && key !== DRAFT_KEY) {
+        var legacy = localStorage.getItem(DRAFT_KEY);
+        if (legacy) {
+          try { localStorage.setItem(key, legacy); } catch (e) {}
+          try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+          raw = legacy;
+        }
+      }
       if (!raw) return false;
       var d = JSON.parse(raw);
       if (!d || d.v !== 1 || !d.proposed) return false;
@@ -1161,6 +1187,9 @@
   }
 
   function clearDraftFromStorage() {
+    try { localStorage.removeItem(getDraftKey()); } catch (e) {}
+    // Also nuke the legacy global key so it can't resurface on the
+    // next load and re-pollute another project.
     try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
     State.lastSavedAt = null;
   }
@@ -5122,6 +5151,12 @@
         try { localStorage.setItem('dtf-known-projects', JSON.stringify(nextList)); } catch (e) {}
         // Clear any draft state for the deleted project.
         try { localStorage.removeItem('ev2-draft-' + id); } catch (e) {}
+        try { localStorage.removeItem(DRAFT_KEY + '--' + id); } catch (e) {}
+        // Also drop any local-hydration caches stashed by onboard so
+        // a future project that reuses this id starts clean.
+        try { localStorage.removeItem('dtf-project-config-' + id); } catch (e) {}
+        try { localStorage.removeItem('dtf-project-primitives-' + id); } catch (e) {}
+        try { localStorage.removeItem('dtf-color-config-' + id); } catch (e) {}
         var wasActive = (getActiveProjectId() === id);
         if (window.ev2Toast) window.ev2Toast('Deleted \u201C' + name + '\u201D', 'ok');
         if (!nextList.length) {
