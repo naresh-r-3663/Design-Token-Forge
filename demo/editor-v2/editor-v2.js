@@ -218,13 +218,15 @@
   }
 
   /* Family grouping for the T2 renderer — order matters, it's what
-     the user sees top-to-bottom in the editing pane. Source of truth
-     is T2_PROP_DEFS[].family; this just defines display order +
-     human labels + sub-text. */
+     the user sees top-to-bottom in the editing pane. Labels are the
+     canonical token-domain names (surface / content / component) so
+     designers reading the panel are reading the same words they
+     write in code. The surface-pane description already gives
+     context; no sub-titles per family. */
   var T2_FAMILIES = [
-    { id:'surface',   label:'Surface',                 sub:'The page itself — bg, outline, separator.' },
-    { id:'content',   label:'Content',                 sub:'Text + icon tones that sit on this surface.' },
-    { id:'component', label:'Component-on-surface',    sub:'Default fills + outlines for components placed on this surface.' }
+    { id:'surface',   label:'Surface'   },
+    { id:'content',   label:'Content'   },
+    { id:'component', label:'Component' }
   ];
 
   /* Neutral palette generator. ROLES already cover brand/danger/etc
@@ -1036,6 +1038,10 @@
     if (opts.dataAttrs) Object.keys(opts.dataAttrs).forEach(function (k) {
       attrs += ' data-' + k + '="' + String(opts.dataAttrs[k]).replace(/"/g,'&quot;') + '"';
     });
+    // Column order is: swatch | name+meta | WCAG | controls.
+    // WCAG sits left-of-controls so the eye reads "what's the issue"
+    // BEFORE "what can I do about it", and controls are flush-right
+    // for predictable click targets across all rows.
     return '<div class="ev2-pc" data-detached="' + (opts.isDetached ? 'true' : 'false') + '"' + attrs + '>'
       + '<div class="ev2-pc-sw" style="' + swSt + '"></div>'
       + '<div class="ev2-pc-main">'
@@ -1045,28 +1051,28 @@
           + (opts.isDetached ? '<span class="ev2-pc-chip">custom</span>' : '<span class="ev2-pc-chip ev2-pc-chip-muted">default</span>')
         + '</div>'
       + '</div>'
-      + '<div class="ev2-pc-controls">'
-        + '<button type="button" class="ev2-pc-step-btn" data-pc-step="-1" aria-label="Step lighter">\u2212</button>'
-        + '<button type="button" class="ev2-pc-step-btn" data-pc-step="+1" aria-label="Step darker">+</button>'
-        + '<button type="button" class="ev2-pc-reset" data-pc-reset' + (opts.isDetached ? '' : ' disabled') + ' aria-label="Reset to default">\u21BA</button>'
-      + '</div>'
       + sentHTML
+      + '<div class="ev2-pc-controls">'
+        + '<button type="button" class="ev2-pc-step-btn" data-pc-step="-1" data-tip="Step lighter" aria-label="Step lighter">\u2212</button>'
+        + '<button type="button" class="ev2-pc-step-btn" data-pc-step="+1" data-tip="Step darker" aria-label="Step darker">+</button>'
+        + '<button type="button" class="ev2-pc-reset" data-pc-reset' + (opts.isDetached ? '' : ' disabled') + ' data-tip="Reset to default" aria-label="Reset to default">\u21BA</button>'
+      + '</div>'
     + '</div>';
   }
 
   function surfacePickerHTML() {
+    // Compact horizontal rail: swatch + name only. Description lives
+    // in the surface-pane header, so we don't pay vertical cost twice.
     return '<div class="ev2-surfaces" role="tablist" aria-label="Surfaces">'
       + T2_SURFACES.map(function (s) {
           var current = s.id === State.activeSurface;
           var bgHex   = t2HexFor(s.id, 'bg', State.editingMode);
           var changed = isT2Changed(s.id);
           return '<button class="ev2-surface" role="tab" data-surface-tab="' + s.id + '"'
-            + ' aria-current="' + current + '" data-changed="' + changed + '">'
+            + ' aria-current="' + current + '" data-changed="' + changed + '"'
+            + ' data-tip="' + s.desc.replace(/"/g, '&quot;') + '">'
             + '<span class="ev2-surface-sw" style="background:' + bgHex + '"></span>'
-            + '<span class="ev2-surface-text">'
-              + '<span class="ev2-surface-name">' + s.label + '</span>'
-              + '<span class="ev2-surface-desc">' + s.desc + '</span>'
-            + '</span>'
+            + '<span class="ev2-surface-name">' + s.label + '</span>'
             + (changed ? '<span class="ev2-surface-dot" aria-label="Has overrides"></span>' : '')
           + '</button>';
         }).join('')
@@ -1098,10 +1104,7 @@
     }).join('');
     return '<section class="ev2-pc-group" data-family="' + family.id + '">'
       + '<header class="ev2-pc-group-head">'
-        + '<div class="ev2-pc-group-titlewrap">'
-          + '<h3 class="ev2-pc-group-title">' + family.label + '</h3>'
-          + '<p class="ev2-pc-group-sub">' + family.sub + '</p>'
-        + '</div>'
+        + '<h3 class="ev2-pc-group-title">' + family.label + '</h3>'
       + '</header>'
       + '<div class="ev2-pc-list">' + cards + '</div>'
     + '</section>';

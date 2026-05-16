@@ -1103,22 +1103,26 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
    from §4 and will be reused by T1 migration + T3.
    ══════════════════════════════════════════════════════════════ */
 
-/* Surface picker — horizontal scroll-able rail at the top of the
-   T2 body. Shows all 8 surfaces with a swatch, name, and override
-   dot if any cell on the surface is detached. */
+/* Surface picker — compact single-row scrollable rail. Each pill
+   shows just a swatch + name; the full description hangs off
+   data-tip and the surface-pane header shows it for the active one.
+   This buys ~140px of vertical room over the old 2-row grid. */
 .ev2-surfaces{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-  gap:8px;
-  padding:16px 24px;
+  display:flex;
+  flex-wrap:nowrap;
+  gap:6px;
+  padding:10px 24px;
+  overflow-x:auto;
+  scrollbar-width:thin;
   border-bottom:1px solid var(--surface-base-outline);
   background:var(--surface-base-bg);
 }
 .ev2-surface{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 12px;
+  display:inline-flex;align-items:center;gap:8px;
+  flex:0 0 auto;
+  padding:6px 12px 6px 8px;
   border:1px solid var(--surface-base-outline);
-  border-radius:var(--radius-md,8px);
+  border-radius:999px;
   background:var(--surface-base-bg);
   text-align:left;cursor:pointer;font:inherit;
   transition:border-color 120ms,box-shadow 120ms,background 120ms;
@@ -1132,17 +1136,15 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-surface:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px}
 .ev2-surface-sw{
   flex-shrink:0;
-  width:28px;height:28px;
-  border-radius:var(--radius-sm,6px);
+  width:20px;height:20px;
+  border-radius:50%;
   border:1px solid var(--surface-base-outline);
 }
-.ev2-surface-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
-.ev2-surface-name{font-size:13px;font-weight:600;color:var(--surface-base-ct-strong);line-height:1.2}
-.ev2-surface-desc{font-size:11px;color:var(--surface-base-ct-subtle);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev2-surface-name{font-size:12px;font-weight:600;color:var(--surface-base-ct-strong);line-height:1.2;white-space:nowrap}
 .ev2-surface-dot{
-  position:absolute;top:8px;right:8px;
   width:6px;height:6px;border-radius:50%;
   background:var(--brand-component-bg-default,#3366f0);
+  margin-inline-start:2px;
 }
 
 /* Surface editing pane — header + family groups */
@@ -1195,13 +1197,14 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 /* Family group containing N Property Cards */
 .ev2-pc-group{padding:20px 24px 8px}
 .ev2-pc-group + .ev2-pc-group{border-top:1px solid var(--surface-base-separator)}
-.ev2-pc-group-head{margin-bottom:12px}
-.ev2-pc-group-title{font-size:13px;font-weight:700;color:var(--surface-base-ct-strong);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
-.ev2-pc-group-sub{font-size:12px;color:var(--surface-base-ct-subtle);line-height:1.4}
-.ev2-pc-list{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.ev2-pc-group-head{margin-bottom:8px}
+.ev2-pc-group-title{font-size:13px;font-weight:700;color:var(--surface-base-ct-strong);text-transform:uppercase;letter-spacing:.04em}
+.ev2-pc-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 
 /* ── Property Card (frozen primitive — docs §4) ──────────
-   Anatomy: swatch | name + step + chip | ± stepper + reset | WCAG.
+   Anatomy: swatch | name + step + chip | WCAG | ± stepper + reset.
+   WCAG sits left of controls so the eye reads "what's wrong"
+   before "what to do"; controls are flush-right on every row.
    Border style on the swatch communicates detached vs default
    (solid = user override, dashed = following default). */
 .ev2-pc{
@@ -1275,11 +1278,11 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-pc-wcag[data-grade="fail"]{background:var(--danger-container-bg,#FDEAEB);color:var(--danger-content-default,#D61D20)}
 
 @media (max-width: 1100px){
-  .ev2-pc{grid-template-columns:32px 1fr auto;grid-template-areas:"sw main controls" "sw wcag wcag";row-gap:6px}
+  .ev2-pc{grid-template-columns:32px 1fr auto;grid-template-areas:"sw main controls" "sw wcag controls";row-gap:6px}
   .ev2-pc-sw{grid-area:sw}
   .ev2-pc-main{grid-area:main}
-  .ev2-pc-controls{grid-area:controls}
   .ev2-pc-wcag{grid-area:wcag;justify-self:start}
+  .ev2-pc-controls{grid-area:controls;align-self:start}
 }
 
 /* ── Responsive guard rails (no full responsive layout in v2 step 2) ── */
