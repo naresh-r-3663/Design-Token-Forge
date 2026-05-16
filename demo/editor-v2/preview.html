@@ -304,6 +304,147 @@
       background:var(--surface-active-cm-bg-pressed);
     }
 
+    /* ---- Roles on this surface ----
+       Real-world question for T2: do my brand/danger/success/warning/
+       info buttons + containers still read well on THIS surface?
+       Each role gets one filled button + one outlined button + one
+       tinted container, all sitting directly on --surface-active-bg
+       so the user can spot contrast collapses (e.g. brand-component-
+       bg disappearing on Accent) without leaving the T2 view. */
+    .pv-roles{
+      margin-top:18px;
+      padding-top:14px;
+      border-top:1px dashed var(--surface-active-separator);
+      display:flex;flex-direction:column;gap:10px;
+    }
+    .pv-roles-cap{
+      font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+      color:var(--surface-active-ct-faint);
+      display:flex;align-items:center;gap:8px;
+    }
+    .pv-roles-cap-hint{
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:9px;font-weight:500;text-transform:none;letter-spacing:0;
+      opacity:.85;
+    }
+    .pv-roles-grid{
+      display:grid;
+      grid-template-columns:60px 1fr 1fr 1fr;
+      gap:6px 10px;
+      align-items:center;
+    }
+    .pv-roles-head{
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:9px;font-weight:600;
+      color:var(--surface-active-ct-faint);
+      text-align:center;
+      padding-bottom:2px;
+    }
+    .pv-roles-head.r-label{text-align:left}
+    .pv-roles-row-label{
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:10px;font-weight:700;
+      color:var(--surface-active-ct-strong);
+    }
+    .pv-role-btn{
+      width:100%;
+      padding:7px 10px;border-radius:6px;
+      font-size:11px;font-weight:600;font-family:inherit;
+      cursor:pointer;
+      transition:background 80ms,border-color 80ms;
+      border:1px solid transparent;
+    }
+    .pv-role-btn.v-fill{
+      background:var(--role-bg);
+      color:var(--role-on);
+      border-color:var(--role-bg);
+    }
+    .pv-role-btn.v-fill:hover  {background:var(--role-bg-h);border-color:var(--role-bg-h)}
+    .pv-role-btn.v-fill:active {background:var(--role-bg-p);border-color:var(--role-bg-p)}
+    .pv-role-btn.v-out{
+      background:transparent;
+      color:var(--role-bg);
+      border-color:var(--role-out);
+    }
+    .pv-role-btn.v-out:hover   {background:var(--surface-active-cm-bg-hover);border-color:var(--role-out-h)}
+    .pv-role-btn.v-out:active  {background:var(--surface-active-cm-bg-pressed);border-color:var(--role-out-p)}
+    .pv-role-chip{
+      width:100%;
+      padding:7px 10px;border-radius:6px;
+      font-size:10.5px;font-weight:600;
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      background:var(--role-tint);
+      color:var(--role-tint-ct);
+      border:1px solid var(--role-tint-out);
+      text-align:center;
+    }
+    /* Per-role token aliases. Maps the generic --role-* vars used by
+       the button/chip rules above onto whichever role's tokens this
+       row belongs to. Component-bg/outline trios come from the role's
+       palette; container tint + container-on/outline come from the
+       semantic surface family that mirrors the role. */
+    .pv-roles-row[data-role="brand"]{
+      --role-bg:var(--brand-component-bg-default);
+      --role-bg-h:var(--brand-component-bg-hover);
+      --role-bg-p:var(--brand-component-bg-pressed);
+      --role-out:var(--brand-component-outline-default);
+      --role-out-h:var(--brand-component-outline-hover);
+      --role-out-p:var(--brand-component-outline-pressed);
+      --role-on:var(--brand-on-component);
+      --role-tint:var(--brand-container-bg);
+      --role-tint-ct:var(--brand-on-container);
+      --role-tint-out:var(--brand-container-outline);
+    }
+    .pv-roles-row[data-role="danger"]{
+      --role-bg:var(--danger-component-bg-default);
+      --role-bg-h:var(--danger-component-bg-hover);
+      --role-bg-p:var(--danger-component-bg-pressed);
+      --role-out:var(--danger-component-outline-default);
+      --role-out-h:var(--danger-component-outline-hover);
+      --role-out-p:var(--danger-component-outline-pressed);
+      --role-on:var(--danger-on-component);
+      --role-tint:var(--danger-container-bg);
+      --role-tint-ct:var(--danger-on-container);
+      --role-tint-out:var(--danger-container-outline);
+    }
+    .pv-roles-row[data-role="success"]{
+      --role-bg:var(--success-component-bg-default);
+      --role-bg-h:var(--success-component-bg-hover);
+      --role-bg-p:var(--success-component-bg-pressed);
+      --role-out:var(--success-component-outline-default);
+      --role-out-h:var(--success-component-outline-hover);
+      --role-out-p:var(--success-component-outline-pressed);
+      --role-on:var(--success-on-component);
+      --role-tint:var(--success-container-bg);
+      --role-tint-ct:var(--success-on-container);
+      --role-tint-out:var(--success-container-outline);
+    }
+    .pv-roles-row[data-role="warning"]{
+      --role-bg:var(--warning-component-bg-default);
+      --role-bg-h:var(--warning-component-bg-hover);
+      --role-bg-p:var(--warning-component-bg-pressed);
+      --role-out:var(--warning-component-outline-default);
+      --role-out-h:var(--warning-component-outline-hover);
+      --role-out-p:var(--warning-component-outline-pressed);
+      --role-on:var(--warning-on-component);
+      --role-tint:var(--warning-container-bg);
+      --role-tint-ct:var(--warning-on-container);
+      --role-tint-out:var(--warning-container-outline);
+    }
+    .pv-roles-row[data-role="info"]{
+      --role-bg:var(--info-component-bg-default);
+      --role-bg-h:var(--info-component-bg-hover);
+      --role-bg-p:var(--info-component-bg-pressed);
+      --role-out:var(--info-component-outline-default);
+      --role-out-h:var(--info-component-outline-hover);
+      --role-out-p:var(--info-component-outline-pressed);
+      --role-on:var(--info-on-component);
+      --role-tint:var(--info-container-bg);
+      --role-tint-ct:var(--info-on-container);
+      --role-tint-out:var(--info-container-outline);
+    }
+    .pv-roles-row{display:contents}
+
     /* ---- Tier gating ----
        When the editor is on T2 the preview becomes a surface-only
        experience: the role spotlight and compare-roles panels (both
@@ -409,6 +550,54 @@
       <div class="pv-try-row">
         <button type="button" class="pv-try-btn">Outlined</button>
         <button type="button" class="pv-try-btn v-ghost">Ghost</button>
+      </div>
+    </div>
+
+    <!-- Roles on this surface: every role's filled + outlined button
+         and container chip painted directly on --surface-active-bg
+         so the user can spot contrast collapses (e.g. a Brand button
+         vanishing on the Accent surface) without leaving T2. -->
+    <div class="pv-roles" aria-label="Roles on this surface">
+      <div class="pv-roles-cap">
+        <span>Roles on this surface</span>
+        <span class="pv-roles-cap-hint">does each role still read?</span>
+      </div>
+      <div class="pv-roles-grid">
+        <div class="pv-roles-head r-label">role</div>
+        <div class="pv-roles-head">filled</div>
+        <div class="pv-roles-head">outlined</div>
+        <div class="pv-roles-head">container</div>
+
+        <div class="pv-roles-row" data-role="brand">
+          <span class="pv-roles-row-label">brand</span>
+          <button type="button" class="pv-role-btn v-fill">Brand</button>
+          <button type="button" class="pv-role-btn v-out">Brand</button>
+          <span class="pv-role-chip">container</span>
+        </div>
+        <div class="pv-roles-row" data-role="danger">
+          <span class="pv-roles-row-label">danger</span>
+          <button type="button" class="pv-role-btn v-fill">Delete</button>
+          <button type="button" class="pv-role-btn v-out">Delete</button>
+          <span class="pv-role-chip">container</span>
+        </div>
+        <div class="pv-roles-row" data-role="success">
+          <span class="pv-roles-row-label">success</span>
+          <button type="button" class="pv-role-btn v-fill">Save</button>
+          <button type="button" class="pv-role-btn v-out">Save</button>
+          <span class="pv-role-chip">container</span>
+        </div>
+        <div class="pv-roles-row" data-role="warning">
+          <span class="pv-roles-row-label">warning</span>
+          <button type="button" class="pv-role-btn v-fill">Review</button>
+          <button type="button" class="pv-role-btn v-out">Review</button>
+          <span class="pv-role-chip">container</span>
+        </div>
+        <div class="pv-roles-row" data-role="info">
+          <span class="pv-roles-row-label">info</span>
+          <button type="button" class="pv-role-btn v-fill">Notify</button>
+          <button type="button" class="pv-role-btn v-out">Notify</button>
+          <span class="pv-role-chip">container</span>
+        </div>
       </div>
     </div>
 
