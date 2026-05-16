@@ -255,11 +255,62 @@
   }
 
   function colorFromId(id){
-    // deterministic accent color from project id
+    // Fallback gradient used until the project's brand color loads.
+    // Deterministic so cards don't flicker between renders.
     var hash = 0;
     for (var i=0; i<id.length; i++) hash = ((hash<<5)-hash) + id.charCodeAt(i);
     var hue = Math.abs(hash) % 360;
     return { c1: 'hsl(' + hue + ' 70% 52%)', c2: 'hsl(' + ((hue+40)%360) + ' 70% 60%)' };
+  }
+
+  /* Darken a hex color toward black by `amt` (0..1). Used to build
+     the brand swatch gradient (brand \u2192 ~25% darker brand) without
+     pulling in the full palette engine. */
+  function shadeHex(hex, amt){
+    var h = (hex || '').replace('#','');
+    if (h.length !== 6) return hex;
+    var r = parseInt(h.slice(0,2),16),
+        g = parseInt(h.slice(2,4),16),
+        b = parseInt(h.slice(4,6),16);
+    r = Math.max(0, Math.round(r * (1 - amt)));
+    g = Math.max(0, Math.round(g * (1 - amt)));
+    b = Math.max(0, Math.round(b * (1 - amt)));
+    var to = function(n){ var s = n.toString(16); return s.length < 2 ? '0'+s : s; };
+    return '#' + to(r) + to(g) + to(b);
+  }
+
+  /* Lazy-load each project's brand color from its config.json so
+     the swatch is the actual brand instead of a hash gradient.
+     Cached per page load. Falls back silently \u2014 the deterministic
+     hash gradient stays if config.json is missing. */
+  var _brandCache = {};
+  function paintBrandSwatch(card, projId){
+    var swatch = card.querySelector('.proj-swatch');
+    if (!swatch) return;
+    function apply(hex){
+      if (!hex) return;
+      swatch.style.setProperty('--c1', hex);
+      swatch.style.setProperty('--c2', shadeHex(hex, 0.25));
+    }
+    if (_brandCache[projId]) { apply(_brandCache[projId]); return; }
+    var urls = [
+      '../projects/' + projId + '/config.json',
+      '/Design-Token-Forge/projects/' + projId + '/config.json',
+      '/projects/' + projId + '/config.json'
+    ];
+    var i = 0;
+    (function tryNext(){
+      if (i >= urls.length) return;
+      fetch(urls[i++] + '?_cb=' + Date.now(), { cache: 'no-store' })
+        .then(function(r){ if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+        .then(function(cfg){
+          var hex = cfg && cfg.paletteKeys && cfg.paletteKeys.brand;
+          if (!hex) return;
+          _brandCache[projId] = hex;
+          apply(hex);
+        })
+        .catch(tryNext);
+    })();
   }
 
   function render(list){
@@ -284,6 +335,10 @@
       card.querySelector('.proj-owner').textContent = p.owner ? '@' + p.owner : '';
       card.querySelector('.proj-desc').textContent = p.description || 'Open to edit tokens, palette, and components.';
       grid.appendChild(card);
+      // Async upgrade: fetch this project's config.json and recolor
+      // the swatch from its actual brand. Fallback hash stays in
+      // place if the fetch fails.
+      paintBrandSwatch(card, p.id);
     });
   }
 
