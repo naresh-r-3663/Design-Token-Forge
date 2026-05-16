@@ -2648,23 +2648,65 @@
       openOn = null;
     }
 
-    function renderPreviewHTML(sent, sug, tokenName) {
-      // For edge intent: show a card-shaped baseline with a 1px
-      // border in the failing color. For text: show text in the
-      // failing color on the baseline. Suggested swatch sits next
-      // to it so the eye can compare.
-      var label = tokenName.replace(/^--surface-[^-]+-/, '');
-      if (sent.intent === 'edge') {
-        var beforeBox = '<div class="ev2-wcag-pop-prev-box" style="background:' + sent.baselineHex + ';border:1px solid ' + (pop.__cellHex || '#000') + '">' + label + '</div>';
-        var afterBox  = sug ? '<div class="ev2-wcag-pop-prev-box" style="background:' + sent.baselineHex + ';border:1px solid ' + sug.hex + '">step ' + sug.step + '</div>' : '';
-        return beforeBox + (afterBox ? '<div class="ev2-wcag-pop-arrow" aria-hidden="true">\u2192</div>' + afterBox : '');
+    function renderPreviewHTML(sent, sug, tokenName, propId) {
+      // Contextualised previews: each prop family gets a treatment
+      // that matches what the token actually paints in product UI,
+      // so the designer reads the popover as "this is the thing"
+      // not "this is a generic rectangle".
+      //   - ct-* (text)         \u2192 the real purpose copy at the right
+      //                            size/weight (heading, body, meta,
+      //                            caption) painted on the baseline bg.
+      //   - cm-outline trio     \u2192 a pill-shaped button outlined in
+      //                            the failing color (component-like).
+      //   - surface outline     \u2192 a small card with stacked inner
+      //                            bars + 2px border (region-like).
+      // Border thickness bumped to 2px in both edge cases so the
+      // failing color is actually visible at thumbnail scale (1px
+      // borders disappeared in the 42px preview boxes).
+      var bg = sent.baselineHex;
+      var curHex = pop.__cellHex || '#000';
+      var sugHex = sug ? sug.hex : null;
+      function pickFg(hex) {
+        return contrastRatio('#000000', hex) >= contrastRatio('#FFFFFF', hex) ? '#000000' : '#FFFFFF';
       }
-      // text intent
-      var sample = sent.large ? 'Aa' : 'Body text';
-      var fontSize = sent.large ? '22px' : '14px';
-      var beforeT = '<div class="ev2-wcag-pop-prev-box" style="background:' + sent.baselineHex + ';color:' + (pop.__cellHex || '#000') + ';font-size:' + fontSize + ';font-weight:' + (sent.large ? '700' : '500') + '">' + sample + '</div>';
-      var afterT  = sug ? '<div class="ev2-wcag-pop-prev-box" style="background:' + sent.baselineHex + ';color:' + sug.hex + ';font-size:' + fontSize + ';font-weight:' + (sent.large ? '700' : '500') + '">' + sample + '</div>' : '';
-      return beforeT + (afterT ? '<div class="ev2-wcag-pop-arrow" aria-hidden="true">\u2192</div>' + afterT : '');
+      var arrow = '<div class="ev2-wcag-pop-arrow" aria-hidden="true">\u2192</div>';
+
+      // ---- Text intent (content tokens) ----
+      if (sent.intent === 'text') {
+        var sample, size, weight;
+        if (propId === 'ct-strong')      { sample = 'Section heading';     size = '17px'; weight = 700; }
+        else if (propId === 'ct-default'){ sample = 'Body paragraph reads here.'; size = '13px'; weight = 500; }
+        else if (propId === 'ct-subtle') { sample = 'Metadata \u00b7 2 min ago'; size = '12px'; weight = 500; }
+        else if (propId === 'ct-faint')  { sample = 'Helper caption text'; size = '11px'; weight = 500; }
+        else                              { sample = sent.large ? 'Aa' : 'Body text'; size = '13px'; weight = 500; }
+        function txtBox(fg) {
+          return '<div class="ev2-wcag-pop-prev-box" style="background:' + bg + ';padding:10px 12px;justify-content:flex-start;text-align:left">'
+            + '<span style="color:' + fg + ';font-size:' + size + ';font-weight:' + weight + ';line-height:1.3">' + sample + '</span>'
+          + '</div>';
+        }
+        return txtBox(curHex) + (sug ? arrow + txtBox(sugHex) : '');
+      }
+
+      // ---- Edge intent (border tokens) ----
+      var isCmEdge = propId === 'cm-outline' || propId === 'cm-outline-hover' || propId === 'cm-outline-pressed';
+      var innerFg = pickFg(bg);
+      if (isCmEdge) {
+        // Pill shape \u2014 reads as a button outline. bg here is cm-bg
+        // for the matching state.
+        function pill(borderHex) {
+          return '<div class="ev2-wcag-pop-prev-box" style="background:' + bg + ';border:2px solid ' + borderHex + ';border-radius:999px;padding:8px 16px;min-height:0;font-size:11px;font-weight:600;color:' + innerFg + '">Button</div>';
+        }
+        return pill(curHex) + (sug ? arrow + pill(sugHex) : '');
+      }
+      // Surface outline \u2014 card with two faint inner bars so the
+      // border has something to outline. 2px so it reads at scale.
+      function card(borderHex) {
+        return '<div class="ev2-wcag-pop-prev-box" style="background:' + bg + ';border:2px solid ' + borderHex + ';padding:8px;display:flex;flex-direction:column;gap:5px;align-items:stretch;justify-content:center">'
+          + '<div style="height:5px;border-radius:2px;background:' + innerFg + ';opacity:.45;width:70%"></div>'
+          + '<div style="height:5px;border-radius:2px;background:' + innerFg + ';opacity:.22;width:50%"></div>'
+        + '</div>';
+      }
+      return card(curHex) + (sug ? arrow + card(sugHex) : '');
     }
 
     function open(chip) {
@@ -2687,7 +2729,11 @@
       var why = wcagTipText(sent, tokenName);
 
       var sugBlock = '';
-      if (sug) {
+      if (sent.judge.pass) {
+        // Already passing \u2014 no fix to suggest. Don't lie with the
+        // empty-fallback copy that pretends no step works.
+        sugBlock = '<div class="ev2-wcag-pop-fix ev2-wcag-pop-fix-empty">No change needed \u2014 this pairing already meets the threshold.</div>';
+      } else if (sug) {
         var sugGrade = sug.judge.pass ? (sug.judge.grade === 'AAA' ? 'aaa' : (sent.large ? 'aa-large' : 'aa')) : 'fail';
         sugBlock =
           '<div class="ev2-wcag-pop-fix">'
@@ -2702,7 +2748,7 @@
           + '</div>'
         + '</div>';
       } else {
-        sugBlock = '<div class="ev2-wcag-pop-fix ev2-wcag-pop-fix-empty">No step in this palette reaches the threshold against ' + tokenName.replace(/^--surface-[^-]+-/, '') + '. Try editing the baseline instead.</div>';
+        sugBlock = '<div class="ev2-wcag-pop-fix ev2-wcag-pop-fix-empty">No step in this palette reaches the threshold against ' + sent.baseline.replace(/^--surface-[^-]+-/, '') + '. Try editing the baseline instead.</div>';
       }
 
       var edgeNote = sent.intent === 'edge' && !sent.judge.pass
@@ -2716,7 +2762,7 @@
             + '<button type="button" class="ev2-wcag-pop-close" data-pc-wcag-close aria-label="Close">\u00D7</button>'
           + '</div>'
           + '<div class="ev2-wcag-pop-prev" aria-label="Preview">'
-            + renderPreviewHTML(sent, sug, tokenName)
+            + renderPreviewHTML(sent, sug, tokenName, propId)
           + '</div>'
           + '<div class="ev2-wcag-pop-why">' + why + '</div>'
           + sugBlock
