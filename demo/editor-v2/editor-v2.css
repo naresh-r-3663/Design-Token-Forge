@@ -1097,6 +1097,191 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-pair-stepper [data-step-reset]{color:var(--surface-base-ct-faint);font-size:11px}
 @media (max-width: 700px) { .ev2-pairs-grid{grid-template-columns:1fr} }
 
+/* ══════════════════════════════════════════════════════════════
+   T2 Surfaces — surface picker + Property Card primitive
+   Step 4 (docs §11). Property Card is the one frozen primitive
+   from §4 and will be reused by T1 migration + T3.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Surface picker — horizontal scroll-able rail at the top of the
+   T2 body. Shows all 8 surfaces with a swatch, name, and override
+   dot if any cell on the surface is detached. */
+.ev2-surfaces{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:8px;
+  padding:16px 24px;
+  border-bottom:1px solid var(--surface-base-outline);
+  background:var(--surface-base-bg);
+}
+.ev2-surface{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;
+  border:1px solid var(--surface-base-outline);
+  border-radius:var(--radius-md,8px);
+  background:var(--surface-base-bg);
+  text-align:left;cursor:pointer;font:inherit;
+  transition:border-color 120ms,box-shadow 120ms,background 120ms;
+  position:relative;
+}
+.ev2-surface:hover{background:var(--surface-base-subtle)}
+.ev2-surface[aria-current="true"]{
+  border-color:var(--brand-component-bg-default,#3366f0);
+  box-shadow:0 0 0 1px var(--brand-component-bg-default,#3366f0) inset;
+}
+.ev2-surface:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px}
+.ev2-surface-sw{
+  flex-shrink:0;
+  width:28px;height:28px;
+  border-radius:var(--radius-sm,6px);
+  border:1px solid var(--surface-base-outline);
+}
+.ev2-surface-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.ev2-surface-name{font-size:13px;font-weight:600;color:var(--surface-base-ct-strong);line-height:1.2}
+.ev2-surface-desc{font-size:11px;color:var(--surface-base-ct-subtle);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev2-surface-dot{
+  position:absolute;top:8px;right:8px;
+  width:6px;height:6px;border-radius:50%;
+  background:var(--brand-component-bg-default,#3366f0);
+}
+
+/* Surface editing pane — header + family groups */
+.ev2-surface-pane{padding:8px 0 32px}
+.ev2-surface-head{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:18px 24px;
+  border-bottom:1px solid var(--surface-base-separator);
+}
+.ev2-surface-head-l{display:flex;align-items:center;gap:14px;min-width:0}
+.ev2-surface-head-sw{
+  flex-shrink:0;
+  width:44px;height:44px;
+  border-radius:var(--radius-md,8px);
+  border:1px solid var(--surface-base-outline);
+}
+.ev2-surface-head-txt{min-width:0}
+.ev2-surface-head-name{font-size:16px;font-weight:700;color:var(--surface-base-ct-strong);line-height:1.2;margin-bottom:2px}
+.ev2-surface-head-sub{font-size:12px;color:var(--surface-base-ct-subtle);line-height:1.4}
+.ev2-surface-head-sub code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:11px;
+  padding:1px 5px;border-radius:3px;
+  background:var(--surface-base-subtle);
+  color:var(--surface-base-ct-strong);
+}
+
+/* Editing mode toggle (Light / Dark). Reuses .ev2-edit-mode click
+   handler from the existing T1 dispatcher — same data-edit-mode
+   attribute, so no JS duplication. */
+.ev2-edit-mode-row{
+  display:inline-flex;align-items:center;
+  padding:3px;border-radius:var(--radius-md,8px);
+  background:var(--surface-base-subtle);
+  border:1px solid var(--surface-base-outline);
+}
+.ev2-edit-mode{
+  padding:5px 12px;
+  font:inherit;font-size:12px;font-weight:600;
+  border:0;background:transparent;border-radius:var(--radius-sm,6px);
+  color:var(--surface-base-ct-subtle);
+  cursor:pointer;
+}
+.ev2-edit-mode[aria-checked="true"]{
+  background:var(--surface-base-bg);
+  color:var(--surface-base-ct-strong);
+  box-shadow:var(--shadow-xs,0 1px 2px rgba(0,0,0,.05));
+}
+
+/* Family group containing N Property Cards */
+.ev2-pc-group{padding:20px 24px 8px}
+.ev2-pc-group + .ev2-pc-group{border-top:1px solid var(--surface-base-separator)}
+.ev2-pc-group-head{margin-bottom:12px}
+.ev2-pc-group-title{font-size:13px;font-weight:700;color:var(--surface-base-ct-strong);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.ev2-pc-group-sub{font-size:12px;color:var(--surface-base-ct-subtle);line-height:1.4}
+.ev2-pc-list{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+
+/* ── Property Card (frozen primitive — docs §4) ──────────
+   Anatomy: swatch | name + step + chip | ± stepper + reset | WCAG.
+   Border style on the swatch communicates detached vs default
+   (solid = user override, dashed = following default). */
+.ev2-pc{
+  display:grid;
+  grid-template-columns:32px 1fr auto auto;
+  align-items:center;gap:12px;
+  padding:8px 12px;
+  border:1px solid var(--surface-base-outline);
+  border-radius:var(--radius-md,8px);
+  background:var(--surface-base-bg);
+  transition:border-color 120ms,box-shadow 120ms;
+}
+.ev2-pc:hover{border-color:var(--surface-base-cm-outline-hover,#C8D0D8)}
+.ev2-pc[data-detached="true"]{
+  border-color:var(--brand-component-bg-default,#3366f0);
+  box-shadow:0 0 0 1px var(--brand-component-bg-default,#3366f0) inset;
+}
+.ev2-pc-sw{
+  width:32px;height:32px;
+  border-radius:var(--radius-sm,6px);
+  border:2px dashed var(--surface-base-outline);
+}
+.ev2-pc[data-detached="true"] .ev2-pc-sw{border-style:solid}
+.ev2-pc-main{min-width:0}
+.ev2-pc-name{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:12px;font-weight:600;
+  color:var(--surface-base-ct-strong);
+  line-height:1.2;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.ev2-pc-meta{display:flex;align-items:center;gap:8px;margin-top:3px}
+.ev2-pc-step{
+  font-size:11px;font-weight:600;
+  color:var(--surface-base-ct-subtle);
+  font-variant-numeric:tabular-nums;
+}
+.ev2-pc-chip{
+  font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  padding:2px 6px;border-radius:3px;
+  background:var(--brand-container-bg,#EAF1FF);
+  color:var(--brand-content-default,#3366f0);
+}
+.ev2-pc-chip-muted{background:var(--surface-base-subtle);color:var(--surface-base-ct-faint)}
+.ev2-pc-controls{display:inline-flex;align-items:center;gap:4px}
+.ev2-pc-step-btn,.ev2-pc-reset{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;
+  border:1px solid var(--surface-base-outline);
+  border-radius:var(--radius-sm,6px);
+  background:var(--surface-base-bg);
+  color:var(--surface-base-ct-strong);
+  font:inherit;font-size:13px;cursor:pointer;
+  transition:background 120ms,border-color 120ms;
+}
+.ev2-pc-step-btn:hover,.ev2-pc-reset:not(:disabled):hover{background:var(--surface-base-subtle)}
+.ev2-pc-step-btn:focus-visible,.ev2-pc-reset:focus-visible{
+  outline:2px solid var(--brand-component-bg-default,#3366f0);
+  outline-offset:1px;
+}
+.ev2-pc-reset:disabled{opacity:.35;cursor:default}
+.ev2-pc-wcag{
+  font-size:11px;font-weight:600;
+  padding:3px 7px;border-radius:3px;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.ev2-pc-wcag[data-grade="aaa"]{background:var(--success-container-bg,#E8F5EB);color:var(--success-content-default,#0B8D28)}
+.ev2-pc-wcag[data-grade="aa"]{background:var(--success-container-bg,#E8F5EB);color:var(--success-content-default,#0B8D28)}
+.ev2-pc-wcag[data-grade="aa-large"]{background:var(--info-container-bg,#EAF4FF);color:var(--info-content-default,#0E6FE0)}
+.ev2-pc-wcag[data-grade="fail"]{background:var(--danger-container-bg,#FDEAEB);color:var(--danger-content-default,#D61D20)}
+
+@media (max-width: 1100px){
+  .ev2-pc{grid-template-columns:32px 1fr auto;grid-template-areas:"sw main controls" "sw wcag wcag";row-gap:6px}
+  .ev2-pc-sw{grid-area:sw}
+  .ev2-pc-main{grid-area:main}
+  .ev2-pc-controls{grid-area:controls}
+  .ev2-pc-wcag{grid-area:wcag;justify-self:start}
+}
+
 /* ── Responsive guard rails (no full responsive layout in v2 step 2) ── */
 @media (max-width: 1100px){
   .ev2-panes{grid-template-columns:1fr 6px 1fr}

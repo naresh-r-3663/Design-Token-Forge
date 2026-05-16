@@ -217,9 +217,48 @@
     return T2_SURFACES.reduce(function (n, s) { return n + (isT2Changed(s.id) ? 1 : 0); }, 0);
   }
 
+  /* Family grouping for the T2 renderer — order matters, it's what
+     the user sees top-to-bottom in the editing pane. Source of truth
+     is T2_PROP_DEFS[].family; this just defines display order +
+     human labels + sub-text. */
+  var T2_FAMILIES = [
+    { id:'surface',   label:'Surface',                 sub:'The page itself — bg, outline, separator.' },
+    { id:'content',   label:'Content',                 sub:'Text + icon tones that sit on this surface.' },
+    { id:'component', label:'Component-on-surface',    sub:'Default fills + outlines for components placed on this surface.' }
+  ];
+
+  /* Neutral palette generator. ROLES already cover brand/danger/etc
+     via stepsFor(); neutral has no T0 entry because it's never the
+     "active editing role". For T2 we need its ladder to paint
+     surface swatches, so we generate it on demand from
+     --prim-neutral-500 in the loaded primitives.css. Cached at
+     module scope; invalidated on Discard (T0 wipe). */
+  var _neutralStepsCache = null;
+  function neutralSteps() {
+    if (_neutralStepsCache) return _neutralStepsCache;
+    var cs = getComputedStyle(document.documentElement);
+    var seed = cs.getPropertyValue('--prim-neutral-500').trim() || '#737E88';
+    _neutralStepsCache = window.PaletteEngine.generatePalette(seed, { anchor: 'normalized' }).steps;
+    return _neutralStepsCache;
+  }
+
+  /* Resolve a T2 cell to its hex value by walking the surface's
+     source palette ladder. Used for swatches + WCAG math. */
+  function t2HexFor(surfaceId, propId, mode) {
+    var surface = T2_SURFACES.find(function (s) { return s.id === surfaceId; });
+    if (!surface) return '#000';
+    var step = resolveT2Step(surfaceId, propId, mode);
+    var ladder = surface.palette === 'brand' ? stepsFor('brand') : neutralSteps();
+    for (var i = 0; i < ladder.length; i++) {
+      if (ladder[i].name === step) return ladder[i].hex;
+    }
+    return '#000';
+  }
+
   var State = {
     activeTier: 't0',
     activeRole: 'brand',
+    activeSurface: 'base',
     editingMode:'light',
     anchor:     'exact',
     baseline:   {},
@@ -291,6 +330,7 @@
         v: 1,
         activeTier: State.activeTier,
         activeRole: State.activeRole,
+        activeSurface: State.activeSurface,
         anchor:     State.anchor,
         disclosure: State.disclosure,
         mode: document.documentElement.getAttribute('data-theme') || 'light',
@@ -900,6 +940,203 @@
       + '</div>';
   }
 
+  /* ── T2 Surfaces ──────────────────────────────────────
+     Build step 4 (per docs §11): render the surface picker + family
+     groups using the frozen Property Card from §4. Reads the state
+     model shipped in step 3 (resolveT2Step / isT2Changed) and writes
+     overrides back via setT2Step / clearT2Override below.
+
+     Out of scope for this commit:
+     - "follows" pointer (no T1 cascade until step 5).
+     - Bulk ops (step 5).
+     - Live preview push (step 6 \u2014 needs preview composition update).
+     - T1 migration to the same primitive (separate commit). */
+
+  /* WCAG sentinel per docs \u00a77 \u2014 baseline + threshold per property
+     family. Returns { baseline:'<token-css-name>', baselineHex, ratio,
+     judge, large } so the Property Card can render the standardized
+     "X.XX:1 vs <token> [grade]" string. */
+  function t2Sentinel(surfaceId, propId, mode) {
+    var prop = T2_PROP_DEFS.find(function (p) { return p.id === propId; });
+    if (!prop) return null;
+    var cellHex = t2HexFor(surfaceId, propId, mode);
+    var baselineProp, large = false;
+    // Match the matrix in docs \u00a77.
+    if (prop.family === 'content') {
+      baselineProp = 'bg';
+      large = (propId === 'ct-subtle' || propId === 'ct-faint');
+    } else if (propId === 'cm-outline' || propId === 'cm-outline-hover' || propId === 'cm-outline-pressed') {
+      baselineProp = 'cm-bg';   // outline vs adjacent component bg
+      large = true;             // 3:1 is the AA threshold for non-text
+    } else if (propId === 'cm-bg' || propId === 'cm-bg-hover' || propId === 'cm-bg-pressed' ||
+               propId === 'outline') {
+      baselineProp = 'bg';
+      large = true;
+    } else {
+      // subtle, strong, separator, cm-separator, bg \u2014 no sentinel
+      // per docs \u00a77 (informational tints / decorative dividers).
+      // bg has no sentinel because it IS the baseline.
+      return null;
+    }
+    var baselineHex = t2HexFor(surfaceId, baselineProp, mode);
+    var ratio = contrastRatio(cellHex, baselineHex);
+    var judge = wcagJudge(ratio, large);
+    return {
+      baseline: '--surface-' + surfaceId + '-' + baselineProp,
+      baselineHex: baselineHex,
+      ratio: ratio,
+      judge: judge,
+      large: large
+    };
+  }
+
+  function setT2Step(surfaceId, propId, mode, newStep) {
+    if (ALL_STEPS.indexOf(newStep) < 0) return;
+    var def = defaultT2Step(surfaceId, propId, mode);
+    if (!State.t2[mode][surfaceId]) State.t2[mode][surfaceId] = {};
+    if (newStep === def) {
+      // Step matches the default again \u2014 drop the override so the
+      // card reverts to its "follows default" rendering. Keeps the
+      // override map minimal and lets cascade math stay clean.
+      delete State.t2[mode][surfaceId][propId];
+    } else {
+      State.t2[mode][surfaceId][propId] = { step: newStep };
+    }
+    scheduleAutosave();
+    refreshChangeBar();
+    renderT2();
+  }
+  function clearT2Override(surfaceId, propId, mode) {
+    if (State.t2[mode] && State.t2[mode][surfaceId]) {
+      delete State.t2[mode][surfaceId][propId];
+    }
+    scheduleAutosave();
+    refreshChangeBar();
+    renderT2();
+  }
+
+  /* Property Card primitive (docs \u00a74). Same DOM will be used by T1
+     migration + T3 \u2014 keep it portable; no T2-specific assumptions
+     except what the caller passes in. */
+  function propertyCardHTML(opts) {
+    // opts: { tokenName, swatchHex, step, isDetached, sentinel?, dataAttrs? }
+    var swSt = 'background:' + opts.swatchHex + ';' +
+               'border-style:' + (opts.isDetached ? 'solid' : 'dashed') + ';';
+    var sent = opts.sentinel;
+    var sentHTML = '';
+    if (sent) {
+      var grade = sent.judge.pass ? (sent.judge.grade === 'AAA' ? 'aaa' : (sent.large ? 'aa-large' : 'aa')) : 'fail';
+      var sym   = sent.judge.pass ? '\u2713' : '\u26A0';
+      sentHTML = '<div class="ev2-pc-wcag" data-grade="' + grade + '"'
+        + ' data-tip="' + sent.ratio.toFixed(2) + ':1 vs ' + sent.baseline + ' (' + (sent.large ? 'AA large 3:1' : 'AA 4.5:1') + ')">'
+        + sym + ' ' + sent.ratio.toFixed(2) + ':1'
+      + '</div>';
+    }
+    var attrs = '';
+    if (opts.dataAttrs) Object.keys(opts.dataAttrs).forEach(function (k) {
+      attrs += ' data-' + k + '="' + String(opts.dataAttrs[k]).replace(/"/g,'&quot;') + '"';
+    });
+    return '<div class="ev2-pc" data-detached="' + (opts.isDetached ? 'true' : 'false') + '"' + attrs + '>'
+      + '<div class="ev2-pc-sw" style="' + swSt + '"></div>'
+      + '<div class="ev2-pc-main">'
+        + '<div class="ev2-pc-name">' + opts.tokenName + '</div>'
+        + '<div class="ev2-pc-meta">'
+          + '<span class="ev2-pc-step">step ' + opts.step + '</span>'
+          + (opts.isDetached ? '<span class="ev2-pc-chip">custom</span>' : '<span class="ev2-pc-chip ev2-pc-chip-muted">default</span>')
+        + '</div>'
+      + '</div>'
+      + '<div class="ev2-pc-controls">'
+        + '<button type="button" class="ev2-pc-step-btn" data-pc-step="-1" aria-label="Step lighter">\u2212</button>'
+        + '<button type="button" class="ev2-pc-step-btn" data-pc-step="+1" aria-label="Step darker">+</button>'
+        + '<button type="button" class="ev2-pc-reset" data-pc-reset' + (opts.isDetached ? '' : ' disabled') + ' aria-label="Reset to default">\u21BA</button>'
+      + '</div>'
+      + sentHTML
+    + '</div>';
+  }
+
+  function surfacePickerHTML() {
+    return '<div class="ev2-surfaces" role="tablist" aria-label="Surfaces">'
+      + T2_SURFACES.map(function (s) {
+          var current = s.id === State.activeSurface;
+          var bgHex   = t2HexFor(s.id, 'bg', State.editingMode);
+          var changed = isT2Changed(s.id);
+          return '<button class="ev2-surface" role="tab" data-surface-tab="' + s.id + '"'
+            + ' aria-current="' + current + '" data-changed="' + changed + '">'
+            + '<span class="ev2-surface-sw" style="background:' + bgHex + '"></span>'
+            + '<span class="ev2-surface-text">'
+              + '<span class="ev2-surface-name">' + s.label + '</span>'
+              + '<span class="ev2-surface-desc">' + s.desc + '</span>'
+            + '</span>'
+            + (changed ? '<span class="ev2-surface-dot" aria-label="Has overrides"></span>' : '')
+          + '</button>';
+        }).join('')
+    + '</div>';
+  }
+
+  function surfaceFamilyHTML(surface, family, mode) {
+    var props = T2_PROP_DEFS.filter(function (p) { return p.family === family.id; });
+    var cards = props.map(function (prop) {
+      var resolvedStep = resolveT2Step(surface.id, prop.id, mode);
+      var defaultStep  = defaultT2Step(surface.id, prop.id, mode);
+      var swatchHex    = t2HexFor(surface.id, prop.id, mode);
+      var ov = State.t2[mode][surface.id] && State.t2[mode][surface.id][prop.id];
+      var isDetached   = !!(ov && ov.step);
+      // bg never shows a sentinel (it IS the baseline for the surface).
+      var sentinel = t2Sentinel(surface.id, prop.id, mode);
+      return propertyCardHTML({
+        tokenName: '--surface-' + surface.id + '-' + prop.id,
+        swatchHex: swatchHex,
+        step: resolvedStep,
+        isDetached: isDetached,
+        sentinel: sentinel,
+        dataAttrs: {
+          'pc-surface': surface.id,
+          'pc-prop':    prop.id,
+          'pc-default': defaultStep
+        }
+      });
+    }).join('');
+    return '<section class="ev2-pc-group" data-family="' + family.id + '">'
+      + '<header class="ev2-pc-group-head">'
+        + '<div class="ev2-pc-group-titlewrap">'
+          + '<h3 class="ev2-pc-group-title">' + family.label + '</h3>'
+          + '<p class="ev2-pc-group-sub">' + family.sub + '</p>'
+        + '</div>'
+      + '</header>'
+      + '<div class="ev2-pc-list">' + cards + '</div>'
+    + '</section>';
+  }
+
+  function renderT2() {
+    var surface = T2_SURFACES.find(function (s) { return s.id === State.activeSurface; })
+               || T2_SURFACES[0];
+    State.activeSurface = surface.id;
+    var mode = State.editingMode;
+    var bgHex = t2HexFor(surface.id, 'bg', mode);
+
+    var modeBtns =
+      '<div class="ev2-edit-mode-row" role="radiogroup" aria-label="Editing mode">'
+        + '<button type="button" class="ev2-edit-mode" data-edit-mode="light" aria-checked="' + (mode === 'light') + '" role="radio">Light</button>'
+        + '<button type="button" class="ev2-edit-mode" data-edit-mode="dark"  aria-checked="' + (mode === 'dark')  + '" role="radio">Dark</button>'
+      + '</div>';
+
+    $body.innerHTML =
+      surfacePickerHTML()
+      + '<div class="ev2-surface-pane">'
+        + '<header class="ev2-surface-head">'
+          + '<div class="ev2-surface-head-l">'
+            + '<span class="ev2-surface-head-sw" style="background:' + bgHex + '"></span>'
+            + '<div class="ev2-surface-head-txt">'
+              + '<h2 class="ev2-surface-head-name">' + surface.label + '</h2>'
+              + '<p class="ev2-surface-head-sub">' + surface.desc + ' \u2014 source: <code>' + surface.palette + '</code></p>'
+            + '</div>'
+          + '</div>'
+          + modeBtns
+        + '</header>'
+        + T2_FAMILIES.map(function (f) { return surfaceFamilyHTML(surface, f, mode); }).join('')
+      + '</div>';
+  }
+
   /* ── T1 Roles ────────────────────────────────────────── */
   /* WCAG bar + auto-derived swatches for the current step picks of a
      role/mode. Returns two HTML strings (the bar + the derived card)
@@ -1298,6 +1535,7 @@
     $listSub.textContent = meta.sub;
     if (State.activeTier === 't0') renderT0();
     else if (State.activeTier === 't1') renderT1();
+    else if (State.activeTier === 't2') renderT2();
     else renderTierPlaceholder(State.activeTier);
   }
 
@@ -1329,6 +1567,7 @@
     try { $frame.contentWindow.postMessage({ type: 'ev2-theme', mode: mode }, '*'); } catch (err) {}
     saveUIState();
     if (State.activeTier === 't1') renderT1();
+    else if (State.activeTier === 't2') renderT2();
   });
 
   document.getElementById('showCssNames').addEventListener('change', function (e) {
@@ -1350,6 +1589,7 @@
     // drops all overrides back to empty.
     State.t2 = makeEmptyT2();
     State.cachedSteps = {};
+    _neutralStepsCache = null;
     clearDraftFromStorage();
     pushPreview();
     renderActiveTier();
@@ -1411,6 +1651,49 @@
     var role = ROLES.find(function (r) { return r.id === roleId; });
     resetRole(roleId);
     if (window.ev2Toast) window.ev2Toast('Reset ' + (role ? role.label : roleId) + ' to defaults', 'ok');
+  });
+
+  /* ── T2 event delegation ───────────────────────────────
+     Surface picker, Property Card stepper, Property Card reset. All
+     delegated since renderT2() rebuilds the body each time. */
+  document.addEventListener('click', function (e) {
+    var surfBtn = e.target.closest && e.target.closest('[data-surface-tab]');
+    if (surfBtn) {
+      var sid = surfBtn.getAttribute('data-surface-tab');
+      if (sid && sid !== State.activeSurface) {
+        State.activeSurface = sid;
+        saveUIState();
+        renderT2();
+      }
+      return;
+    }
+    var stepBtn = e.target.closest && e.target.closest('[data-pc-step]');
+    if (stepBtn) {
+      var card = stepBtn.closest('.ev2-pc');
+      if (!card) return;
+      var surfaceId = card.getAttribute('data-pc-surface');
+      var propId    = card.getAttribute('data-pc-prop');
+      if (!surfaceId || !propId) return;
+      var delta = parseInt(stepBtn.getAttribute('data-pc-step'), 10) || 0;
+      // Walk in the tonal direction the user perceives: clicking "+"
+      // (darker) in light mode goes UP the ladder; in dark mode the
+      // visible darker direction is the opposite so we mirror via
+      // tonalDir(). Keeps the stepper intuitive across modes.
+      var current = resolveT2Step(surfaceId, propId, State.editingMode);
+      var next    = stepRel(current, delta * tonalDir(State.editingMode));
+      if (next !== current) setT2Step(surfaceId, propId, State.editingMode, next);
+      return;
+    }
+    var resetBtn = e.target.closest && e.target.closest('[data-pc-reset]');
+    if (resetBtn && !resetBtn.disabled) {
+      var card2 = resetBtn.closest('.ev2-pc');
+      if (!card2) return;
+      clearT2Override(
+        card2.getAttribute('data-pc-surface'),
+        card2.getAttribute('data-pc-prop'),
+        State.editingMode
+      );
+    }
   });
 
   /* ── Deploy summary dialog ─────────────────────────────
@@ -1618,6 +1901,9 @@
     if (ui) {
       if (ui.activeTier) State.activeTier = ui.activeTier;
       if (ui.activeRole) State.activeRole = ui.activeRole;
+      if (ui.activeSurface && T2_SURFACES.some(function (s) { return s.id === ui.activeSurface; })) {
+        State.activeSurface = ui.activeSurface;
+      }
       if (ui.anchor === 'exact' || ui.anchor === 'normalized') State.anchor = ui.anchor;
       if (ui.disclosure && typeof ui.disclosure === 'object') {
         Object.keys(ui.disclosure).forEach(function (k) { State.disclosure[k] = !!ui.disclosure[k]; });
