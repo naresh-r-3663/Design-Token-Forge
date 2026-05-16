@@ -1237,9 +1237,87 @@
             + '</div>'
           + '</div>'
         + '</div>'
-      + '</div>';
+      + '</div>'
+      + renderSystemPalettesPanel()
+      + renderCustomPalettesPanel();
 
     bindT0();
+  }
+
+  /* ── System palettes panel ──────────────────────────────
+     Auto-derived palettes (greyscale, desaturated) sit outside the
+     primary ROLES list because they're not key colors a designer
+     types a hex into — they're derived from brand's hue with
+     controlled chroma. The panel surfaces them on T0 so designers
+     can SEE what's available before opening the T2 surface picker.
+     Each row shows: label + chroma meta + a compact ladder strip
+     (every step's swatch). No editing controls yet — chroma sliders
+     come in the next pass. */
+  function paletteStripHTML(steps) {
+    if (!steps || !steps.length) return '';
+    return '<div class="ev2-sp-strip">' + steps.map(function (s) {
+      return '<span class="ev2-sp-sw" style="background:' + s.hex
+        + '" title="step ' + s.name + ' \u2014 ' + s.hex.toUpperCase() + '"></span>';
+    }).join('') + '</div>';
+  }
+
+  function renderSystemPalettesPanel() {
+    var rows = [
+      { id:'greyscale',   label:'Greyscale',   meta:'chroma 0 \u2014 achromatic',
+        desc:'Tracks brand hue but invisible at C=0' },
+      { id:'desaturated', label:'Desaturated', meta:'chroma \u22480.04 \u2014 branded gray',
+        desc:'Low chroma, hue tracks brand' }
+    ];
+    return '<div class="ev2-sp-panel" data-sp-panel="system">'
+      + '<div class="ev2-sp-head">'
+        + '<div class="ev2-sp-titlewrap">'
+          + '<span class="ev2-sp-title">System palettes</span>'
+          + '<span class="ev2-sp-sub">Auto-derived from Brand \u2014 used for surface backgrounds</span>'
+        + '</div>'
+      + '</div>'
+      + '<div class="ev2-sp-list">'
+        + rows.map(function (r) {
+            var steps = systemPaletteSteps(r.id);
+            return '<div class="ev2-sp-row" data-sp-palette="' + r.id + '">'
+              + '<div class="ev2-sp-rowhead">'
+                + '<span class="ev2-sp-name">' + r.label + '</span>'
+                + '<span class="ev2-sp-meta">' + r.meta + '</span>'
+              + '</div>'
+              + paletteStripHTML(steps)
+            + '</div>';
+          }).join('')
+      + '</div>'
+    + '</div>';
+  }
+
+  function renderCustomPalettesPanel() {
+    var customs = discoverCustomPalettes();
+    return '<div class="ev2-sp-panel" data-sp-panel="custom">'
+      + '<div class="ev2-sp-head">'
+        + '<div class="ev2-sp-titlewrap">'
+          + '<span class="ev2-sp-title">Custom palettes</span>'
+          + '<span class="ev2-sp-sub">Project-specific palettes available in the T2 surface picker</span>'
+        + '</div>'
+        + '<button type="button" class="ev2-sp-add" data-add-palette>'
+          + '<span class="ev2-sp-add-glyph" aria-hidden="true">+</span> Add palette'
+        + '</button>'
+      + '</div>'
+      + (customs.length
+          ? '<div class="ev2-sp-list">'
+              + customs.map(function (c) {
+                  var steps = customPaletteSteps(c.id);
+                  return '<div class="ev2-sp-row" data-sp-palette="' + c.id + '">'
+                    + '<div class="ev2-sp-rowhead">'
+                      + '<span class="ev2-sp-name">' + c.label + '</span>'
+                      + '<span class="ev2-sp-meta">--prim-' + c.id + '-*</span>'
+                    + '</div>'
+                    + paletteStripHTML(steps)
+                  + '</div>';
+                }).join('')
+            + '</div>'
+          : '<div class="ev2-sp-empty">No custom palettes in this project yet. Add one to surface it in the T2 picker.</div>'
+        )
+    + '</div>';
   }
 
   function bindT0() {
@@ -1293,6 +1371,82 @@
       // After reset, refresh tabs/inputs visually
       renderT0();
     });
+
+    /* + Add palette \u2014 prompts for a name + key hex, injects a
+       --prim-<name>-* ladder into the iframe + parent CSS as an
+       inline style block, and re-renders so the new palette
+       appears under Custom palettes AND in the T2 surface picker.
+       This is the MVP for multi-brand support: the palette lives
+       in the current session only. Full persistence (to the
+       project's primitives.css + Figma collection) ships with
+       the broader multi-brand model. */
+    var addBtn = document.querySelector('[data-add-palette]');
+    if (addBtn) addBtn.addEventListener('click', addCustomPalettePrompt);
+  }
+
+  function addCustomPalettePrompt() {
+    var rawName = window.prompt('Custom palette name (lowercase, no spaces \u2014 e.g. "sage", "mauve", "secondary")');
+    if (!rawName) return;
+    var name = rawName.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+    if (!name) { window.ev2Toast && window.ev2Toast('Invalid palette name', 'warn'); return; }
+    if (SYSTEM_PALETTE_IDS[name]) {
+      window.ev2Toast && window.ev2Toast('"' + name + '" is a reserved system palette id', 'warn');
+      return;
+    }
+    if (discoverCustomPalettes().some(function (c) { return c.id === name; })) {
+      window.ev2Toast && window.ev2Toast('A palette named "' + name + '" already exists', 'warn');
+      return;
+    }
+    var rawHex = window.prompt('Key color hex for "' + name + '" (e.g. #6B7390)');
+    if (!rawHex) return;
+    var hex = rawHex.trim();
+    if (!hex.startsWith('#')) hex = '#' + hex;
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+      window.ev2Toast && window.ev2Toast('Invalid hex \u2014 use #RRGGBB', 'warn');
+      return;
+    }
+    injectCustomPalette(name, hex.toUpperCase());
+    window.ev2Toast && window.ev2Toast('Added custom palette "' + name + '" \u2014 available under T2 source palette', 'ok');
+  }
+
+  /* Build a 22-step ladder from a key hex and inject it as a
+     --prim-<id>-* block into BOTH the editor document (so
+     customPaletteSteps can read the values via getComputedStyle)
+     AND the preview iframe (so the live preview can paint with the
+     new palette). Cache invalidation forces discovery to re-scan. */
+  function injectCustomPalette(id, keyHex) {
+    var palette = window.PaletteEngine.generatePalette(keyHex, { anchor: State.anchor || 'normalized' });
+    var cssLines = palette.steps.map(function (s) {
+      return '  --prim-' + id + '-' + s.name + ': ' + s.hex + ';';
+    });
+    var css = ':root {\n' + cssLines.join('\n') + '\n}';
+    /* Single shared <style id="ev2-custom-palettes"> holds every
+       runtime-injected palette as concatenated :root blocks. We
+       index per-id inside the style by data attributes so a future
+       "rename / delete" can target one without nuking the others. */
+    var styleEl = document.getElementById('ev2-custom-palettes');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'ev2-custom-palettes';
+      styleEl.setAttribute('data-ev2-custom', '');
+      document.head.appendChild(styleEl);
+    }
+    /* Append (palette ids are validated unique above). Wrap each
+       palette in a marker comment so a future remove-by-id pass
+       can splice it out by string search. */
+    styleEl.textContent += '\n/* @ev2-custom-palette:' + id + ' */\n' + css + '\n/* @ev2-custom-palette-end:' + id + ' */\n';
+    /* Mirror into the preview iframe so previews paint with the
+       new palette too. */
+    try {
+      $frame.contentWindow.postMessage({ type: 'ev2-custom-palette', id: id, css: css }, '*');
+    } catch (e) {}
+    /* Force discovery + step caches to re-scan. */
+    _customPalettesCache = null;
+    delete _systemPaletteCache[id];
+    /* Re-render T0 (so the new row appears under Custom palettes)
+       and T2 if it's active (so picker shows the new option). */
+    if (State.activeTier === 't0') renderT0();
+    else if (State.activeTier === 't2') renderT2();
   }
 
   function setHex(hex) {
