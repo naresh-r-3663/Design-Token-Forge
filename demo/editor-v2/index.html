@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../shared.css">
 
   <!-- Editor v2 specific layout -->
-  <link rel="stylesheet" href="./editor-v2.css?v=121">
+  <link rel="stylesheet" href="./editor-v2.css?v=122">
 
   <!-- Palette engine (browser IIFE — exposes window.PaletteEngine) -->
   <script src="../palette-engine.js?v=85" defer></script>
@@ -137,6 +137,12 @@
           <div class="ev2-list-titlewrap">
             <h2 class="ev2-list-title" id="listTitle">Palette</h2>
             <p class="ev2-list-sub" id="listSub">Your foundation colors. Editing here cascades to roles, surfaces, and every component.</p>
+          </div>
+          <div class="ev2-edit-toggle" id="tierEditToggle" role="radiogroup" aria-label="Editing mode" hidden
+            data-tip="Switches which mode's tokens you are editing AND the editor UI to match. Light and dark each have their own picks — changing one does not touch the other.">
+            <span class="ev2-edit-toggle-label" aria-hidden="true">Editing</span>
+            <button type="button" class="ev2-edit-mode" data-edit-mode="light" role="radio">Light</button>
+            <button type="button" class="ev2-edit-mode" data-edit-mode="dark" role="radio">Dark</button>
           </div>
           <button type="button" class="ev2-section-reset" id="sectionResetBtn" hidden
             data-tip="Reset every change in this section back to the project defaults. Other sections are untouched.">
@@ -363,6 +369,6 @@
     </div>
   </div>
 
-  <script src="./editor-v2.js?v=139" defer></script>
+  <script src="./editor-v2.js?v=140" defer></script>
 </body>
 </html>

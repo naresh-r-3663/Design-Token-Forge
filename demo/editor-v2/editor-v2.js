@@ -1029,6 +1029,7 @@
     refreshAutosaveLabel();
     refreshSectionResetBtn();
     refreshT0Switch();
+    refreshTierEditToggle();
   }
 
   function sectionDirtyCount(tierId) {
@@ -1077,6 +1078,23 @@
     var onPalettes = (State.activeT0 === 'palettes');
     btn.textContent = onPalettes ? '← Back to key colors' : 'Manage palette library →';
     btn.setAttribute('aria-label', btn.textContent);
+  }
+
+  /* Editing Light/Dark toggle — global editor state that applies to
+     both T1 (per-mode lever edits) and T2 (per-mode surface bg). It
+     used to live inside each role card / surface header which buried
+     a tier-level control inside a per-item context. Now persistent in
+     the page header; only visible where the toggle is meaningful. */
+  function refreshTierEditToggle() {
+    var wrap = document.getElementById('tierEditToggle');
+    if (!wrap) return;
+    var showOn = (State.activeTier === 't1' || State.activeTier === 't2');
+    wrap.hidden = !showOn;
+    if (!showOn) return;
+    var mode = State.editingMode;
+    wrap.querySelectorAll('.ev2-edit-mode').forEach(function (b) {
+      b.setAttribute('aria-checked', String(b.getAttribute('data-edit-mode') === mode));
+    });
   }
 
   function refreshAutosaveLabel() {
@@ -2749,12 +2767,6 @@
     var activePalette = surfacePaletteFor(surface.id);
     var paletteCustom = isSurfacePaletteCustom(surface.id);
 
-    var modeBtns =
-      '<div class="ev2-edit-mode-row" role="radiogroup" aria-label="Editing mode">'
-        + '<button type="button" class="ev2-edit-mode" data-edit-mode="light" aria-checked="' + (mode === 'light') + '" role="radio">Light</button>'
-        + '<button type="button" class="ev2-edit-mode" data-edit-mode="dark"  aria-checked="' + (mode === 'dark')  + '" role="radio">Dark</button>'
-      + '</div>';
-
     /* Source-palette picker. Custom popover (not a native <select>)
        so we can show grouped sections with labels + a "Custom
        palettes" empty state. The trigger button shows the current
@@ -2791,7 +2803,6 @@
           + '</div>'
           + '<div class="ev2-surface-head-r">'
             + paletteCtl
-            + modeBtns
           + '</div>'
         + '</header>'
         + T2_FAMILIES.map(function (f) { return surfaceFamilyHTML(surface, f, mode); }).join('')
