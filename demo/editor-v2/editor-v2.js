@@ -1291,9 +1291,9 @@
     $body.innerHTML =
       '<div class="ev2-t0-subs" role="tablist" aria-label="T0 sub-view">'
         + '<button class="ev2-t0-sub" role="tab" data-t0-sub="roles" '
-          + 'aria-selected="' + (State.activeT0 === 'roles') + '">Roles</button>'
+          + 'aria-selected="' + (State.activeT0 === 'roles') + '">By role</button>'
         + '<button class="ev2-t0-sub" role="tab" data-t0-sub="palettes" '
-          + 'aria-selected="' + (State.activeT0 === 'palettes') + '">Palettes</button>'
+          + 'aria-selected="' + (State.activeT0 === 'palettes') + '">By palette</button>'
       + '</div>'
       + (State.activeT0 === 'palettes' ? renderT0Palettes() : renderT0Roles());
 
@@ -5508,6 +5508,13 @@
     if (e.key === 'Enter') { e.preventDefault(); $modalConfirm.click(); }
   });
   $modalCancel.addEventListener('click', closeModal);
+  // Top-right close (×) and any other [data-modal-action="cancel"]
+  // inside the modal also dismiss it. Without this, the X glyph was
+  // a dead button — only the footer Cancel actually closed the dialog.
+  $modal.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-modal-action="cancel"]');
+    if (t && $modal.contains(t)) closeModal();
+  });
   $modal.querySelector('.ev2-modal-backdrop').addEventListener('click', closeModal);
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !$modal.hasAttribute('hidden')) closeModal();
