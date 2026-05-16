@@ -44,3 +44,6 @@ See `docs/ROADMAP.md` for the phased plan. Skills are designed to match roadmap 
 - Component inventory: `docs/components/inventory.md`
 - Decision records: `docs/decisions/adrs.md`
 - Roadmap: `docs/ROADMAP.md`
+- **UI consistency checklist**: `docs/CONSISTENCY.md` — canonical vocabulary, action verbs,
+  WCAG strings, class naming, microcopy. **Update in the same PR** whenever a new pattern
+  ships.

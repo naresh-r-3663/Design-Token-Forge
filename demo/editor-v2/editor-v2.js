@@ -1991,119 +1991,9 @@
   }
 
   /* ── T1 Roles ────────────────────────────────────────── */
-  /* Auto-derived border/separator/on-* swatches for the current step
-     picks of a role/mode. The old AA-fail banner + Snap-to-AA action
-     lived here too; both were removed once per-lever Property Cards
-     started carrying their own WCAG chip + click-to-Apply popover —
-     the banner just restated the same fail status without any data
-     the card chips didn't already show. */
-  function renderWcagPairsHTML(role, mode) {
-    var t1 = State.t1[mode][role.id];
-    var pageBg = surfaceBgFor(mode);
-    var wcag = computeRoleContrast(role.id, mode);
-
-    var pairedFillHex = stepHexByName(role.id, t1.fill) || '#000';
-    var pairedContainerHex = stepHexByName(role.id, t1.container) || pageBg;
-    var pairOnComp = wcag.onComp;
-    var pairOnCont = wcag.onCont;
-    var pairOnCompRatio = contrastRatio(pairOnComp, pairedFillHex);
-    var pairOnContRatio = contrastRatio(pairOnCont, pairedContainerHex);
-    var pairOnCompJudge = wcagJudge(pairOnCompRatio, false);
-    var pairOnContJudge = wcagJudge(pairOnContRatio, false);
-    var pairOnCompName  = pairOnComp.toUpperCase() === '#FFFFFF' ? 'White' : 'Black';
-    /* Border + Separator are auto-derived from the container pick
-       and walk in the mode-correct direction (lighter in dark mode,
-       darker in light mode) so they remain visible. Users can
-       override the step via the ± controls below — honored by
-       resolveBorderStep / resolveSeparatorStep. */
-    var containerStep = t1.container;
-    var borderStep    = resolveBorderStep(role.id, mode);
-    var separatorStep = resolveSeparatorStep(role.id, mode);
-    var borderHex     = stepHexByName(role.id, borderStep) || pairedContainerHex;
-    var separatorHex  = stepHexByName(role.id, separatorStep) || pairedContainerHex;
-    var borderOverridden    = !!t1.borderStep;
-    var separatorOverridden = !!t1.separatorStep;
-    var borderRatio    = contrastRatio(borderHex, pairedContainerHex);
-    var separatorRatio = contrastRatio(separatorHex, pairedContainerHex);
-    function surfaceGrade(r) { return r >= 3 ? "aa" : "fail"; }
-    function pairBadge(j) {
-      var cls = j.pass ? (j.grade === 'AAA' ? 'aaa' : 'aa') : 'fail';
-      var txt = j.pass ? j.grade : 'Fail';
-      return '<span class="ev2-pair-badge" data-grade="' + cls + '">'
-        + (j.pass ? '\u2713 ' : '\u26A0 ') + txt + '</span>';
-    }
-    var pairedHTML = '<div class="ev2-pairs">'
-      + '<div class="ev2-pairs-head">'
-        + '<span class="ev2-pairs-title" data-tip="These slots are auto-derived from your fill / content / container picks. Change the underlying levers to adjust them.">Auto-derived from picks</span>'
-        + '<span class="ev2-pairs-sub">On-pair text, borders and separators — always coherent with the levers above</span>'
-      + '</div>'
-      + '<div class="ev2-pairs-grid">'
-        + '<div class="ev2-pair" data-wcag-grade="' + (pairOnCompJudge.pass ? (pairOnCompJudge.grade === "AAA" ? "aaa" : "aa") : "fail") + '">'
-          + '<div class="ev2-pair-label">on-component</div>'
-          + '<div class="ev2-pair-swatch" style="background:' + pairedFillHex + ';color:' + pairOnComp + '">Aa</div>'
-          + '<div class="ev2-pair-meta">'
-            + '<span class="ev2-pair-pick">' + pairOnCompName + ' on fill</span>'
-            + '<span class="ev2-pair-ratio"><strong>' + pairOnCompRatio.toFixed(2) + ':1</strong> <em class="ev2-pair-vs" data-tip="This ratio is measured against the component-bg fill (your fill pick).">vs ' + role.id + '-component-bg</em></span>'
-            + pairBadge(pairOnCompJudge)
-          + '</div>'
-        + '</div>'
-        + '<div class="ev2-pair" data-wcag-grade="' + (pairOnContJudge.pass ? (pairOnContJudge.grade === "AAA" ? "aaa" : "aa") : "fail") + '">'
-          + '<div class="ev2-pair-label">on-container</div>'
-          + '<div class="ev2-pair-swatch" style="background:' + pairedContainerHex + ';color:' + pairOnCont + '">Aa</div>'
-          + '<div class="ev2-pair-meta">'
-            + (function () {
-                /* Find which ladder step corresponds to the auto-derived
-                   on-container hex, then surface a fallback note when it
-                   differs from the user's content pick. Keeps the auto-
-                   derived card honest about the silent step-walk. */
-                var s = ALL_STEPS, h = pairOnCont, derivedStep = '?';
-                for (var i = 0; i < s.length; i++) {
-                  if ((stepHexByName(role.id, s[i]) || '').toLowerCase() === h.toLowerCase()) { derivedStep = s[i]; break; }
-                }
-                var walked = derivedStep !== t1.content;
-                var pick = walked
-                  ? 'step ' + derivedStep + ' on container <em class="ev2-pair-fallback" data-tip="Your content pick (step ' + t1.content + ') doesn\'t pass AA on this container, so the on-container token auto-walked to step ' + derivedStep + '.">· fallback from step ' + t1.content + '</em>'
-                  : 'step ' + derivedStep + ' on container';
-                return '<span class="ev2-pair-pick">' + pick + '</span>';
-              })()
-            + '<span class="ev2-pair-ratio"><strong>' + pairOnContRatio.toFixed(2) + ':1</strong> <em class="ev2-pair-vs" data-tip="This ratio is measured against the container background (your container pick).">vs ' + role.id + '-container-bg</em></span>'
-            + pairBadge(pairOnContJudge)
-          + '</div>'
-        + '</div>'
-        + '<div class="ev2-pair" data-kind="surface" data-wcag-grade="' + surfaceGrade(borderRatio) + '">'
-          + '<div class="ev2-pair-label">border</div>'
-          + '<div class="ev2-pair-swatch" style="background:' + pairedContainerHex + ';border:2px solid ' + borderHex + ';color:transparent">—</div>'
-          + '<div class="ev2-pair-meta">'
-            + '<span class="ev2-pair-pick">step ' + borderStep + ' on container'
-              + (borderOverridden ? ' <em class="ev2-pair-fallback" data-tip="You overrode the auto-derived step. Click Reset to return to the default.">· custom</em>' : '')
-            + '</span>'
-            + '<span class="ev2-pair-ratio"><strong>' + borderRatio.toFixed(2) + ':1</strong> <em class="ev2-pair-vs" data-tip="Border step is measured against the container background. Aim for at least 3:1 for visible separation.">vs ' + role.id + '-container-bg</em></span>'
-          + '</div>'
-          + '<div class="ev2-pair-stepper" role="group" aria-label="Border step">'
-            + '<button type="button" data-step-walk="border" data-dir="-1" data-tip="Walk one step lighter">\u2212</button>'
-            + '<button type="button" data-step-walk="border" data-dir="1"  data-tip="Walk one step darker">+</button>'
-            + (borderOverridden ? '<button type="button" data-step-reset="border" data-tip="Reset to mode default">\u21BA</button>' : '')
-          + '</div>'
-        + '</div>'
-        + '<div class="ev2-pair" data-kind="surface" data-wcag-grade="info">'
-          + '<div class="ev2-pair-label">separator</div>'
-          + '<div class="ev2-pair-swatch" style="background:' + pairedContainerHex + ';color:transparent;position:relative"><span style="position:absolute;left:6px;right:6px;top:50%;height:2px;background:' + separatorHex + ';transform:translateY(-50%);display:block"></span>—</div>'
-          + '<div class="ev2-pair-meta">'
-            + '<span class="ev2-pair-pick">step ' + separatorStep + ' on container'
-              + (separatorOverridden ? ' <em class="ev2-pair-fallback" data-tip="You overrode the auto-derived step. Click Reset to return to the default.">· custom</em>' : '')
-            + '</span>'
-            + '<span class="ev2-pair-ratio"><strong>' + separatorRatio.toFixed(2) + ':1</strong> <em class="ev2-pair-vs" data-tip="Separator step is measured against the container background. Informational only.">vs ' + role.id + '-container-bg</em></span>'
-          + '</div>'
-          + '<div class="ev2-pair-stepper" role="group" aria-label="Separator step">'
-            + '<button type="button" data-step-walk="separator" data-dir="-1" data-tip="Walk one step lighter">\u2212</button>'
-            + '<button type="button" data-step-walk="separator" data-dir="1"  data-tip="Walk one step darker">+</button>'
-            + (separatorOverridden ? '<button type="button" data-step-reset="separator" data-tip="Reset to mode default">\u21BA</button>' : '')
-          + '</div>'
-        + '</div>'
-      + '</div>'
-    + '</div>';
-    return { pairedHTML: pairedHTML };
-  }
+  /* (removed) renderWcagPairsHTML — the auto-derived border /
+     separator / on-component / on-container swatches it produced
+     are now first-class Property Cards rendered by t1DerivedCard. */
 
   function renderT1() {
     var prevScroll = $body ? $body.scrollTop : 0;
@@ -2319,32 +2209,10 @@
        the shared [data-pc-ladder-pick] handler with a t1 branch. */
   }
 
-  /* Delegated handlers for the border / separator step controls.
-     Lets the user walk the auto-derived step or reset to the
-     mode-default direction. Persisted in t1[mode][roleId]. */
-  document.addEventListener('click', function (e) {
-    var walk  = e.target && e.target.closest && e.target.closest('[data-step-walk]');
-    var reset = e.target && e.target.closest && e.target.closest('[data-step-reset]');
-    if (!walk && !reset) return;
-    var key   = (walk || reset).getAttribute(walk ? 'data-step-walk' : 'data-step-reset');
-    var which = key === 'border' ? 'borderStep' : 'separatorStep';
-    var t = t1For(State.activeRole);
-    if (reset) {
-      delete t[which];
-    } else {
-      var current = which === 'borderStep'
-        ? resolveBorderStep(State.activeRole, State.editingMode)
-        : resolveSeparatorStep(State.activeRole, State.editingMode);
-      var dir = parseInt(walk.getAttribute('data-dir'), 10) || 1;
-      var next = stepRel(current, dir);
-      if (next === current) return; // clamped at edge
-      t[which] = next;
-    }
-    pushPreview();
-    refreshChangeBar();
-    scheduleAutosave();
-    renderT1();
-  });
+  /* (removed) [data-step-walk] / [data-step-reset] delegated
+     click handler — those attributes are no longer emitted anywhere
+     (border / separator are full Property Cards routed through the
+     [data-pc-step] + [data-pc-reset] dispatcher). */
 
   function leverSlotHint(leverId) {
     if (leverId === 'fill') return 'component-bg-default';
