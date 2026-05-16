@@ -310,17 +310,23 @@
     if (ov && ov.step && ALL_STEPS.indexOf(ov.step) >= 0) return ov.step;
     return defaultT2Step(surfaceId, propId, mode);
   }
-  /* True if any cell in this surface (either mode) carries an
-     override — either a custom step, a follows pointer, OR a
-     non-default source-palette pick. */
+  /* True if any cell in this surface (either mode) differs from the
+     last-published baseline. Empty bag === clean. After save-as-
+     default copies the current bag into t2Baseline, every override
+     becomes part of the baseline and isT2Changed returns false. */
   function isT2Changed(surfaceId) {
     if (isSurfacePaletteCustom(surfaceId)) return true;
     return ['light','dark'].some(function (mode) {
-      var bag = State.t2 && State.t2[mode] && State.t2[mode][surfaceId];
-      if (!bag) return false;
-      return Object.keys(bag).some(function (propId) {
-        var ov = bag[propId];
-        return ov && (ov.step || ov.follows);
+      var cur = (State.t2 && State.t2[mode] && State.t2[mode][surfaceId]) || {};
+      var base = (State.t2Baseline && State.t2Baseline[mode] && State.t2Baseline[mode][surfaceId]) || {};
+      var keys = {};
+      Object.keys(cur).forEach(function (k) { keys[k] = 1; });
+      Object.keys(base).forEach(function (k) { keys[k] = 1; });
+      return Object.keys(keys).some(function (propId) {
+        var c = cur[propId]  || {};
+        var b = base[propId] || {};
+        return (c.step || null)    !== (b.step || null)
+            || (c.follows || null) !== (b.follows || null);
       });
     });
   }
@@ -480,7 +486,13 @@
   function isSurfacePaletteCustom(surfaceId) {
     var def = T2_SURFACES.find(function (s) { return s.id === surfaceId; });
     if (!def) return false;
-    return surfacePaletteFor(surfaceId) !== def.palette;
+    var current  = surfacePaletteFor(surfaceId);
+    // Baseline takes precedence over the hardcoded T2_SURFACES default
+    // once the user has published — "custom" means "differs from the
+    // last snapshot", not "differs from factory defaults".
+    var baseline = (State.t2SurfacePaletteBaseline && State.t2SurfacePaletteBaseline[surfaceId])
+                || def.palette;
+    return current !== baseline;
   }
   function t2LadderFor(surfaceId) {
     var pal = surfacePaletteFor(surfaceId);
@@ -609,6 +621,10 @@
     // 'neutral'). Absence means "use the default declared in
     // T2_SURFACES". Validated against SURFACE_PALETTE_OK on load.
     t2SurfacePalette: {},
+    // Baseline mirror for surface-palette overrides. Promoted from
+    // t2SurfacePalette on save-as-default so 'CUSTOM' pills clear
+    // once the user publishes their picks as the new defaults.
+    t2SurfacePaletteBaseline: {},
     // T0 sub-view selector. 'roles' = key-color editing for the 6
     // primary roles; 'palettes' = inventory + CRUD for the system
     // and custom palettes that surfaces consume in T2. Palette
@@ -707,8 +723,10 @@
     var b = (State.t1Baseline && State.t1Baseline[mode] && State.t1Baseline[mode][roleId])
          || defaultT1ForRole(roleId, mode);
     return t.fill !== b.fill || t.content !== b.content || t.container !== b.container
-        || !!t.borderStep || !!t.separatorStep
-        || !!t.onComponent || !!t.onContainerStep;
+        || (t.borderStep      || null) !== (b.borderStep      || null)
+        || (t.separatorStep   || null) !== (b.separatorStep   || null)
+        || (t.onComponent     || null) !== (b.onComponent     || null)
+        || (t.onContainerStep || null) !== (b.onContainerStep || null);
   }
   function isT1Changed(roleId) {
     return isT1ChangedInMode(roleId, 'light') || isT1ChangedInMode(roleId, 'dark');
@@ -1149,6 +1167,12 @@
     if (state === 'saving') label.textContent = 'Saving draft\u2026';
     else if (state === 'saved') label.textContent = 'Draft saved \u00b7 ' + relTime(State.lastSavedAt);
     else if (state === 'error') label.textContent = 'Draft save failed';
+    else if (state === 'published') {
+      // Sticky-ish: shows the version we just published until the
+      // user starts editing again (next edit flips back to 'saved').
+      var v = State.lastPublishedVersion;
+      label.textContent = v ? ('Published ' + v + ' \u00b7 just now') : 'Published \u00b7 just now';
+    }
     else label.textContent = State.lastSavedAt ? 'Draft saved \u00b7 ' + relTime(State.lastSavedAt) : 'No draft yet';
   }
 
@@ -3925,12 +3949,23 @@
       confirmBtn.textContent = 'Save as default';
       confirmBtn.disabled = false;
       if (window.ev2Toast) window.ev2Toast('Published ' + nextVer + ' to ' + projId, 'ok');
-      // Promote current state to the new baseline so "Discard" reverts
-      // to what we just published instead of the pre-edit state.
+      // Promote EVERYTHING we just committed to be the new baseline.
+      // After this:
+      //   • totalChanges() drops to 0 → 'Deploy' badge disappears.
+      //   • isSurfacePaletteCustom() returns false → CUSTOM pills clear.
+      //   • Draft storage is wiped → a reload won't show stale edits.
+      //   • Topbar status flips to 'Published vX.Y.Z · just now'.
       try {
-        State.baseline = JSON.parse(JSON.stringify(State.proposed));
+        State.baseline   = JSON.parse(JSON.stringify(State.proposed));
         State.t1Baseline = JSON.parse(JSON.stringify(State.t1));
+        State.t2Baseline = JSON.parse(JSON.stringify(State.t2));
+        State.t2SurfacePaletteBaseline = JSON.parse(JSON.stringify(State.t2SurfacePalette));
+        State.lastPublishedVersion = nextVer;
+        clearDraftFromStorage();
         if (typeof refreshChangeBar === 'function') refreshChangeBar();
+        refreshDraftStatus('published');
+        // Repaint anything that renders CUSTOM pills or change badges.
+        if (typeof renderActiveTier === 'function') renderActiveTier();
       } catch (e) { /* baseline reset is best-effort */ }
       // Wizard: advance to step 2 (Push to Figma) instead of closing.
       // Direct-mode (non-wizard) save: just close the dialog.
