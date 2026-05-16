@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../shared.css">
 
   <!-- Editor v2 specific layout -->
-  <link rel="stylesheet" href="./editor-v2.css?v=110">
+  <link rel="stylesheet" href="./editor-v2.css?v=111">
 
   <!-- Palette engine (browser IIFE — exposes window.PaletteEngine) -->
   <script src="../palette-engine.js?v=85" defer></script>
@@ -51,6 +51,14 @@
         <input type="checkbox" id="showCssNames" checked>
         <span>Show CSS names</span>
       </label>
+      <button class="ev2-history-btn" id="historyBtn" type="button"
+        data-tip="Browse published versions. Restore any previous release as a new publish.">
+        <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8 4v4l2.5 1.5"/>
+          <circle cx="8" cy="8" r="6"/>
+        </svg>
+        <span>History</span>
+      </button>
       <button class="ev2-deploy" id="deployBtn" type="button" disabled
         data-tip="Save your changes as the new default for this project. Figma refreshes automatically.">
         <span class="ev2-deploy-label">Publish</span>
@@ -307,6 +315,26 @@
     </div>
   </div>
 
-  <script src="./editor-v2.js?v=116" defer></script>
+  <!-- Version history dialog. Read-only list of every published
+       version for the active project. "Restore" republishes the
+       chosen snapshot as a new patch version (never rewrites
+       history) and runs through the same Publish timeline. -->
+  <div class="ev2-history-dialog" id="ev2HistoryDialog" hidden role="dialog" aria-modal="true" aria-labelledby="ev2HistoryTitle">
+    <div class="ev2-modal-backdrop" data-history-dismiss></div>
+    <div class="ev2-history-card" role="document">
+      <header class="ev2-history-head">
+        <div class="ev2-history-headtxt">
+          <h3 class="ev2-history-title" id="ev2HistoryTitle">Version history</h3>
+          <p class="ev2-history-sub" id="ev2HistorySub">Every Publish creates a snapshot. Restore one to republish those tokens as the next version.</p>
+        </div>
+        <button class="ev2-modal-btn ev2-history-close" type="button" data-history-dismiss aria-label="Close">×</button>
+      </header>
+      <div class="ev2-history-body" id="ev2HistoryBody">
+        <div class="ev2-history-empty">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./editor-v2.js?v=117" defer></script>
 </body>
 </html>

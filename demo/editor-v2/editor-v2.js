@@ -3723,6 +3723,240 @@
     document.body.classList.remove('ev2-modal-open');
   }
 
+  /* ── Version history dialog ──────────────────────────
+     Read-only listing of every published version for the
+     active project. Each row offers a Restore action that
+     republishes the chosen snapshot as a new patch version
+     (never rewrites history — the older versions stay).
+     Snapshots written before commit 87e07de only contain
+     metadata (files: [...]) so their Restore is disabled.
+  */
+  function openHistoryDialog() {
+    var dlg  = document.getElementById('ev2HistoryDialog');
+    var body = document.getElementById('ev2HistoryBody');
+    if (!dlg || !body) return;
+    var projId = getActiveProjectId();
+    if (!projId) {
+      if (window.ev2Toast) window.ev2Toast('No active project \u2014 open one first', 'warn');
+      return;
+    }
+    dlg.hidden = false;
+    document.body.classList.add('ev2-modal-open');
+    body.innerHTML = '<div class="ev2-history-empty">Loading version history\u2026</div>';
+
+    // Requires a GH token to list private contents. If user doesn't
+    // have one yet we prompt — same flow as Publish.
+    ensureGhCredentials().then(function (cred) {
+      var path = 'projects/' + projId + '/versions';
+      return ghFetch('/repos/' + cred.user + '/' + GH_REPO_NAME + '/contents/' + path)
+        .then(function (entries) { return { user: cred.user, entries: entries || [] }; })
+        .catch(function (err) {
+          if (err && err.status === 404) return { user: cred.user, entries: [] };
+          throw err;
+        });
+    }).then(function (res) {
+      var jsonFiles = (res.entries || []).filter(function (e) {
+        return e && e.type === 'file' && /\.json$/i.test(e.name);
+      });
+      if (!jsonFiles.length) {
+        body.innerHTML = '<div class="ev2-history-empty">No published versions yet. Use <strong>Publish</strong> to create your first snapshot.</div>';
+        return;
+      }
+      // Fetch all snapshot bodies in parallel (each is tiny).
+      return Promise.all(jsonFiles.map(function (e) {
+        return fetch(e.download_url).then(function (r) { return r.json(); })
+          .then(function (json) { return { name: e.name, json: json }; })
+          .catch(function () { return { name: e.name, json: null }; });
+      })).then(function (snapshots) { renderHistoryList(res.user, snapshots); });
+    }).catch(function (err) {
+      body.innerHTML = '<div class="ev2-history-empty">Couldn\u2019t load version history.<br><small>' + escapeHTML(String(err && err.message || err)) + '</small></div>';
+    });
+  }
+
+  function closeHistoryDialog() {
+    var dlg = document.getElementById('ev2HistoryDialog');
+    if (!dlg) return;
+    if (dlg._restoring) return;
+    dlg.hidden = true;
+    document.body.classList.remove('ev2-modal-open');
+  }
+
+  function renderHistoryList(ghUser, snapshots) {
+    var body = document.getElementById('ev2HistoryBody');
+    if (!body) return;
+    var current = getProjectCurrentVersion();
+    // Sort newest first by semver.
+    snapshots.sort(function (a, b) {
+      var av = (a.json && a.json.meta && a.json.meta.version) || a.name;
+      var bv = (b.json && b.json.meta && b.json.meta.version) || b.name;
+      return cmpSemver(bv, av);
+    });
+    var rows = snapshots.map(function (s) {
+      var meta = (s.json && s.json.meta) || {};
+      var ver  = meta.version || s.name.replace(/\.json$/, '');
+      var name = meta.name || '\u2014';
+      var when = meta.savedAt ? timeAgo(meta.savedAt) : '';
+      var who  = meta.savedBy || '';
+      var desc = meta.description || '';
+      var isCurrent = (ver === current);
+      // Restorable only when the snapshot embeds full file contents
+      // (object form), not the legacy array-of-names form.
+      var hasInline = s.json && s.json.files && !Array.isArray(s.json.files) && typeof s.json.files === 'object';
+      var btnAttrs = hasInline
+        ? 'data-restore="' + escapeAttr(ver) + '"'
+        : 'disabled data-tip="Snapshot predates inline file storage. Restore is unavailable for this version."';
+      var btnLabel = isCurrent ? 'Live' : 'Restore';
+      var btnDisabledAttr = isCurrent ? 'disabled' : '';
+      var metaBits = [];
+      if (when) metaBits.push(escapeHTML(when));
+      if (who)  metaBits.push(escapeHTML('@' + who));
+      if (!hasInline) metaBits.push('legacy snapshot');
+      var metaLine = metaBits.join(' <span class="ev2-history-meta-sep">\u00b7</span> ');
+      return '<div class="ev2-history-row" data-current="' + (isCurrent ? 'true' : 'false') + '">'
+        + '<div class="ev2-history-ver">'
+          + escapeHTML(ver)
+          + (isCurrent ? '<span class="ev2-history-live">Live</span>' : '')
+        + '</div>'
+        + '<div class="ev2-history-info">'
+          + '<div class="ev2-history-name">' + escapeHTML(name) + '</div>'
+          + (metaLine ? '<div class="ev2-history-meta">' + metaLine + '</div>' : '')
+          + (desc ? '<div class="ev2-history-desc">' + escapeHTML(desc) + '</div>' : '')
+        + '</div>'
+        + '<button class="ev2-history-restore" type="button" ' + btnAttrs + ' ' + btnDisabledAttr + '>'
+          + escapeHTML(btnLabel)
+        + '</button>'
+      + '</div>';
+    }).join('');
+    body.innerHTML = '<div class="ev2-history-list">' + rows + '</div>';
+    body._ghUser = ghUser;
+    body._snapshots = snapshots;
+  }
+
+  // Restore = republish the snapshot's files as a new patch version.
+  // Same files API as Publish; same Pages rebuild. Old version JSONs
+  // are untouched — history only grows.
+  function restoreVersion(ver) {
+    var projId = getActiveProjectId();
+    if (!projId) return;
+    var body = document.getElementById('ev2HistoryBody');
+    var snap = (body && body._snapshots || []).find(function (s) {
+      return (s.json && s.json.meta && s.json.meta.version) === ver;
+    });
+    if (!snap || !snap.json || !snap.json.files || Array.isArray(snap.json.files)) {
+      if (window.ev2Toast) window.ev2Toast('Snapshot for ' + ver + ' has no embedded files', 'error');
+      return;
+    }
+    var curVer  = getProjectCurrentVersion();
+    var nextVer = bumpSemver(curVer, 'patch');
+    var origName = (snap.json.meta && snap.json.meta.name) || ver;
+    var ok = window.confirm(
+      'Restore ' + ver + ' \u2014 "' + origName + '"\n\n'
+      + 'This publishes a new version (' + nextVer + ') with the contents of ' + ver + '.\n'
+      + 'Older versions stay in history. Figma refreshes after the commit.\n\nContinue?'
+    );
+    if (!ok) return;
+
+    var btn = body.querySelector('[data-restore="' + cssEscape(ver) + '"]');
+    if (btn) { btn.setAttribute('data-restoring','true'); btn.disabled = true; btn.textContent = 'Restoring\u2026'; }
+    var dlg = document.getElementById('ev2HistoryDialog');
+    if (dlg) dlg._restoring = true;
+
+    ensureGhCredentials().then(function (cred) {
+      var meta = {
+        version:     nextVer,
+        name:        'Restore of ' + ver,
+        description: 'Restored from ' + ver + (origName && origName !== ver ? ' \u2014 "' + origName + '"' : ''),
+        savedAt:     new Date().toISOString(),
+        savedBy:     cred.user
+      };
+      var files = snap.json.files;
+      // Patch the snapshot's config.json so latestVersion reflects
+      // the NEW version, not the restored one. Without this, the
+      // editor would re-open thinking ver is the live version.
+      var newCfgText = files['config.json'] || '';
+      try {
+        var cfg = JSON.parse(newCfgText);
+        cfg.latestVersion = {
+          version: nextVer,
+          name: meta.name,
+          description: meta.description,
+          savedAt: meta.savedAt,
+          savedBy: meta.savedBy
+        };
+        newCfgText = JSON.stringify(cfg, null, 2) + '\n';
+      } catch (_) { /* leave as-is */ }
+
+      // New version JSON re-embeds the same files so the restored
+      // version is itself restorable.
+      var versionSnapshot = JSON.stringify({
+        meta: meta,
+        savedFrom: 'editor-v2-restore',
+        restoredFrom: ver,
+        files: {
+          'primitives.css': files['primitives.css'] || '',
+          'semantic.css':   files['semantic.css']   || '',
+          'surfaces.css':   files['surfaces.css']   || '',
+          'config.json':    newCfgText
+        }
+      }, null, 2) + '\n';
+
+      var base = 'projects/' + projId;
+      var toCommit = [
+        { path: base + '/primitives.css', content: files['primitives.css'] || '' },
+        { path: base + '/semantic.css',   content: files['semantic.css']   || '' },
+        { path: base + '/surfaces.css',   content: files['surfaces.css']   || '' },
+        { path: base + '/config.json',    content: newCfgText },
+        { path: base + '/versions/' + nextVer + '.json', content: versionSnapshot }
+      ];
+      var msg = 'project(' + projId + '): restore ' + ver + ' as ' + nextVer;
+      return ghMultiCommit(cred.user, toCommit, msg).then(function () { return meta; });
+    }).then(function (meta) {
+      // Fire Pages rebuild — best-effort like normal Publish.
+      triggerPagesRebuild().catch(function () {});
+      if (window.ev2Toast) window.ev2Toast('Restored ' + ver + ' as ' + meta.version + '. Reloading editor\u2026', 'success', 3500);
+      if (dlg) dlg._restoring = false;
+      // Reload so the editor reads the freshly-restored files as
+      // the new baseline. This avoids any drift between in-memory
+      // State and what GitHub now holds.
+      setTimeout(function () { window.location.reload(); }, 1200);
+    }).catch(function (err) {
+      if (window.ev2Toast) window.ev2Toast('Restore failed: ' + (err && err.message || err), 'error', 6000);
+      if (btn) { btn.removeAttribute('data-restoring'); btn.disabled = false; btn.textContent = 'Restore'; }
+      if (dlg) dlg._restoring = false;
+      // eslint-disable-next-line no-console
+      console.error('[restore]', err);
+    });
+  }
+
+  /* Semver compare. Returns -1 / 0 / 1. */
+  function cmpSemver(a, b) {
+    var sa = parseSemver(a), sb = parseSemver(b);
+    if (sa.major !== sb.major) return sa.major < sb.major ? -1 : 1;
+    if (sa.minor !== sb.minor) return sa.minor < sb.minor ? -1 : 1;
+    if (sa.patch !== sb.patch) return sa.patch < sb.patch ? -1 : 1;
+    return 0;
+  }
+  /* Friendly "2 hours ago" / "3 days ago". */
+  function timeAgo(iso) {
+    var t = Date.parse(iso); if (!t) return '';
+    var diff = (Date.now() - t) / 1000;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 86400 * 7) return Math.floor(diff / 86400) + 'd ago';
+    if (diff < 86400 * 30) return Math.floor(diff / 86400 / 7) + 'w ago';
+    return new Date(t).toISOString().slice(0, 10);
+  }
+  function escapeHTML(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function escapeAttr(s) { return escapeHTML(s); }
+  function cssEscape(s) {
+    return (window.CSS && CSS.escape) ? CSS.escape(s) : String(s).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+  }
+
   /* ── Inline publish timeline ─────────────────────────── */
   /* Single-screen timeline that replaces the form during publish.
      Steps are 'save' \u2192 'figma' \u2192 'done', each tracked by
@@ -3943,7 +4177,16 @@
       var versionSnapshot = JSON.stringify({
         meta: meta,
         savedFrom: 'editor-v2',
-        files: ['primitives.css','semantic.css','surfaces.css','config.json']
+        // Snapshot the full file contents inline so future "Restore"
+        // can rebuild this exact release without trawling git history.
+        // Older snapshots that only have ['filename', ...] are still
+        // listed in History but their Restore is disabled.
+        files: {
+          'primitives.css': primCSS,
+          'semantic.css':   semCSS,
+          'surfaces.css':   surfCSS,
+          'config.json':    cfgJSON
+        }
       }, null, 2) + '\n';
 
       var base = 'projects/' + projId;
@@ -4019,6 +4262,22 @@
   // Backdrop, close button, cancel button \u2014 all carry data-deploy-dismiss.
   document.querySelectorAll('[data-deploy-dismiss]').forEach(function (el) {
     el.addEventListener('click', closeDeployDialog);
+  });
+
+  // Top-bar History button \u2014 opens the version-history dialog.
+  var $history = document.getElementById('historyBtn');
+  if ($history) {
+    $history.addEventListener('click', openHistoryDialog);
+  }
+  document.querySelectorAll('[data-history-dismiss]').forEach(function (el) {
+    el.addEventListener('click', closeHistoryDialog);
+  });
+  // Restore-action delegation (rows are rendered async).
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-restore]');
+    if (!btn) return;
+    var ver = btn.getAttribute('data-restore');
+    if (ver) restoreVersion(ver);
   });
   // Confirm button is contextual:
   //   form mode     \u2192 trigger publish (saveAsDefault swaps in the timeline)

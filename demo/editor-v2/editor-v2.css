@@ -169,6 +169,24 @@ body{
 }
 .ev2-css-toggle input{margin:0;cursor:pointer}
 
+.ev2-history-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 10px;
+  border:1px solid var(--ev2-chrome-outline);
+  border-radius:var(--radius-md,6px);
+  background:transparent;
+  color:var(--ev2-chrome-ct-subtle);
+  font:inherit;font-size:11px;font-weight:600;
+  cursor:pointer;
+  transition:all 120ms ease;
+}
+.ev2-history-btn:hover{
+  color:var(--ev2-chrome-ct-strong);
+  border-color:var(--ev2-chrome-ct-faint);
+  background:var(--ev2-chrome-bg);
+}
+.ev2-history-btn svg{opacity:.8}
+
 .ev2-deploy{
   display:inline-flex;align-items:center;gap:8px;
   padding:7px 14px;
@@ -2288,3 +2306,87 @@ body.ev2-modal-open{overflow:hidden}
   display:inline-flex;align-items:center;justify-content:center;
 }
 .ev2-migrate-dismiss:hover{background:var(--warning-container-hover,#FDE68A)}
+
+/* ── Version history dialog ──────────────────────────── */
+.ev2-history-dialog{position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center}
+.ev2-history-dialog[hidden]{display:none}
+.ev2-history-card{
+  position:relative;
+  width:min(640px, calc(100vw - 32px));
+  max-height:calc(100vh - 64px);
+  display:flex;flex-direction:column;
+  border:1px solid var(--ev2-chrome-outline);
+  border-radius:var(--radius-lg,8px);
+  background:var(--ev2-chrome-cm-bg);
+  box-shadow:var(--shadow-xl,0 16px 48px rgba(0,0,0,.22));
+  overflow:hidden;
+}
+.ev2-history-head{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:24px;
+  padding:20px 24px 14px;
+  border-bottom:1px solid var(--ev2-chrome-outline);
+  background:var(--ev2-chrome-bg);
+}
+.ev2-history-headtxt{min-width:0;flex:1}
+.ev2-history-title{font-size:17px;font-weight:700;color:var(--ev2-chrome-ct-strong);margin-bottom:5px}
+.ev2-history-sub{font-size:12px;color:var(--ev2-chrome-ct-subtle);line-height:1.5;max-width:520px}
+.ev2-history-close{
+  width:30px;height:30px;padding:0;
+  font-size:20px;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.ev2-history-body{flex:1;min-height:0;overflow:auto;padding:8px 0}
+.ev2-history-empty{
+  padding:32px 24px;text-align:center;
+  color:var(--ev2-chrome-ct-subtle);font-size:12px;
+}
+.ev2-history-list{display:flex;flex-direction:column}
+.ev2-history-row{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;gap:14px;
+  padding:14px 24px;
+  border-bottom:1px solid var(--ev2-chrome-outline);
+}
+.ev2-history-row:last-child{border-bottom:0}
+.ev2-history-row[data-current="true"]{background:var(--ev2-chrome-bg)}
+.ev2-history-ver{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:700;color:var(--ev2-chrome-ct-strong);
+  font-variant-numeric:tabular-nums;
+  min-width:64px;
+}
+.ev2-history-live{
+  display:inline-block;
+  padding:1px 6px;
+  border-radius:999px;
+  background:var(--success-component-bg-default,#16A34A);
+  color:var(--success-on-component,#fff);
+  font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+}
+.ev2-history-info{min-width:0;display:flex;flex-direction:column;gap:2px}
+.ev2-history-name{font-size:12px;font-weight:600;color:var(--ev2-chrome-ct-strong);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev2-history-meta{font-size:10px;color:var(--ev2-chrome-ct-faint);display:flex;gap:6px;flex-wrap:wrap}
+.ev2-history-meta-sep{opacity:.5}
+.ev2-history-desc{font-size:11px;color:var(--ev2-chrome-ct-subtle);line-height:1.4;margin-top:2px;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ev2-history-restore{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 12px;
+  border:1px solid var(--ev2-chrome-outline);
+  border-radius:var(--radius-md,6px);
+  background:transparent;
+  color:var(--ev2-chrome-ct-strong);
+  font:inherit;font-size:11px;font-weight:600;
+  cursor:pointer;
+  transition:all 120ms ease;
+}
+.ev2-history-restore:hover:not(:disabled){
+  background:var(--brand-component-bg-default);
+  border-color:var(--brand-component-bg-default);
+  color:var(--brand-on-component);
+}
+.ev2-history-restore:disabled{opacity:.4;cursor:not-allowed}
+.ev2-history-restore[data-restoring="true"]{opacity:.7;cursor:progress}
