@@ -1028,7 +1028,6 @@
     }
     refreshAutosaveLabel();
     refreshSectionResetBtn();
-    refreshT0Switch();
     refreshTierEditToggle();
   }
 
@@ -1061,23 +1060,6 @@
       var meta = TIER_META[tier];
       label.textContent = 'Reset ' + (meta && meta.title ? meta.title : 'section');
     }
-  }
-
-  /* T0 has two pivots on the same data — keys for each role, and
-     the full palette inventory. Instead of stacking another pill
-     row above the role tabs (cognitive overload), we surface the
-     OTHER view as a single inline switch in the section header.
-     Hidden on every tier except T0. Label reads "Manage palette
-     library →" when on Key colors, "← Back to key colors" when on
-     the library. */
-  function refreshT0Switch() {
-    var btn = document.getElementById('t0SubSwitch');
-    if (!btn) return;
-    if (State.activeTier !== 't0') { btn.hidden = true; return; }
-    btn.hidden = false;
-    var onPalettes = (State.activeT0 === 'palettes');
-    btn.textContent = onPalettes ? '← Back to key colors' : 'Manage palette library →';
-    btn.setAttribute('aria-label', btn.textContent);
   }
 
   /* Editing Light/Dark toggle — global editor state that applies to
@@ -1324,7 +1306,10 @@
                   are *defined*; T2 is where they're *mapped* to
                   surfaces. */
   function renderT0() {
-    $body.innerHTML = State.activeT0 === 'palettes' ? renderT0Palettes() : renderT0Roles();
+    // Role intent card on top, then the palette library panels
+    // (system + custom) flow beneath it in one scroll — same
+    // 'foundation colors' tier, no separate sub-view.
+    $body.innerHTML = renderT0Roles() + renderT0Palettes();
     bindT0();
   }
 
@@ -1471,14 +1456,10 @@
   }
 
   function bindT0() {
-    // Sub-view switching is wired once at boot against the persistent
-    // header button (#t0SubSwitch). The old in-body pill row was
-    // dropped to reduce stacked tab rows on T0.
-
-    /* Roles sub-view bindings (the elements only exist on T0 Roles) */
-    if (State.activeT0 === 'roles') bindT0Roles();
-    /* Palettes sub-view bindings (Add / Rename / Delete) */
-    else if (State.activeT0 === 'palettes') bindT0Palettes();
+    // Role intent + palette library are both always rendered now,
+    // so both binding sets run on every T0 render.
+    bindT0Roles();
+    bindT0Palettes();
   }
 
   function bindT0Roles() {
@@ -3184,18 +3165,6 @@
       resetSection(State.activeTier);
       var label = TIER_META[State.activeTier] && TIER_META[State.activeTier].title;
       if (window.ev2Toast) window.ev2Toast('Reset ' + (label || 'section') + ' to defaults', 'ok');
-    });
-  }
-
-  // T0 sub-view inline switch (header link). Only visible on T0;
-  // refreshT0Switch() handles label + visibility.
-  var $t0SubSwitch = document.getElementById('t0SubSwitch');
-  if ($t0SubSwitch) {
-    $t0SubSwitch.addEventListener('click', function () {
-      State.activeT0 = (State.activeT0 === 'palettes') ? 'roles' : 'palettes';
-      saveUIState();
-      renderT0();
-      refreshT0Switch();
     });
   }
 
