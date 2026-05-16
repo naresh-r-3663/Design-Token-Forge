@@ -15,6 +15,10 @@
   <link rel="stylesheet" href="../../packages/components/src/input/input.css">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0}
+    /* `display:flex` on .pv-canvas would otherwise win over the
+       UA `[hidden]{display:none}` rule, so the T2 canvas leaked
+       into T0/T1/T3 previews. Force-hide whenever the attr is set. */
+    [hidden]{display:none !important}
     html{background:var(--surface-base-bg)}
     body{font-family:var(--font-family-sans,system-ui);background:var(--surface-base-bg);color:var(--surface-base-ct-default);padding:24px;line-height:1.5;min-height:100vh}
     /* On T2, the whole iframe should read as the active surface so

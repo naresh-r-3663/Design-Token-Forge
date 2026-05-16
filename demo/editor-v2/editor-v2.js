@@ -1275,6 +1275,93 @@
     return !!(t && d && t[leverId] !== d[leverId]);
   }
 
+  /* T1 equivalents of t2Sentinel / t2SuggestStep — let the WCAG
+     popover open from a T1 lever chip exactly like a T2 prop chip.
+     Per-lever baseline mirrors the solver's judgeStepForLever:
+       fill      → "on-component" auto-derived from the fill hex
+                   (white or black, whichever wins ≥4.5:1)
+       content   → surface base bg for the current mode
+       container → deriveOnContainer against the container itself
+     intent flags steer the popover preview: 'fill' renders a filled
+     pill; 'text' renders the role's purpose copy. */
+  function t1Sentinel(roleId, leverId, mode) {
+    var ladder = ladderFor(roleId);
+    var picks  = t1For(roleId, mode);
+    if (!ladder || !picks) return null;
+    var step = picks[leverId];
+    var hex  = ladder[step];
+    if (!hex) return null;
+    var j = DTFSolver.judgeStepForLever(ladder, leverId, step, picks, mode);
+    var role = ROLES.find(function (r) { return r.id === roleId; });
+    var prefix = role ? role.prefix : roleId;
+    var sent;
+    if (leverId === 'fill') {
+      var rW = contrastRatio(hex, '#FFFFFF'), rB = contrastRatio(hex, '#0A0A0A');
+      var onComp = rW >= rB ? '#FFFFFF' : '#0A0A0A';
+      sent = {
+        intent: 'fill', large: false,
+        baselineHex: onComp,
+        baseline: '--' + prefix + '-on-component',
+        ratio: j.ratio, judge: { pass: j.pass, grade: j.grade },
+        fillHex: hex
+      };
+    } else if (leverId === 'content') {
+      var pageBg = surfaceBgFor(mode);
+      sent = {
+        intent: 'text', large: false,
+        baselineHex: pageBg,
+        baseline: '--surface-base-bg',
+        ratio: j.ratio, judge: { pass: j.pass, grade: j.grade }
+      };
+    } else { // container
+      // judge already gave us deriveOnContainer's ratio; surface the
+      // computed on-container hex so the popover can render the
+      // legible pairing the solver actually scores.
+      var info = DTFSolver.deriveOnContainer(ladder, picks.content, hex);
+      sent = {
+        intent: 'container', large: false,
+        baselineHex: hex,                 // container bg
+        baseline: '--' + prefix + '-container-bg',
+        ratio: j.ratio, judge: { pass: j.pass, grade: j.grade },
+        onContainerHex: info.hex
+      };
+    }
+    return sent;
+  }
+  function t1SuggestStep(roleId, leverId, mode) {
+    var sent = t1Sentinel(roleId, leverId, mode);
+    if (!sent || sent.judge.pass) return null;
+    var ladder = ladderFor(roleId);
+    var picks  = t1For(roleId, mode);
+    var current = picks[leverId];
+    var step = DTFSolver.snapStepToAA(ladder, leverId, current, picks, mode);
+    if (!step || step === current) return null;
+    var hex = ladder[step];
+    var j = DTFSolver.judgeStepForLever(ladder, leverId, step, picks, mode);
+    if (!j.pass) return null;
+    return {
+      step: step,
+      hex: hex,
+      ratio: j.ratio,
+      judge: { pass: j.pass, grade: j.grade },
+      baselineHex: sent.baselineHex
+    };
+  }
+  function t1HexFor(roleId, leverId, mode) {
+    var ladder = ladderFor(roleId);
+    var picks  = t1For(roleId, mode);
+    if (!ladder || !picks) return '#000';
+    return ladder[picks[leverId]] || '#000';
+  }
+  function t1TokenName(roleId, leverId) {
+    var role = ROLES.find(function (r) { return r.id === roleId; });
+    var prefix = role ? role.prefix : roleId;
+    if (leverId === 'fill')      return '--' + prefix + '-component-bg-default';
+    if (leverId === 'content')   return '--' + prefix + '-content-default';
+    if (leverId === 'container') return '--' + prefix + '-container-bg';
+    return '--' + prefix + '-' + leverId;
+  }
+
   /* ── T2 bulk ops ─────────────────────────────────────
      Three high-frequency designer shortcuts wired into a per-row
      overflow menu. All write through the same setT2Step path so
@@ -2890,6 +2977,28 @@
       }
       var arrow = '<div class="ev2-wcag-pop-arrow" aria-hidden="true">\u2192</div>';
 
+      // ---- Fill intent (T1 fill lever) ----
+      // Role color paints the BG; on-component (white/black) is
+      // the legible text the button would carry in real UI.
+      if (sent.intent === 'fill') {
+        function fillPill(fillHex) {
+          var onC = (contrastRatio(fillHex, '#FFFFFF') >= contrastRatio(fillHex, '#0A0A0A')) ? '#FFFFFF' : '#0A0A0A';
+          return '<div class="ev2-wcag-pop-prev-box" style="background:' + fillHex + ';color:' + onC + ';padding:8px 16px;border-radius:999px;min-height:0;font-size:11px;font-weight:600;justify-content:center">Button</div>';
+        }
+        return fillPill(curHex) + (sug ? arrow + fillPill(sugHex) : '');
+      }
+
+      // ---- Container intent (T1 container lever) ----
+      // Container hex paints the BG; the auto-derived on-container
+      // is what real alerts/banners use for body copy.
+      if (sent.intent === 'container') {
+        function containerChip(contHex) {
+          var onC = (contrastRatio(contHex, '#FFFFFF') >= contrastRatio(contHex, '#0A0A0A')) ? '#FFFFFF' : '#0A0A0A';
+          return '<div class="ev2-wcag-pop-prev-box" style="background:' + contHex + ';color:' + onC + ';padding:8px 12px;border-radius:6px;min-height:0;font-size:11px;font-weight:500;text-align:left;justify-content:flex-start">Container body</div>';
+        }
+        return containerChip(curHex) + (sug ? arrow + containerChip(sugHex) : '');
+      }
+
       // ---- Text intent (content tokens) ----
       if (sent.intent === 'text') {
         var sample, size, weight;
@@ -2931,14 +3040,30 @@
     function open(chip) {
       var card = chip.closest('.ev2-pc');
       if (!card) return;
-      var surfaceId = card.getAttribute('data-pc-surface');
-      var propId    = card.getAttribute('data-pc-prop');
+      var tier      = card.getAttribute('data-pc-tier') || 't2';
       var mode      = State.editingMode;
-      var sent = t2Sentinel(surfaceId, propId, mode);
-      if (!sent) return;
-      var sug  = t2SuggestStep(surfaceId, propId, mode);
-      var tokenName = '--surface-' + surfaceId + '-' + propId;
-      pop.__cellHex = t2HexFor(surfaceId, propId, mode);
+      var sent, sug, tokenName, applyAttrs, propIdHint = null, flashProp = null;
+      if (tier === 't1') {
+        var roleId  = card.getAttribute('data-pc-role');
+        var leverId = card.getAttribute('data-pc-lever');
+        sent = t1Sentinel(roleId, leverId, mode);
+        if (!sent) return;
+        sug  = t1SuggestStep(roleId, leverId, mode);
+        tokenName = t1TokenName(roleId, leverId);
+        pop.__cellHex = t1HexFor(roleId, leverId, mode);
+        applyAttrs = ' data-pc-wcag-tier="t1" data-pc-wcag-role="' + roleId + '" data-pc-wcag-lever="' + leverId + '"';
+      } else {
+        var surfaceId = card.getAttribute('data-pc-surface');
+        var propId    = card.getAttribute('data-pc-prop');
+        sent = t2Sentinel(surfaceId, propId, mode);
+        if (!sent) return;
+        sug  = t2SuggestStep(surfaceId, propId, mode);
+        tokenName = '--surface-' + surfaceId + '-' + propId;
+        pop.__cellHex = t2HexFor(surfaceId, propId, mode);
+        applyAttrs = ' data-pc-wcag-tier="t2" data-surface="' + surfaceId + '" data-prop="' + propId + '"';
+        propIdHint = propId;
+        flashProp  = propId;
+      }
 
       // header chip mirrors the chip style
       var grade = chip.getAttribute('data-grade') || 'fail';
@@ -2963,11 +3088,11 @@
           + '<div class="ev2-wcag-pop-fix-body">'
             + '<span class="ev2-wcag-pop-sw" style="background:' + sug.hex + '"></span>'
             + '<span class="ev2-wcag-pop-fix-txt">Step <strong>' + sug.step + '</strong> (' + sug.hex.toUpperCase() + ')</span>'
-            + '<button type="button" class="ev2-wcag-pop-apply" data-pc-wcag-apply data-step="' + sug.step + '" data-surface="' + surfaceId + '" data-prop="' + propId + '">Apply</button>'
+            + '<button type="button" class="ev2-wcag-pop-apply" data-pc-wcag-apply' + applyAttrs + ' data-step="' + sug.step + '">Apply</button>'
           + '</div>'
         + '</div>';
       } else {
-        sugBlock = '<div class="ev2-wcag-pop-fix ev2-wcag-pop-fix-empty">No step in this palette reaches the threshold against ' + sent.baseline.replace(/^--surface-[^-]+-/, '') + '. Try editing the baseline instead.</div>';
+        sugBlock = '<div class="ev2-wcag-pop-fix ev2-wcag-pop-fix-empty">No step in this palette reaches the threshold against ' + sent.baseline.replace(/^--[^-]+-/, '') + '. Try editing the baseline instead.</div>';
       }
 
       var edgeNote = '';
@@ -2979,7 +3104,7 @@
             + '<button type="button" class="ev2-wcag-pop-close" data-pc-wcag-close aria-label="Close">\u00D7</button>'
           + '</div>'
           + '<div class="ev2-wcag-pop-prev" aria-label="Preview">'
-            + renderPreviewHTML(sent, sug, tokenName, propId)
+            + renderPreviewHTML(sent, sug, tokenName, propIdHint)
           + '</div>'
           + '<div class="ev2-wcag-pop-why">' + why + '</div>'
           + sugBlock
@@ -3003,8 +3128,9 @@
       var tip = document.querySelector('.ev2-tip-portal');
       if (tip) tip.removeAttribute('data-show');
       // Point the preview canvas at the same prop so the designer
-      // sees WHERE the failing token lives on real UI.
-      pushPvFlash(propId);
+      // sees WHERE the failing token lives on real UI. T1 has no
+      // canvas zone mapping yet, so skip the flash there.
+      if (flashProp) pushPvFlash(flashProp);
     }
 
     document.addEventListener('click', function (e) {
@@ -3012,14 +3138,21 @@
       if (closeBtn) { close(); return; }
       var applyBtn = e.target.closest && e.target.closest('[data-pc-wcag-apply]');
       if (applyBtn) {
-        var sId = applyBtn.getAttribute('data-surface');
-        var pId = applyBtn.getAttribute('data-prop');
-        var step = applyBtn.getAttribute('data-step');
+        var step    = applyBtn.getAttribute('data-step');
+        var btnTier = applyBtn.getAttribute('data-pc-wcag-tier') || 't2';
         close();
-        setT2Step(sId, pId, State.editingMode, step);
-        // Re-flash the zone right after the new value lands so the
-        // designer SEES the fix arrive.
-        setTimeout(function () { pushPvFlash(pId); }, 60);
+        if (btnTier === 't1') {
+          var rId = applyBtn.getAttribute('data-pc-wcag-role');
+          var lId = applyBtn.getAttribute('data-pc-wcag-lever');
+          setT1Lever(rId, lId, State.editingMode, step);
+        } else {
+          var sId = applyBtn.getAttribute('data-surface');
+          var pId = applyBtn.getAttribute('data-prop');
+          setT2Step(sId, pId, State.editingMode, step);
+          // Re-flash the zone right after the new value lands so the
+          // designer SEES the fix arrive.
+          setTimeout(function () { pushPvFlash(pId); }, 60);
+        }
         return;
       }
       var chip = e.target.closest && e.target.closest('[data-pc-wcag-open]');
