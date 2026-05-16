@@ -155,14 +155,14 @@
      pass through tonalDir(mode) — so dark mode mirrors automatically
      and no inline `± constant` ever leaks in (decision D4). */
   var T2_SURFACES = [
-    { id:'bright',    label:'Bright',    palette:'neutral', desc:'Brightest page background' },
-    { id:'base',      label:'Base',      palette:'neutral', desc:'Base page background'      },
-    { id:'dim',       label:'Dim',       palette:'neutral', desc:'Recessed background'       },
-    { id:'deep',      label:'Deep',      palette:'neutral', desc:'Most recessed background'  },
-    { id:'accent',    label:'Accent',    palette:'brand',   desc:'Branded panels'            },
-    { id:'container', label:'Container', palette:'neutral', desc:'Card-on-surface'           },
-    { id:'float',     label:'Float',     palette:'neutral', desc:'Popovers, menus'           },
-    { id:'inverse',   label:'Inverse',   palette:'neutral', desc:'Dark on light, light on dark' }
+    { id:'bright',    label:'Bright',    palette:'greyscale', desc:'Brightest page background' },
+    { id:'base',      label:'Base',      palette:'greyscale', desc:'Base page background'      },
+    { id:'dim',       label:'Dim',       palette:'greyscale', desc:'Recessed background'       },
+    { id:'deep',      label:'Deep',      palette:'greyscale', desc:'Most recessed background'  },
+    { id:'accent',    label:'Accent',    palette:'brand',     desc:'Branded panels'            },
+    { id:'container', label:'Container', palette:'greyscale', desc:'Card-on-surface'           },
+    { id:'float',     label:'Float',     palette:'greyscale', desc:'Popovers, menus'           },
+    { id:'inverse',   label:'Inverse',   palette:'greyscale', desc:'Dark on light, light on dark' }
   ];
 
   /* Anchor step for each surface's `bg` per mode. All other props on
@@ -339,19 +339,111 @@
     { id:'component', label:'Component', anchorRef:'bg' }
   ];
 
-  /* Neutral palette generator. ROLES already cover brand/danger/etc
-     via stepsFor(); neutral has no T0 entry because it's never the
-     "active editing role". For T2 we need its ladder to paint
-     surface swatches, so we generate it on demand from
-     --prim-neutral-500 in the loaded primitives.css. Cached at
-     module scope; invalidated on Discard (T0 wipe). */
-  var _neutralStepsCache = null;
-  function neutralSteps() {
-    if (_neutralStepsCache) return _neutralStepsCache;
+  /* ── System surface palettes (brand-coupled) ──────────
+     Two ship by default and are available to every project:
+       greyscale   — chroma 0, achromatic ladder. Hue tracks
+                     brand but is invisible at C=0; included so
+                     the cache invalidates when brand changes
+                     and the math stays consistent if a future
+                     T0 control lifts chroma slightly ("warm grey").
+       desaturated — low chroma (0.04 OKLCH C ≈ Tailwind "slate"),
+                     hue tracks brand. Reads as branded gray.
+     Both seed from brand's hue and use the PaletteEngine's
+     normalized anchor mode (tone curve independent of seed L*),
+     so the L* ladder ("lighting legacy") is identical to brand's
+     and identical between greyscale + desaturated — only chroma
+     differs. That's the property the user asked us to preserve. */
+  var SYSTEM_PALETTE_IDS = { brand:1, danger:1, success:1, warning:1, info:1, greyscale:1, desaturated:1 };
+  var SYSTEM_PALETTE_CHROMA = { greyscale: 0, desaturated: 0.04 };
+  var _systemPaletteCache = {};
+
+  function brandSeedHex() {
+    if (State.proposed && State.proposed.brand) return State.proposed.brand;
     var cs = getComputedStyle(document.documentElement);
-    var seed = cs.getPropertyValue('--prim-neutral-500').trim() || '#737E88';
-    _neutralStepsCache = window.PaletteEngine.generatePalette(seed, { anchor: 'normalized' }).steps;
-    return _neutralStepsCache;
+    return (cs.getPropertyValue('--prim-brand-500').trim() || '#3366F0');
+  }
+  function systemPaletteSeed(paletteId) {
+    var brandHex = brandSeedHex();
+    var oklch = window.PaletteEngine.hexToOklch(brandHex);
+    var brandH = oklch[2];
+    var chroma = SYSTEM_PALETTE_CHROMA[paletteId];
+    if (chroma == null) chroma = 0;
+    /* Seed L* doesn't matter in normalized-anchor mode — the engine
+       re-derives every step's L from TONE_SCALE. Only keyC + keyH
+       drive the ladder's chroma decay + hue. Use L=0.6 (≈step 500
+       luminance) so the seed lives inside sRGB for any hue. */
+    return window.PaletteEngine.oklchToHex(0.6, chroma, brandH);
+  }
+  function systemPaletteSteps(paletteId) {
+    if (_systemPaletteCache[paletteId]) return _systemPaletteCache[paletteId];
+    var seed = systemPaletteSeed(paletteId);
+    _systemPaletteCache[paletteId] = window.PaletteEngine.generatePalette(seed, { anchor: 'normalized' }).steps;
+    return _systemPaletteCache[paletteId];
+  }
+
+  /* ── Custom palettes (project-level, discovered) ──────
+     Any --prim-<name>-500 token in the loaded primitives.css that
+     isn't a system palette id is registered as a custom palette
+     and surfaced under "Custom palettes" in the source-palette
+     picker. Writer Handhelds' "neutral" palette gets picked up
+     this way without any rename or migration. The ladder is read
+     directly from the project's existing 22-step CSS variables
+     (not regenerated) so custom palette colors stay byte-identical
+     to what the project has shipped. */
+  var _customPalettesCache = null;
+  function discoverCustomPalettes() {
+    if (_customPalettesCache) return _customPalettesCache;
+    var found = {};
+    var sheets = document.styleSheets;
+    for (var i = 0; i < sheets.length; i++) {
+      var crs;
+      try { crs = sheets[i].cssRules || sheets[i].rules; } catch (e) { continue; }
+      if (!crs) continue;
+      for (var j = 0; j < crs.length; j++) {
+        var rule = crs[j];
+        if (!rule.style) continue;
+        for (var k = 0; k < rule.style.length; k++) {
+          var p = rule.style[k];
+          var m = /^--prim-([a-z][a-z0-9-]*)-500$/.exec(p);
+          if (m && !SYSTEM_PALETTE_IDS[m[1]]) found[m[1]] = 1;
+        }
+      }
+    }
+    _customPalettesCache = Object.keys(found).map(function (id) {
+      return {
+        id: id,
+        label: id.charAt(0).toUpperCase() + id.slice(1),
+        desc: 'Custom palette \u2014 --prim-' + id + '-*'
+      };
+    });
+    return _customPalettesCache;
+  }
+  function customPaletteSteps(paletteId) {
+    if (_systemPaletteCache[paletteId]) return _systemPaletteCache[paletteId];
+    var cs = getComputedStyle(document.documentElement);
+    var first = cs.getPropertyValue('--prim-' + paletteId + '-' + ALL_STEPS[1]).trim();
+    if (!first) return null;
+    /* Read every step name from --prim-<id>-<step>; gaps fall back
+       to engine-generated values from --prim-<id>-500 so a partial
+       custom palette still renders something sensible. */
+    var ladder = ALL_STEPS.map(function (name) {
+      if (name === 'white') return { name:'white', hex:'#FFFFFF' };
+      if (name === 'black') return { name:'black', hex:'#000000' };
+      var v = cs.getPropertyValue('--prim-' + paletteId + '-' + name).trim();
+      return { name: name, hex: v || null };
+    });
+    var missing = ladder.some(function (s) { return !s.hex; });
+    if (missing) {
+      var seed = cs.getPropertyValue('--prim-' + paletteId + '-500').trim();
+      if (seed) {
+        var gen = window.PaletteEngine.generatePalette(seed, { anchor:'normalized' }).steps;
+        var byName = {};
+        gen.forEach(function (s) { byName[s.name] = s.hex; });
+        ladder = ladder.map(function (s) { return { name: s.name, hex: s.hex || byName[s.name] || '#888' }; });
+      }
+    }
+    _systemPaletteCache[paletteId] = ladder;
+    return ladder;
   }
 
   /* Resolve a T2 cell to its hex value by walking the surface's
@@ -381,9 +473,9 @@
      against a different hue without losing the work. */
   function surfacePaletteFor(surfaceId) {
     var ov = State.t2SurfacePalette && State.t2SurfacePalette[surfaceId];
-    if (ov && SURFACE_PALETTE_OK[ov]) return ov;
+    if (ov && isValidSurfacePalette(ov)) return ov;
     var def = T2_SURFACES.find(function (s) { return s.id === surfaceId; });
-    return def ? def.palette : 'neutral';
+    return def ? def.palette : 'greyscale';
   }
   function isSurfacePaletteCustom(surfaceId) {
     var def = T2_SURFACES.find(function (s) { return s.id === surfaceId; });
@@ -392,21 +484,67 @@
   }
   function t2LadderFor(surfaceId) {
     var pal = surfacePaletteFor(surfaceId);
-    if (pal === 'neutral') return neutralSteps();
-    return stepsFor(pal);
+    if (pal === 'greyscale' || pal === 'desaturated') return systemPaletteSteps(pal);
+    if (pal === 'brand' || pal === 'danger' || pal === 'success' || pal === 'warning' || pal === 'info') return stepsFor(pal);
+    /* Custom palette (discovered from --prim-<id>-* tokens) */
+    var custom = customPaletteSteps(pal);
+    if (custom) return custom;
+    /* Last-resort fallback if palette id is stale and points
+       nowhere: greyscale keeps surfaces neutral instead of black. */
+    return systemPaletteSteps('greyscale');
   }
-  /* Allowed source-palette ids for a T2 surface. Mirrors ROLES[]
-     plus 'neutral'. Kept as a static map so the draft loader can
-     validate without re-deriving from ROLES (which may grow). */
-  var SURFACE_PALETTE_OPTIONS = [
-    { id:'neutral', label:'Neutral' },
-    { id:'brand',   label:'Brand'   },
-    { id:'danger',  label:'Danger'  },
-    { id:'warning', label:'Warning' },
-    { id:'info',    label:'Info'    },
-    { id:'success', label:'Success' }
+  function isValidSurfacePalette(id) {
+    if (SURFACE_PALETTE_OK[id]) return true;
+    var customs = discoverCustomPalettes();
+    for (var i = 0; i < customs.length; i++) if (customs[i].id === id) return true;
+    return false;
+  }
+  /* Source-palette options for the custom popover picker.
+     - DEFAULTS section (system-level, ship with every project):
+         Greyscale   — brand-coupled, C=0 (true achromatic)
+         Desaturated — brand-coupled, low chroma (≈ Tailwind slate)
+         Brand       — the project's primary hue
+       Status palettes (danger/success/info/warning) are intentionally
+       NOT offered as surfaces — they're alert palettes (toasts,
+       badges, callouts) and a "Danger" page bg has no real use
+       case.
+     - CUSTOM section: project-level palettes discovered at runtime
+       from --prim-<name>-* tokens in primitives.css. Writer
+       Handhelds' own "Neutral" palette surfaces here.
+     SURFACE_PALETTE_OPTIONS (flat) + SURFACE_PALETTE_OK stay as
+     the validation source for system palette ids; isValidSurfacePalette
+     additionally consults discoverCustomPalettes() so a saved
+     custom-palette override survives draft load. */
+  var SURFACE_PALETTE_DEFAULTS = [
+    { id:'greyscale',   label:'Greyscale',   desc:'Achromatic ladder, tracks brand hue at C=0' },
+    { id:'desaturated', label:'Desaturated', desc:'Low-chroma branded gray, tracks brand hue' },
+    { id:'brand',       label:'Brand',       desc:'Your project\u2019s primary hue'             }
   ];
+  function buildSurfacePaletteGroups() {
+    var customs = discoverCustomPalettes();
+    return [
+      { id:'defaults', label:'Default palettes', options: SURFACE_PALETTE_DEFAULTS.slice() },
+      {
+        id:'custom',
+        label:'Custom palettes',
+        options: customs,
+        emptyState: customs.length ? null
+          : 'No custom palettes in this project. Add a --prim-<name>-* ladder to surface one here.'
+      }
+    ];
+  }
+  var SURFACE_PALETTE_OPTIONS = SURFACE_PALETTE_DEFAULTS.slice();
   var SURFACE_PALETTE_OK = SURFACE_PALETTE_OPTIONS.reduce(function (m, o) { m[o.id] = true; return m; }, {});
+  function paletteOptionFor(id) {
+    for (var i = 0; i < SURFACE_PALETTE_DEFAULTS.length; i++) {
+      if (SURFACE_PALETTE_DEFAULTS[i].id === id) return SURFACE_PALETTE_DEFAULTS[i];
+    }
+    var customs = discoverCustomPalettes();
+    for (var j = 0; j < customs.length; j++) {
+      if (customs[j].id === id) return customs[j];
+    }
+    return null;
+  }
 
   var State = {
     activeTier: 't0',
@@ -975,12 +1113,13 @@
       }
       if (d.editingMode === 'light' || d.editingMode === 'dark') State.editingMode = d.editingMode;
       if (d.anchor === 'exact' || d.anchor === 'normalized') State.anchor = d.anchor;
-      // Per-surface source palette — validated against the static
-      // SURFACE_PALETTE_OK map so a stale role id can't sneak in.
+      // Per-surface source palette — validated against system
+      // palette ids AND discovered custom palettes (so a custom
+      // pick saved in a prior session survives draft load).
       if (d.t2SurfacePalette && typeof d.t2SurfacePalette === 'object') {
         T2_SURFACES.forEach(function (s) {
           var v = d.t2SurfacePalette[s.id];
-          if (typeof v === 'string' && SURFACE_PALETTE_OK[v]) {
+          if (typeof v === 'string' && isValidSurfacePalette(v)) {
             State.t2SurfacePalette[s.id] = v;
           }
         });
@@ -1160,6 +1299,14 @@
     var role = State.activeRole;
     State.proposed[role] = hex.toUpperCase();
     delete State.cachedSteps[role];
+    /* Brand drives the system surface palettes (greyscale +
+       desaturated are seeded from brand's hue). Invalidate their
+       caches so the swatches under T2 repaint against the new
+       brand. Other role edits don't affect surfaces. */
+    if (role === 'brand') {
+      delete _systemPaletteCache.greyscale;
+      delete _systemPaletteCache.desaturated;
+    }
     pushPreview();
     refreshChangeBar();
     scheduleAutosave();
@@ -2062,25 +2209,28 @@
         + '<button type="button" class="ev2-edit-mode" data-edit-mode="dark"  aria-checked="' + (mode === 'dark')  + '" role="radio">Dark</button>'
       + '</div>';
 
-    /* Source-palette picker. Lives in the surface header so it's
-       discoverable at the moment a designer is auditioning a
-       surface, not buried in a settings menu. Custom picks get a
-       CUSTOM pill + per-surface reset button so the override is
-       always reversible without leaving the page. */
-    var paletteOpts = SURFACE_PALETTE_OPTIONS.map(function (o) {
-      return '<option value="' + o.id + '"' + (o.id === activePalette ? ' selected' : '') + '>' + o.label + '</option>';
-    }).join('');
+    /* Source-palette picker. Custom popover (not a native <select>)
+       so we can show grouped sections with labels + a "Custom
+       palettes" empty state. The trigger button shows the current
+       pick + a CUSTOM pill / Reset button when the surface is on
+       a non-default palette. The popover singleton lives at body
+       level (see initSurfacePalettePopover() below). */
+    var activeOpt = paletteOptionFor(activePalette) || { id:activePalette, label:activePalette };
     var paletteCtl =
-      '<label class="ev2-surface-head-palette" data-custom="' + paletteCustom + '">'
+      '<div class="ev2-surface-head-palette" data-custom="' + paletteCustom + '">'
         + '<span class="ev2-surface-head-palette-label">Source palette</span>'
-        + '<select class="ev2-surface-head-palette-sel" data-surface-palette="' + surface.id + '" aria-label="Source palette for ' + surface.label + '">'
-          + paletteOpts
-        + '</select>'
+        + '<button type="button" class="ev2-surface-head-palette-trigger"'
+          + ' data-surface-palette-open="' + surface.id + '"'
+          + ' aria-haspopup="listbox" aria-expanded="false"'
+          + ' aria-label="Source palette for ' + surface.label + ' \u2014 currently ' + activeOpt.label + '">'
+          + '<span class="ev2-surface-head-palette-trigger-val">' + activeOpt.label + '</span>'
+          + '<svg class="ev2-surface-head-palette-trigger-caret" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        + '</button>'
         + (paletteCustom
             ? '<span class="ev2-surface-head-palette-pill" data-tip="Default for this surface is ' + surface.palette + '. Click reset to restore.">CUSTOM</span>'
               + '<button type="button" class="ev2-surface-head-palette-reset" data-surface-palette-reset="' + surface.id + '" aria-label="Reset source palette to ' + surface.palette + '">Reset</button>'
             : '')
-      + '</label>';
+      + '</div>';
 
     $body.innerHTML =
       surfacePickerHTML()
@@ -2391,30 +2541,18 @@
     else if (State.activeTier === 't2') renderT2();
   });
 
-  /* Surface source-palette picker (T2 header). `change` listener so
-     keyboard arrow-navigation in the <select> commits naturally.
-     Override stored on State.t2SurfacePalette; the surface's CUSTOM
-     step picks are preserved \u2014 they just resolve against the new
-     ladder. */
-  document.addEventListener('change', function (e) {
-    var sel = e.target && e.target.closest && e.target.closest('[data-surface-palette]');
-    if (!sel) return;
-    var sid = sel.getAttribute('data-surface-palette');
-    var def = T2_SURFACES.find(function (s) { return s.id === sid; });
-    if (!def) return;
-    var picked = sel.value;
-    if (!SURFACE_PALETTE_OK[picked]) return;
-    if (picked === def.palette) {
-      // Restoring the default — drop the override entry so the
-      // surface no longer counts as dirty for palette reasons.
-      if (State.t2SurfacePalette[sid]) delete State.t2SurfacePalette[sid];
-    } else {
-      State.t2SurfacePalette[sid] = picked;
-    }
-    scheduleAutosave();
-    pushPreview();
-    if (State.activeTier === 't2') renderT2();
-    refreshChangeBar();
+  /* Surface source-palette picker open-trigger (T2 header). Native
+     <select> can't render grouped sections with separators + an
+     empty-state slot, so the picker is a custom popover singleton
+     (see initSurfacePalettePicker below). This handler just opens
+     the popover for the clicked trigger button; the popover renders
+     the groups and handles option clicks. */
+  document.addEventListener('click', function (e) {
+    var openBtn = e.target && e.target.closest && e.target.closest('[data-surface-palette-open]');
+    if (!openBtn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (window.__ev2OpenPalettePicker) window.__ev2OpenPalettePicker(openBtn);
   });
 
   document.getElementById('showCssNames').addEventListener('change', function (e) {
@@ -2437,7 +2575,7 @@
     State.t2 = makeEmptyT2();
     State.t2SurfacePalette = {};
     State.cachedSteps = {};
-    _neutralStepsCache = null;
+    _systemPaletteCache = {};
     clearDraftFromStorage();
     pushPreview();
     renderActiveTier();
@@ -3592,6 +3730,137 @@
     window.addEventListener('scroll', function () {
       // Ignore the focus-induced scrollIntoView that fires right
       // after a click; only close on genuine user scrolling.
+      if (openOn && Date.now() - openedAt > 250) close();
+    }, true);
+    window.addEventListener('resize', function () { if (openOn) close(); });
+  })();
+
+  /* ── Surface source-palette picker (custom popover) ────
+     A native <select> can't render labeled group separators or an
+     empty-state slot, so the picker is a singleton popover that
+     renders SURFACE_PALETTE_GROUPS as labeled sections with a 1px
+     separator between groups. Mirrors the WCAG popover above for
+     positioning, outside-click + Esc close, and the 250ms scroll
+     grace window so focus-induced scrolls don't auto-dismiss.
+     Exposes window.__ev2OpenPalettePicker(triggerBtn) so the
+     delegated click handler at the top of this file can drive it. */
+  (function initSurfacePalettePicker() {
+    var pop = document.createElement('div');
+    pop.className = 'ev2-pal-pop';
+    pop.setAttribute('role', 'listbox');
+    pop.setAttribute('aria-label', 'Source palette');
+    document.body.appendChild(pop);
+    var openOn = null;
+    var openedAt = 0;
+
+    function close() {
+      if (!openOn) return;
+      pop.removeAttribute('data-show');
+      pop.innerHTML = '';
+      openOn.setAttribute('aria-expanded', 'false');
+      openOn = null;
+    }
+
+    function render(surfaceId) {
+      var groups = (typeof buildSurfacePaletteGroups === 'function')
+        ? buildSurfacePaletteGroups()
+        : [{ id:'defaults', label:'Default palettes', options: SURFACE_PALETTE_DEFAULTS.slice() }];
+      var current = surfacePaletteFor(surfaceId);
+      var def = T2_SURFACES.find(function (s) { return s.id === surfaceId; });
+      var defaultPaletteId = def ? def.palette : null;
+      var html = '';
+      groups.forEach(function (g, gi) {
+        if (gi > 0) html += '<div class="ev2-pal-pop-sep" role="separator"></div>';
+        html += '<div class="ev2-pal-pop-group" data-group="' + g.id + '">'
+          + '<div class="ev2-pal-pop-group-label">' + g.label + '</div>';
+        if (g.options.length) {
+          g.options.forEach(function (opt) {
+            var isCurrent = opt.id === current;
+            var isDefault = opt.id === defaultPaletteId;
+            html += '<button type="button" class="ev2-pal-pop-opt"'
+              + ' role="option" aria-selected="' + (isCurrent ? 'true' : 'false') + '"'
+              + ' data-palette-pick="' + opt.id + '"'
+              + (isCurrent ? ' data-current="1"' : '')
+              + '>'
+              + '<span class="ev2-pal-pop-opt-main">'
+                + '<span class="ev2-pal-pop-opt-label">' + opt.label
+                  + (isDefault ? '<span class="ev2-pal-pop-opt-default">default</span>' : '')
+                + '</span>'
+                + (opt.desc ? '<span class="ev2-pal-pop-opt-desc">' + opt.desc + '</span>' : '')
+              + '</span>'
+              + (isCurrent ? '<span class="ev2-pal-pop-opt-check" aria-hidden="true">\u2713</span>' : '')
+            + '</button>';
+          });
+        } else if (g.emptyState) {
+          html += '<div class="ev2-pal-pop-empty">' + g.emptyState + '</div>';
+        }
+        html += '</div>';
+      });
+      pop.innerHTML = html;
+    }
+
+    function position(trigger) {
+      var r = trigger.getBoundingClientRect();
+      var pw = pop.offsetWidth, ph = pop.offsetHeight;
+      var vw = window.innerWidth, vh = window.innerHeight;
+      var top = r.bottom + 6;
+      if (top + ph > vh - 8) top = Math.max(8, r.top - ph - 6);
+      var left = Math.round(r.left);
+      // Prefer right-edge alignment if it doesn't overflow on the right.
+      if (left + pw > vw - 8) left = Math.max(8, vw - pw - 8);
+      pop.style.top  = Math.round(top) + 'px';
+      pop.style.left = left + 'px';
+    }
+
+    function openFor(trigger) {
+      var surfaceId = trigger.getAttribute('data-surface-palette-open');
+      if (!surfaceId) return;
+      if (openOn === trigger) { close(); return; }
+      if (openOn) close();
+      render(surfaceId);
+      pop.setAttribute('data-surface', surfaceId);
+      pop.setAttribute('data-show', '1');
+      // Measure AFTER paint so offsetWidth/Height are valid.
+      position(trigger);
+      trigger.setAttribute('aria-expanded', 'true');
+      openOn = trigger;
+      openedAt = Date.now();
+    }
+    window.__ev2OpenPalettePicker = openFor;
+
+    document.addEventListener('click', function (e) {
+      var pickBtn = e.target && e.target.closest && e.target.closest('[data-palette-pick]');
+      if (pickBtn && openOn && pop.contains(pickBtn)) {
+        var picked = pickBtn.getAttribute('data-palette-pick');
+        var sid = pop.getAttribute('data-surface');
+        var def = T2_SURFACES.find(function (s) { return s.id === sid; });
+        if (!def || !picked || !isValidSurfacePalette(picked)) { close(); return; }
+        if (picked === def.palette) {
+          /* Restoring the surface's declared default \u2014 drop the
+             override so the surface no longer counts as dirty for
+             palette reasons. CUSTOM step picks survive (only the
+             palette override is cleared). */
+          if (State.t2SurfacePalette[sid]) delete State.t2SurfacePalette[sid];
+        } else {
+          State.t2SurfacePalette[sid] = picked;
+        }
+        scheduleAutosave();
+        pushPreview();
+        close();
+        if (State.activeTier === 't2') renderT2();
+        refreshChangeBar();
+        return;
+      }
+      // Outside-click close. Triggers are handled by the dedicated
+      // [data-surface-palette-open] click listener at the top of
+      // the file; if a different trigger is clicked while one is
+      // open, openFor() handles the swap.
+      if (openOn && !pop.contains(e.target) && !e.target.closest('[data-surface-palette-open]')) close();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && openOn) { var t = openOn; close(); t.focus && t.focus(); }
+    });
+    window.addEventListener('scroll', function () {
       if (openOn && Date.now() - openedAt > 250) close();
     }, true);
     window.addEventListener('resize', function () { if (openOn) close(); });

@@ -39,13 +39,38 @@ editor + demo surface) speaking the same language so users learn it once.
 - **Derived T1 tokens**: `border`, `separator`, `onComponent`, `onContainer`.
 - **Surfaces** (T2, ordered): `bright`, `base`, `dim`, `deep`, `accent`, `container`,
   `float`, `inverse`. Display labels are Title Case.
-- **Surface → source palette** is **user-overridable**. Each surface declares a default
-  in `T2_SURFACES` (page bgs → `neutral`, `accent` → `brand`, etc.); the picker in the
-  surface header lets the designer remap any surface to any role's ladder
-  (`neutral|brand|danger|warning|info|success`). When a surface is on a non-default
-  palette its row is marked `CUSTOM` and a Reset button restores the default. CUSTOM
-  step picks on the surface **survive** a palette swap — the step name stays, it just
-  resolves against the new ladder.
+- **Surface → source palette** is **user-overridable** via a custom popover picker
+  (grouped sections, not a native `<select>` — needed for labeled groups + separators
+  + an empty-state slot for the Custom group). Two groups, both surfaced for every
+  project:
+  - **Default palettes** (system-level, ship with every project):
+    - `greyscale` — brand-coupled, chroma 0 (true achromatic). Hue tracks brand but
+      is invisible at C=0. Default for `bright`, `base`, `dim`, `deep`, `container`,
+      `float`, `inverse`.
+    - `desaturated` — brand-coupled, low chroma (≈0.04 OKLCH C, close to Tailwind
+      `slate`). Hue tracks brand. Reads as branded gray.
+    - `brand` — the project's primary hue. Default for `accent`.
+  - **Custom palettes** (project-level, discovered): any `--prim-<name>-*` ladder
+    in the project's `primitives.css` that isn't a system palette id (brand,
+    danger, success, warning, info, greyscale, desaturated) is auto-registered
+    and shown here. Writer Handhelds' "Neutral" palette surfaces this way — no
+    rename, no migration. New projects with no custom palettes see an empty-state
+    row explaining how to add one.
+
+  **Status palettes are intentionally NOT offered as surface options.** `danger`,
+  `success`, `info`, `warning` exist to color alerts, toasts, and status badges — not
+  page backgrounds. A "Danger" page surface has no real use case and would mislead
+  designers. Keep this restriction unless the use case changes.
+
+  **The "lighting legacy" stays untouched.** Greyscale + desaturated share the
+  same L* tone curve as brand (via PaletteEngine `anchor:'normalized'`). Only
+  chroma differs between the three. The `--prim-{greyscale,desaturated}-*`
+  ladders therefore step identically in luminance, so swapping a surface between
+  them shifts only color temperature, never elevation.
+
+  When a surface is on a non-default palette its header is marked `CUSTOM` and a Reset
+  button restores the default. CUSTOM step picks on the surface **survive** a palette
+  swap — the step name stays, it just resolves against the new ladder.
 - **Step names** (T0 ladder, 22 entries): `white`, `25`, `50`, `100`, `200`, `300`, `400`,
   `450`, `500`, `550`, `600`, `650`, `700`, `750`, `800`, `850`, `900`, `black` (numeric steps shown as `step N`, e.g. *"step 500"*).
 
@@ -358,3 +383,4 @@ The four-hop pipeline is where drift creeps in fastest. Lock its surface area he
 | 2026-05-16 | Component builder visible to all plugin users                  | Stops being an owner-only tool; gating moves server-side if ever needed |
 | 2026-05-16 | Added §11 Figma plugin + §12 Sync scope to consistency doc     | Plugin / sync drift was the most-repeated source of incidents — pulling rules in-doc so they're checked alongside UI strings |
 | 2026-05-16 | T2 surface → source-palette mapping is user-overridable        | Architecture spec §3.2 always said "step on source palette" — landing the picker closes the loop. CUSTOM step picks survive a palette swap so designers can audition the same elevation shape against multiple hues without re-tuning. |
+| 2026-05-16 | System surface palettes = Greyscale + Desaturated + Brand      | Replaces the single hardcoded `neutral` palette. Greyscale (C=0) and Desaturated (C≈0.04) are brand-coupled — same hue, controlled chroma — so the L* "lighting legacy" stays identical across all three. Status palettes are still NOT surfaceable (alert semantics). Custom project-level palettes (e.g. Writer Handhelds' "Neutral") are auto-discovered from `--prim-<name>-*` and shown under "Custom palettes". Picker became a custom popover because native `<select>` can't render labeled group separators + empty-state slots reliably. |
