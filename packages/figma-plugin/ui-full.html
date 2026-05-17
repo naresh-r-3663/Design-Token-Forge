@@ -1633,7 +1633,25 @@ function bindMismatchActions(){}
 function totalChangeCount(){
   if (!changeData || !changeData.entries || !changeData.entries[0]) return 0;
   var e = changeData.entries[0].summary || {};
-  return (e.changedVars ? e.changedVars.length : 0) + (e.added || 0) + (e.removed || 0);
+  /* Count rename pairs once so the tab badge matches the headline
+     ("3 changes · 5 renamed" shows badge 8, not 13). We pair ADDs
+     and REMs with identical resolved values; everything else is a
+     real, paint-affecting change. */
+  var vars = e.changedVars || [];
+  var addsByValue = {};
+  var remsByValue = {};
+  for (var i = 0; i < vars.length; i++){
+    var r = vars[i];
+    if (r.tag === 'add' && r.to)   (addsByValue[r.to] = addsByValue[r.to] || []).push(i);
+    else if (r.tag === 'rem' && r.from) (remsByValue[r.from] = remsByValue[r.from] || []).push(i);
+  }
+  var renamed = 0;
+  for (var val in addsByValue){
+    if (!addsByValue.hasOwnProperty(val) || !remsByValue[val]) continue;
+    renamed += Math.min(addsByValue[val].length, remsByValue[val].length);
+  }
+  /* Subtract one slot per pair (ADD+REM collapsed into a single rename). */
+  return vars.length + (e.added || 0) + (e.removed || 0) - renamed;
 }
 
 /* Derive a group key from token name. "btn-bg-default" → "Button". */
@@ -3293,64 +3311,22 @@ function renderBuilderMeta(versions, currentStructureHashes, currentPrototypeHas
       pillsHtml = '<span class="pill" data-kind="bindings">build needed</span>';
       tint = 'bindings';
       why = 'Some token bindings are broken and need re-binding.';
-    } else if (structureChanged) {
-      pillsHtml = '<span class="pill" data-kind="structure">update available</span>';
-      tint = 'structure';
-      /* Lead with what stays, not what leaves. The structure pill
-         fires whenever DTF ships a spec with a different variant
-         matrix than the ledger \u2014 the designer didn't cause it,
-         and instance bindings survive a Rebuild. Per-family detail
-         is moved to the row title (hover) so the headline stays
-         calm. */
-      var bm = currentBpMeta && currentBpMeta[key];
-      var ledgerFams = (v.families && v.families.slice) ? v.families.slice() : [];
-      var ledgerVariants = (typeof v.totalComponents === 'number') ? v.totalComponents : 0;
-      var ledgerDetail = v.familyDetail || null;
-      var structureTooltip = '';
-      if (bm && bm.families) {
-        var liveFams = bm.families;
-        var ledgerSet = {}; for (var lf = 0; lf < ledgerFams.length; lf++) ledgerSet[ledgerFams[lf]] = 1;
-        var liveSet   = {}; for (var lvf = 0; lvf < liveFams.length;   lvf++) liveSet[liveFams[lvf]]   = 1;
-        var planVariants = bm.plannedVariants || 0;
-        /* Lead line \u2014 short, calm, action-oriented. */
-        if (planVariants && ledgerVariants) {
-          why = 'Spec updated to <span class="nums">' + planVariants + '</span> variants (was ' + ledgerVariants + '). Existing instances preserved.';
-        } else if (planVariants) {
-          why = 'Spec updated to <span class="nums">' + planVariants + '</span> variants. Existing instances preserved.';
-        } else {
-          why = 'Spec updated. Existing instances preserved.';
-        }
-        /* Hover tooltip carries the breakdown for designers who
-           want to verify before clicking. */
-        var tipBits = [];
-        if (ledgerDetail && bm.familyDetail) {
-          for (var pf = 0; pf < liveFams.length; pf++) {
-            var fnP = liveFams[pf];
-            var ld = ledgerDetail[fnP];
-            var nd = bm.familyDetail[fnP];
-            if (!nd) continue;
-            if (!ld) tipBits.push(fnP + ': new (' + nd.variants + ')');
-            else if (ld.variants !== nd.variants) tipBits.push(fnP + ': ' + ld.variants + ' \u2192 ' + nd.variants);
-          }
-          for (var rf = 0; rf < ledgerFams.length; rf++) {
-            var fnR = ledgerFams[rf];
-            if (!liveSet[fnR]) {
-              var ldR = ledgerDetail[fnR];
-              tipBits.push(fnR + ': dropped (' + (ldR ? ldR.variants : '?') + ')');
-            }
-          }
-        }
-        if (tipBits.length) structureTooltip = tipBits.join(' \u00b7 ');
-      } else {
-        why = 'Spec updated. Existing instances preserved.';
-      }
-      /* structureTooltip is merged into the fingerprint tip below
-         so the hover carries both human + hash detail. */
     } else if (protoChanged) {
       pillsHtml = '<span class="pill" data-kind="proto">build needed</span>';
       tint = 'proto';
       why = 'Prototype interactions need re-wiring.';
     }
+    /* Structure pill intentionally removed. structureHash divergence
+       only ever fires when DTF (we) ship a new BUTTON_BLUEPRINT in
+       code.js — the designer didn't cause it, and ignoring it has
+       zero impact on their existing variants. Spec adoption is a
+       deliberate release-notes conversation, not a per-component
+       badge. When we actually want users to adopt a new variant
+       matrix we'll surface that via the topbar or a release banner.
+       structureChanged is still computed above so the fingerprint
+       tooltip stays accurate. */
+    // var structureTooltip kept undefined; the merge below tolerates it.
+    var structureTooltip = '';
 
     var anyChange = !!pillsHtml;
     row.setAttribute('data-tint', tint);
