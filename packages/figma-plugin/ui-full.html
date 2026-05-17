@@ -3367,7 +3367,7 @@ function renderBuilderMeta(versions, currentStructureHashes, currentPrototypeHas
 
     /* Timestamp. */
     var when = fmtBuiltAgo(v.writtenAt || v.generatedAt);
-    whenEl && (whenEl.textContent = when ? ('· ' + when) : '');
+    whenEl && (whenEl.textContent = when ? ('· added to Figma ' + when) : '');
 
     pillsEl.innerHTML = pillsHtml;
     actEl.classList.toggle('idle', !anyChange);
