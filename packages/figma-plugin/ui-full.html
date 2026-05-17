@@ -397,6 +397,37 @@
     border-top: 1px solid var(--dtf-surface-alt);
   }
   .change-row:first-child { border-top: 0; }
+  .change-row--expandable { flex-direction: column; align-items: stretch; cursor: pointer; }
+  .change-row--expandable:hover { background: var(--dtf-surface-alt); }
+  .change-row--expandable:focus-visible { outline: 2px solid var(--dtf-brand-content); outline-offset: -2px; }
+  .change-row-main { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .ch-row-detail {
+    display: none;
+    padding: 8px 10px 4px 22px;   /* indent past the dot */
+    gap: 6px;
+    flex-direction: column;
+    border-top: 1px dashed var(--dtf-surface-alt);
+    margin-top: 6px;
+  }
+  .change-row[aria-expanded="true"] .ch-row-detail { display: flex; }
+  .ch-row-detail-line { display: flex; align-items: baseline; gap: 8px; }
+  .ch-row-detail-label {
+    flex-shrink: 0; width: 36px;
+    font-family: var(--dtf-font-sans, system-ui);
+    font-size: var(--dtf-fs-10);
+    color: var(--dtf-fg-faint);
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .ch-row-detail code {
+    flex: 1;
+    font-family: var(--dtf-font-mono);
+    font-size: var(--dtf-fs-11);
+    color: var(--dtf-fg-strong);
+    background: var(--dtf-surface-alt);
+    padding: 2px 6px;
+    border-radius: 3px;
+    word-break: break-all;
+  }
   .ch-tag {
     display: inline-block; width: 6px; height: 6px;
     border-radius: 50%; flex-shrink: 0;
@@ -903,7 +934,7 @@ var openGroups = new Set();      /* expanded group keys */
 /* Build stamp — bump on every UI-affecting change so you can confirm
    the Figma plugin sandbox isn't serving a cached old copy. Shown in
    the empty-state footer + logged once to the plugin console. */
-var BUILD_VERSION = '2026-05-17-p2';
+var BUILD_VERSION = '2026-05-17-p3';
 function log(msg){ console.log('[DTF] ' + msg); }
 log('plugin UI build ' + BUILD_VERSION);
 
@@ -1246,26 +1277,50 @@ function rowHTML(r){
   if (r.tag === 'upd' && normForCompare(r.from) === normForCompare(r.to)) return '';
 
   /* Alias-vs-alias: show only the changed segment so the diff is
-     scannable at a glance. */
+     scannable at a glance. The row is clickable — expanding it
+     reveals both FULL paths on their own lines, so the user can
+     audit exactly which binding is being rewritten before hitting
+     "Update". Hover also shows a native tooltip with the same. */
   var aliasDiff = (r.tag === 'upd') ? diffAliasParts(r.from, r.to) : null;
   if (aliasDiff){
-    var common = '<span class="ch-alias-common">' + esc(aliasDiff.prefix) + '<span class="ch-alias-mid"><span class="ch-from-mid">' + esc(aliasDiff.fromMid) + '</span><span class="ch-arrow">→</span><span class="ch-to-mid">' + esc(aliasDiff.toMid) + '</span></span>' + esc(aliasDiff.suffix) + '</span>';
-    return '<div class="change-row">'
-         + '<span class="ch-tag ' + r.tag + '" title="' + tagLabel + '">' + tagLabel + '</span>'
-         + '<span class="ch-name" title="' + esc(r.name) + '">' + esc(r.name) + '</span>'
-         + common
+    var fullTip = r.from + '   →   ' + r.to;
+    var common = '<span class="ch-alias-common" title="' + esc(fullTip) + '">' + esc(aliasDiff.prefix) + '<span class="ch-alias-mid"><span class="ch-from-mid">' + esc(aliasDiff.fromMid) + '</span><span class="ch-arrow">→</span><span class="ch-to-mid">' + esc(aliasDiff.toMid) + '</span></span>' + esc(aliasDiff.suffix) + '</span>';
+    var detail = '<div class="ch-row-detail">'
+      +   '<div class="ch-row-detail-line"><span class="ch-row-detail-label">From</span><code>' + esc(r.from) + '</code></div>'
+      +   '<div class="ch-row-detail-line"><span class="ch-row-detail-label">To</span><code>' + esc(r.to) + '</code></div>'
+      + '</div>';
+    return '<div class="change-row change-row--expandable" data-expandable="1" tabindex="0" role="button" aria-expanded="false" title="Click to show full paths">'
+         + '<div class="change-row-main">'
+         +   '<span class="ch-tag ' + r.tag + '" title="' + tagLabel + '">' + tagLabel + '</span>'
+         +   '<span class="ch-name" title="' + esc(r.name) + '">' + esc(r.name) + '</span>'
+         +   common
+         + '</div>'
+         + detail
          + '</div>';
   }
+
+  /* Literal value diff (hex / number). Also expandable so long hex
+     lists or unit-bearing values can be inspected in full. */
+  var literalTip = (r.from || '(empty)') + '   →   ' + (r.to || '(empty)');
 
   var fromSwatch = isColor(r.from) ? '<span class="ch-swatch" style="background:' + r.from + '"></span>' : '';
   var toSwatch   = isColor(r.to)   ? '<span class="ch-swatch" style="background:' + r.to + '"></span>'   : '';
   var fromHtml = r.from ? '<span class="ch-from">' + fromSwatch + esc(r.from) + '</span>' : '';
   var toHtml   = r.to   ? '<span class="ch-to">'   + toSwatch   + esc(r.to)   + '</span>' : '';
   var arrow    = (r.from && r.to) ? '<span class="ch-arrow">→</span>' : '';
-  return '<div class="change-row">'
-       + '<span class="ch-tag ' + r.tag + '" title="' + tagLabel + '">' + tagLabel + '</span>'
-       + '<span class="ch-name" title="' + esc(r.name) + '">' + esc(r.name) + '</span>'
-       + fromHtml + arrow + toHtml
+  var literalDetail = (r.from || r.to)
+    ? '<div class="ch-row-detail">'
+      +   (r.from ? '<div class="ch-row-detail-line"><span class="ch-row-detail-label">From</span><code>' + esc(r.from) + '</code></div>' : '')
+      +   (r.to   ? '<div class="ch-row-detail-line"><span class="ch-row-detail-label">To</span><code>'   + esc(r.to)   + '</code></div>' : '')
+      + '</div>'
+    : '';
+  return '<div class="change-row change-row--expandable" data-expandable="1" tabindex="0" role="button" aria-expanded="false" title="' + esc(literalTip) + '">'
+       + '<div class="change-row-main">'
+       +   '<span class="ch-tag ' + r.tag + '" title="' + tagLabel + '">' + tagLabel + '</span>'
+       +   '<span class="ch-name" title="' + esc(r.name) + '">' + esc(r.name) + '</span>'
+       +   fromHtml + arrow + toHtml
+       + '</div>'
+       + literalDetail
        + '</div>';
 }
 
@@ -1384,7 +1439,25 @@ changeGroups.addEventListener('click', function(e){
     var key = m.getAttribute('data-more');
     groupRowLimit[key] = (groupRowLimit[key] || ROW_CAP) + ROW_CAP;
     renderChangeList();
+    return;
   }
+  /* Expand/collapse a single change row to reveal both full
+     from/to paths. Lightweight, in-place — does NOT re-render the
+     whole list so scroll position is preserved. */
+  var ex = e.target.closest('[data-expandable]');
+  if (ex){
+    var expanded = ex.getAttribute('aria-expanded') === 'true';
+    ex.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+  }
+});
+/* Keyboard parity: Enter/Space expands the focused row. */
+changeGroups.addEventListener('keydown', function(e){
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  var ex = e.target.closest('[data-expandable]');
+  if (!ex) return;
+  e.preventDefault();
+  var expanded = ex.getAttribute('aria-expanded') === 'true';
+  ex.setAttribute('aria-expanded', expanded ? 'false' : 'true');
 });
 filterChips.addEventListener('click', function(e){
   var c = e.target.closest('.chip');
