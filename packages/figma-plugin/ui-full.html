@@ -219,11 +219,16 @@
   }
   .btn-sync { background: var(--dtf-brand-bg); color: var(--dtf-fg-on-brand); }
   .btn-sync:hover { background: var(--dtf-brand-bg-hover); }
-  .btn-sync.ready { background: var(--dtf-success-bg); }
-  /* No :hover on .ready — success is a terminal state, hover darkening reads as 'this still does something'. */
+  /* Terminal success state is neutral, not a CTA — nothing left to do, no green call-to-action needed. */
+  .btn-sync.ready,
+  .btn-sync.ready:disabled {
+    background: var(--dtf-surface-alt);
+    color: var(--dtf-fg);
+    border: 1px solid var(--dtf-border-strong);
+    font-weight: 500;
+    opacity: 1;
+  }
   .btn-sync:disabled { background: var(--dtf-surface-deep); color: var(--dtf-fg-faint); }
-  /* .ready overrides the disabled grey so the success colour holds even while the button is locked. */
-  .btn-sync.ready:disabled { background: var(--dtf-success-bg); color: var(--dtf-fg-on-brand); opacity: .85; }
   .btn-cancel { background: var(--dtf-surface-alt); color: var(--dtf-fg); border: 1px solid var(--dtf-border-strong); flex: 0 0 auto; padding: 10px 14px; }
   .btn-cancel:hover { background: var(--dtf-surface-deep); border-color: var(--dtf-fg-faint); color: var(--dtf-fg-strong); }
 
