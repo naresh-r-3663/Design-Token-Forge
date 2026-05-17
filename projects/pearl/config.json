@@ -6,7 +6,7 @@
   "created": "2026-05-16",
   "schemaVersion": 2,
   "paletteKeys": {
-    "brand": "#DE5AE7",
+    "brand": "#E75A6F",
     "danger": "#DC2626",
     "warning": "#D97706",
     "info": "#0EA5E9",
@@ -68,10 +68,10 @@
     "inverse": "greyscale"
   },
   "latestVersion": {
-    "version": "v0.0.3",
-    "name": "May17 16:31",
+    "version": "v0.0.4",
+    "name": "May17 20:34",
     "description": "",
-    "savedAt": "2026-05-17T11:01:51.398Z",
+    "savedAt": "2026-05-17T15:04:11.204Z",
     "savedBy": "sridhar-ravi-2917"
   }
 }
