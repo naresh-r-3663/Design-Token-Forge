@@ -7,7 +7,7 @@
   --brand-component-outline-default: #DB51EE;
   --brand-component-outline-hover: #DB51EE;
   --brand-component-outline-pressed: #DE5AE7;
-  --brand-on-component: #0A0A0A;
+  --brand-on-component: #FFFFFF;
   --brand-content-default: #790287;
   --brand-content-strong: #5B0366;
   --brand-content-subtle: #B423C6;
@@ -153,7 +153,7 @@
   --warning-component-outline-default: #D57F0A;
   --warning-component-outline-hover: #D57F0A;
   --warning-component-outline-pressed: #D97706;
-  --warning-on-component: #0A0A0A;
+  --warning-on-component: #FFFFFF;
   --warning-content-default: #FEB062;
   --warning-content-strong: #F5A44F;
   --warning-content-subtle: #FFCFA2;

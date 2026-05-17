@@ -57,7 +57,7 @@
   --warning-container-pressed: #FFDDBE;
   --warning-container-outline: #FEB062;
   --warning-container-separator: #FFDDBE;
-  --warning-on-component: #FFFFFF;
+  --warning-on-component: #0A0A0A;
   --warning-on-container: #A56207;
   --info-content-default: #1196E0;
   --info-content-strong: #0984C7;
@@ -75,7 +75,7 @@
   --info-container-pressed: #D1EBFF;
   --info-container-outline: #95D1FF;
   --info-container-separator: #D1EBFF;
-  --info-on-component: #FFFFFF;
+  --info-on-component: #0A0A0A;
   --info-on-container: #0984C7;
   --success-content-default: #089C2C;
   --success-content-strong: #028A25;
@@ -93,7 +93,7 @@
   --success-container-pressed: #AFF9B1;
   --success-container-outline: #7EDB82;
   --success-container-separator: #AFF9B1;
-  --success-on-component: #FFFFFF;
+  --success-on-component: #0A0A0A;
   --success-on-container: #028A25;
 }
 
@@ -114,7 +114,7 @@
   --brand-container-pressed: #861D02;
   --brand-container-outline: #B32B07;
   --brand-container-separator: #6D1400;
-  --brand-on-component: #FFFFFF;
+  --brand-on-component: #0A0A0A;
   --brand-on-container: #FFCEC3;
   --danger-content-default: #FFBAB1;
   --danger-content-strong: #FFCFC8;
@@ -132,7 +132,7 @@
   --danger-container-pressed: #92020B;
   --danger-container-outline: #C30A15;
   --danger-container-separator: #760408;
-  --danger-on-component: #FFFFFF;
+  --danger-on-component: #0A0A0A;
   --danger-on-container: #FFCFC8;
   --warning-content-default: #FFCFA2;
   --warning-content-strong: #FFDDBE;
@@ -150,7 +150,7 @@
   --warning-container-pressed: #894F00;
   --warning-container-outline: #BA6F0D;
   --warning-container-separator: #6D3E00;
-  --warning-on-component: #FFFFFF;
+  --warning-on-component: #0A0A0A;
   --warning-on-container: #FFDDBE;
   --info-content-default: #BDE2FF;
   --info-content-strong: #D1EBFF;
@@ -168,7 +168,7 @@
   --info-container-pressed: #0A6CA3;
   --info-container-outline: #1196E0;
   --info-container-separator: #055582;
-  --info-on-component: #FFFFFF;
+  --info-on-component: #0A0A0A;
   --info-on-container: #D1EBFF;
   --success-content-default: #9FEFA1;
   --success-content-strong: #AFF9B1;
@@ -186,6 +186,6 @@
   --success-container-pressed: #06721E;
   --success-container-outline: #089C2C;
   --success-container-separator: #045A16;
-  --success-on-component: #FFFFFF;
+  --success-on-component: #0A0A0A;
   --success-on-container: #AFF9B1;
 }

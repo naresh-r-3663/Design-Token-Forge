@@ -837,15 +837,28 @@
   }
 
   // Auto-pair: pick black or white text for a filled component fill,
-  // whichever has higher WCAG contrast. User override = `t.onComponent`
-  // ('white' | 'black') wins when present.
+  // whichever has higher WCAG contrast against the WORST of the
+  // three fill states (default + hover + pressed). Hover/pressed
+  // share the same on-component value (one foreground token, no
+  // flicker), so the colour must be readable on all of them \u2014
+  // testing default alone produces white-on-light-pressed or
+  // black-on-dark-pressed failures (Pearl brand caught this).
+  // User override = `t.onComponent` ('white' | 'black') wins.
   function onComponentColor(roleId, mode) {
     if (!roleId) return '#FFFFFF';
     var t = State.t1[mode || State.editingMode][roleId];
     if (t.onComponent === 'white') return '#FFFFFF';
     if (t.onComponent === 'black') return '#0A0A0A';
-    var fillHex = stepHexByName(roleId, t.fill) || '#000';
-    return DTFSolver.deriveOnComponent(fillHex);
+    var fillStep = t.fill;
+    // Fills derived the same way semanticVarsFor() does (stepRel
+    // +0, +1, +2) so the AA test sees exactly the values that ship.
+    var fills = [
+      stepHexByName(roleId, fillStep),
+      stepHexByName(roleId, stepRel(fillStep, 1)),
+      stepHexByName(roleId, stepRel(fillStep, 2))
+    ].filter(Boolean);
+    if (!fills.length) fills = ['#000'];
+    return DTFSolver.deriveOnComponent(fills);
   }
   // Auto-pair: pick the ladder step (closest to the user's chosen
   // content-default) that passes AA against the active container.

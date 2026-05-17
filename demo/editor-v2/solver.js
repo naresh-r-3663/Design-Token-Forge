@@ -63,14 +63,51 @@
   function surfaceBgFor(mode) { return mode === 'dark' ? '#0A0A0A' : '#FFFFFF'; }
 
   /* ── Auto-pair derivations ────────────────────────────
-     on-component: black or white, whichever beats fill in WCAG.
+     on-component: black or white, whichever beats the WORST
+       fill in WCAG. A button has 3 fills (default/hover/pressed);
+       designers don't change colour on hover, so the on-component
+       value must be readable on the darkest AND lightest fill
+       the role can produce, not just default. Pearl light-mode
+       brand caught this: black passes AA on default (#C737D9)
+       but fails on pressed (#9803A9) where white wins.
      on-container: nearest ladder step (to user's chosen content
        pick) that AA-passes vs the container hex. Walks outward
        so the answer stays close to user intent. */
-  function deriveOnComponent(fillHex) {
-    var rW = contrastRatio(fillHex, '#FFFFFF');
-    var rB = contrastRatio(fillHex, '#0A0A0A');
-    return rB > rW ? '#0A0A0A' : '#FFFFFF';
+  function deriveOnComponent(fills) {
+    var list = Array.isArray(fills) ? fills.filter(Boolean) : [fills];
+    if (!list.length) return '#FFFFFF';
+    var minW = Infinity, minB = Infinity;
+    for (var i = 0; i < list.length; i++) {
+      var rW = contrastRatio(list[i], '#FFFFFF');
+      var rB = contrastRatio(list[i], '#0A0A0A');
+      if (rW < minW) minW = rW;
+      if (rB < minB) minB = rB;
+    }
+    return minB > minW ? '#0A0A0A' : '#FFFFFF';
+  }
+
+  /* Diagnostic companion: returns the picked colour, its worst-case
+     contrast across all supplied fills, and a flag telling the UI
+     whether the chosen colour fails AA on ANY state (so the editor
+     can surface a "fill range is too wide" warning and recommend
+     tightening the hover/pressed step deltas). */
+  function deriveOnComponentVerdict(fills) {
+    var list = Array.isArray(fills) ? fills.filter(Boolean) : [fills];
+    if (!list.length) return { hex: '#FFFFFF', worst: 0, passesAA: false, weakest: null };
+    var minW = Infinity, minB = Infinity, weakW = null, weakB = null;
+    for (var i = 0; i < list.length; i++) {
+      var rW = contrastRatio(list[i], '#FFFFFF');
+      var rB = contrastRatio(list[i], '#0A0A0A');
+      if (rW < minW) { minW = rW; weakW = list[i]; }
+      if (rB < minB) { minB = rB; weakB = list[i]; }
+    }
+    var pickWhite = minW >= minB;
+    return {
+      hex:      pickWhite ? '#FFFFFF' : '#0A0A0A',
+      worst:    pickWhite ? minW : minB,
+      passesAA: (pickWhite ? minW : minB) >= 4.5,
+      weakest:  pickWhite ? weakW : weakB
+    };
   }
 
   function deriveOnContainer(ladder, contentStep, containerHex) {
@@ -277,6 +314,7 @@
     wcagJudge:         wcagJudge,
     surfaceBgFor:      surfaceBgFor,
     deriveOnComponent: deriveOnComponent,
+    deriveOnComponentVerdict: deriveOnComponentVerdict,
     deriveOnContainer: deriveOnContainer,
     resolveSteps:      resolveSteps,
     evaluate:          evaluate,

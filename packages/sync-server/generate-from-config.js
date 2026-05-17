@@ -18,13 +18,24 @@ import { generatePalette, STEP_NAMES, wcagContrast } from '../generator/src/pale
 const FIXED_WHITE = '#FFFFFF';
 const FIXED_BLACK = '#0A0A0A';
 
-// Auto-AA pair: black or white, whichever beats the fill in WCAG.
-// Mirrors demo/editor-v2/solver.js#deriveOnComponent so the value
-// the editor previews is the value the sync server emits.
-function deriveOnComponent(fillHex) {
-  const rW = wcagContrast(fillHex, FIXED_WHITE);
-  const rB = wcagContrast(fillHex, FIXED_BLACK);
-  return rB > rW ? FIXED_BLACK : FIXED_WHITE;
+// Auto-AA pair: black or white, whichever beats the WORST of the
+// supplied fills in WCAG. A button has 3 fills (default/hover/
+// pressed) but a single on-component text colour — testing only
+// default produced white-on-light-pressed and black-on-dark-pressed
+// failures (Pearl brand pressed = #9803A9 needs white; default
+// #C737D9 prefers black). Mirrors demo/editor-v2/solver.js so the
+// value the editor previews is the value the sync server emits.
+function deriveOnComponent(fills) {
+  const list = Array.isArray(fills) ? fills.filter(Boolean) : [fills].filter(Boolean);
+  if (!list.length) return FIXED_WHITE;
+  let minW = Infinity, minB = Infinity;
+  for (const f of list) {
+    const rW = wcagContrast(f, FIXED_WHITE);
+    const rB = wcagContrast(f, FIXED_BLACK);
+    if (rW < minW) minW = rW;
+    if (rB < minB) minB = rB;
+  }
+  return minB > minW ? FIXED_BLACK : FIXED_WHITE;
 }
 
 // Resolve a single semantic value. Centralises fixed-* handling so
@@ -223,19 +234,34 @@ function generateSemanticTokens(semanticMap, palettes, customRoles) {
     // diverge from the web preview (the original Pearl bug).
     //
     // We re-derive on-component from the role's own component-bg
-    // fill, using the exact same rule as the editor's solver
+    // fills, using the exact same rule as the editor's solver
     // (deriveOnComponent in demo/editor-v2/solver.js). The config
     // value is treated as a hint; AA always wins.
-    const lFill = light[`${role}-component-bg-default`];
-    const dFill = dark[`${role}-component-bg-default`];
-    if (lFill) {
-      const wanted = deriveOnComponent(lFill);
+    //
+    // We test against ALL THREE fill states (default + hover +
+    // pressed), not just default — a button uses one foreground
+    // colour across hover/pressed, so the colour must be readable
+    // on the WORST fill, not the friendliest. Pearl brand caught
+    // this: black passed AA on default #C737D9 but failed on
+    // pressed #9803A9; worst-case derivation picks white instead.
+    const lFills = [
+      light[`${role}-component-bg-default`],
+      light[`${role}-component-bg-hover`],
+      light[`${role}-component-bg-pressed`]
+    ].filter(Boolean);
+    const dFills = [
+      dark[`${role}-component-bg-default`],
+      dark[`${role}-component-bg-hover`],
+      dark[`${role}-component-bg-pressed`]
+    ].filter(Boolean);
+    if (lFills.length) {
+      const wanted = deriveOnComponent(lFills);
       if (light[`${role}-on-component`] !== wanted) {
         light[`${role}-on-component`] = wanted;
       }
     }
-    if (dFill) {
-      const wanted = deriveOnComponent(dFill);
+    if (dFills.length) {
+      const wanted = deriveOnComponent(dFills);
       if (dark[`${role}-on-component`] !== wanted) {
         dark[`${role}-on-component`] = wanted;
       }
