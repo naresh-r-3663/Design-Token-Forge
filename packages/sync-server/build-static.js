@@ -141,30 +141,78 @@ async function main() {
   }
 
   // ── Generate token overrides from config.json ────────────────
-  //    If the project config has paletteKeys/semanticMap/surfaceMap,
-  //    regenerate the token values from config (the source of truth)
-  //    instead of relying solely on the CSS files.
+  //    If the project has editor-saved CSS at projects/{id}/*.css,
+  //    that is the SOURCE OF TRUTH (the editor's per-role AA-fix
+  //    walks fill steps and derives on-component independently for
+  //    every role — config.json's per-property semanticMap cannot
+  //    express that). Parse those files first; only fall back to
+  //    config-derived values for files that don't exist yet.
+  //
+  //    Round-trip rule: editor writes projects/{id}/*.css; build
+  //    reads them; build writes dist/projects/{id}/*.css (deploy
+  //    mirror only). Source files are never overwritten by build
+  //    — doing so silently destroyed editor saves (e.g. Pearl
+  //    brand-component-bg-default was #C737D9 in source but the
+  //    build replaced it with config's step-500 #DE5AE7).
   let exportOpts = {};
+  const projCSSDir = PROJECT_ID ? path.join(ROOT, 'projects', PROJECT_ID) : null;
+  const editorTruth = { primitive: false, semantic: false, surface: false };
+
+  // Baseline primitives (spacing, font, radius, etc.) live in the
+  // shared CSS file. The editor only saves COLOR primitives per
+  // project, so we always merge: baseline first, editor wins for
+  // overlapping keys. Without this merge the parsed editor file
+  // alone has no spacing/font tokens and every component size token
+  // falls back to a literal number (button heights etc.).
+  let baselinePrimitives = { light: {}, dark: {} };
+  if (serverModule.parseCSSTokens) {
+    const TOKENS_DIR = path.join(ROOT, 'packages', 'tokens', 'src');
+    try {
+      baselinePrimitives = serverModule.parseCSSTokens(path.join(TOKENS_DIR, 'primitives.css'));
+    } catch (e) { /* missing baseline → keep empty */ }
+  }
+
+  if (PROJECT_ID && serverModule.parseCSSTokens) {
+    const tryParse = (file, key, label, merge) => {
+      const p = path.join(projCSSDir, file);
+      if (!fs.existsSync(p)) return;
+      try {
+        const parsed = serverModule.parseCSSTokens(p);
+        const has = (parsed && (Object.keys(parsed.light || {}).length || Object.keys(parsed.dark || {}).length));
+        if (!has) return;
+        if (merge) {
+          exportOpts[key] = {
+            light: { ...(merge.light || {}), ...(parsed.light || {}) },
+            dark:  { ...(merge.dark  || {}), ...(parsed.dark  || {}) },
+          };
+        } else {
+          exportOpts[key] = parsed;
+        }
+        editorTruth[label] = true;
+      } catch (e) {
+        console.warn(`  ⚠ Failed to parse projects/${PROJECT_ID}/${file}: ${e.message}`);
+      }
+    };
+    tryParse('primitives.css', 'primitiveTokens', 'primitive', baselinePrimitives);
+    tryParse('semantic.css',   'semanticTokens',  'semantic',  null);
+    tryParse('surfaces.css',   'surfaceTokens',   'surface',   null);
+    const truthParts = Object.entries(editorTruth).filter(function (e) { return e[1]; }).map(function (e) { return e[0]; });
+    if (truthParts.length) console.log(`  ✓ Editor truth   → ${truthParts.join(', ')} (parsed from projects/${PROJECT_ID}/)`);
+  }
   if (projectConfig?.paletteKeys) {
     try {
       const { generateTokenOverrides } = await import(generatorPath);
 
-      // Parse baseline primitives so non-color tokens (spacing, font) are preserved
-      const TOKENS_DIR = path.join(ROOT, 'packages', 'tokens', 'src');
-      const basePrimitives = serverModule.parseCSSTokens
-        ? serverModule.parseCSSTokens(path.join(TOKENS_DIR, 'primitives.css'))
-        : { light: {}, dark: {} };
-
-      const overrides = generateTokenOverrides(projectConfig, basePrimitives);
-      if (overrides.primitiveTokens) exportOpts.primitiveTokens = overrides.primitiveTokens;
-      if (overrides.semanticTokens)  exportOpts.semanticTokens  = overrides.semanticTokens;
-      if (overrides.surfaceTokens)   exportOpts.surfaceTokens   = overrides.surfaceTokens;
+      const overrides = generateTokenOverrides(projectConfig, baselinePrimitives);
+      if (overrides.primitiveTokens && !editorTruth.primitive) exportOpts.primitiveTokens = overrides.primitiveTokens;
+      if (overrides.semanticTokens  && !editorTruth.semantic)  exportOpts.semanticTokens  = overrides.semanticTokens;
+      if (overrides.surfaceTokens   && !editorTruth.surface)   exportOpts.surfaceTokens   = overrides.surfaceTokens;
 
       const parts = [];
-      if (overrides.primitiveTokens) parts.push('primitives');
-      if (overrides.semanticTokens)  parts.push('semantic');
-      if (overrides.surfaceTokens)   parts.push('surfaces');
-      if (parts.length) console.log(`  ✓ Config overrides → ${parts.join(', ')}`);
+      if (overrides.primitiveTokens && !editorTruth.primitive) parts.push('primitives');
+      if (overrides.semanticTokens  && !editorTruth.semantic)  parts.push('semantic');
+      if (overrides.surfaceTokens   && !editorTruth.surface)   parts.push('surfaces');
+      if (parts.length) console.log(`  ✓ Config fallback → ${parts.join(', ')}`);
     } catch (e) {
       console.warn(`  ⚠ Config override generation failed, falling back to CSS: ${e.message}`);
     }
@@ -636,35 +684,37 @@ async function main() {
     console.log('  ✓ projects/' + PROJECT_ID + '/config.json → for demo pages');
   }
 
-  // ── Write per-project CSS to projects/{id}/ for local dev switching ──
-  // ALSO mirror to dist/projects/{id}/ so the deployed demo can fetch the
-  // project's customized brand/secondary/role primitives + semantic + surface
-  // overrides. Without the dist mirror, the live site only ships config.json
-  // and demo pages fall back to the default DTF brand blue regardless of
-  // what the project customized — colors silently revert on every deploy.
+  // ── Mirror editor-saved per-project CSS to dist/ ───────────────
+  // The deployed demo fetches /projects/{id}/*.css to apply the
+  // project's customized brand/role/surface tokens. Source files
+  // (projects/{id}/*.css) are written by the editor and are the
+  // truth — build NEVER overwrites them. We only copy them verbatim
+  // into the dist mirror. When editor truth is missing (first build
+  // of a fresh project), we fall back to config-generated CSS so
+  // the deploy still ships sensible values.
   if (PROJECT_ID) {
-    const projCSSDir = path.join(ROOT, 'projects', PROJECT_ID);
     const projDistCSSDir = path.join(BASE_OUT_DIR, 'projects', PROJECT_ID);
-    fs.mkdirSync(projCSSDir, { recursive: true });
     fs.mkdirSync(projDistCSSDir, { recursive: true });
-    const writePair = (name, content) => {
-      fs.writeFileSync(path.join(projCSSDir, name), content);
-      fs.writeFileSync(path.join(projDistCSSDir, name), content);
+    const mirror = (name, fallbackTokens, fallbackTitle) => {
+      const srcPath = path.join(projCSSDir, name);
+      if (fs.existsSync(srcPath)) {
+        fs.copyFileSync(srcPath, path.join(projDistCSSDir, name));
+        return 'editor';
+      }
+      if (fallbackTokens) {
+        fs.writeFileSync(path.join(projDistCSSDir, name), tokensToCSSFile(fallbackTokens, fallbackTitle));
+        return 'config';
+      }
+      return null;
     };
-    if (exportOpts.primitiveTokens) {
-      writePair('primitives.css',
-        tokensToCSSFile(exportOpts.primitiveTokens, 'T0 Primitive Colors'));
-    }
-    if (exportOpts.semanticTokens) {
-      writePair('semantic.css',
-        tokensToCSSFile(exportOpts.semanticTokens, 'T1 Semantic Tokens'));
-    }
-    if (exportOpts.surfaceTokens) {
-      writePair('surfaces.css',
-        tokensToCSSFile(exportOpts.surfaceTokens, 'T2 Surface Context Tokens'));
-    }
-    if (exportOpts.primitiveTokens || exportOpts.semanticTokens || exportOpts.surfaceTokens) {
-      console.log(`  ✓ projects/${PROJECT_ID}/*.css → local + dist (deploy)`);
+    const srcOfP = mirror('primitives.css', exportOpts.primitiveTokens, 'T0 Primitive Colors');
+    const srcOfS = mirror('semantic.css',   exportOpts.semanticTokens,  'T1 Semantic Tokens');
+    const srcOfU = mirror('surfaces.css',   exportOpts.surfaceTokens,   'T2 Surface Context Tokens');
+    const sources = [srcOfP, srcOfS, srcOfU].filter(Boolean);
+    if (sources.length) {
+      const allEditor = sources.every(s => s === 'editor');
+      const tag = allEditor ? 'editor truth' : sources.join('/');
+      console.log(`  ✓ dist/projects/${PROJECT_ID}/*.css → ${tag}`);
     }
   }
 
