@@ -351,7 +351,7 @@
    9.  DISABLED STATE — opacity + cursor
    ──────────────────────────────────────────────────────────────── */
 .select-group[data-disabled] .select-field {
-  cursor: not-allowed;
+
 }
 .select-group[data-disabled]:not([data-variant]) .select-field,
 .select-group[data-disabled][data-variant="outline"] .select-field {
@@ -365,7 +365,7 @@
 }
 
 .select-group[data-disabled] .select-field select {
-  cursor: not-allowed;
+
   pointer-events: none;
 }
 

@@ -293,7 +293,7 @@
   color: var(--datepicker-disabled-fg);
   background: var(--datepicker-disabled-bg);
   opacity: var(--datepicker-disabled-opacity);
-  cursor: not-allowed;
+
   pointer-events: none;
 }
 

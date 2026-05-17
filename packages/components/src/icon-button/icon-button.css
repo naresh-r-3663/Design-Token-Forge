@@ -543,7 +543,7 @@
 /* Disabled */
 .icon-btn:disabled,
 .icon-btn[data-disabled] {
-  cursor: not-allowed;
+
   pointer-events: none;
 }
 

@@ -28,9 +28,9 @@
     --dtf-fg-on-brand:#FFFFFF;
 
     /* Brand — matches the editor's Publish CTA (teal-green). */
-    --dtf-brand-bg:#0F766E;
-    --dtf-brand-bg-hover:#115E59;
-    --dtf-brand-content:#0F766E;
+    --dtf-brand-bg:#3366F0;
+    --dtf-brand-bg-hover:#2952D9;
+    --dtf-brand-content:#3366F0;
 
     /* Status colors — matches DTF semantic roles */
     --dtf-success-bg:#0B8D28;
@@ -56,9 +56,9 @@
        reads as the same brand as the editor's Publish CTA. The
        logo keeps its magenta gradient (DTF wordmark color) so it
        still pops as the product identity. */
-    --dtf-project-grad:linear-gradient(135deg,#0F766E 0%,#0B5C56 100%);
+    --dtf-project-grad:linear-gradient(135deg,#3366F0 0%,#2952D9 100%);
     --dtf-logo-grad:linear-gradient(135deg,#BD22AB,#FF70E0);
-    --dtf-builder-grad:linear-gradient(135deg,#0F766E,#15A09A);
+    --dtf-builder-grad:linear-gradient(135deg,#3366F0,#5C8AF5);
 
     /* Shape + spacing — mirrors --radius-* / --space-* */
     --dtf-radius-sm:4px;
@@ -220,8 +220,10 @@
   .btn-sync { background: var(--dtf-brand-bg); color: var(--dtf-fg-on-brand); }
   .btn-sync:hover { background: var(--dtf-brand-bg-hover); }
   .btn-sync.ready { background: var(--dtf-success-bg); }
-  .btn-sync.ready:hover { background: #097020; }
-  .btn-sync:disabled { background: var(--dtf-surface-deep); color: var(--dtf-fg-faint); cursor: not-allowed; }
+  /* No :hover on .ready — success is a terminal state, hover darkening reads as 'this still does something'. */
+  .btn-sync:disabled { background: var(--dtf-surface-deep); color: var(--dtf-fg-faint); }
+  /* .ready overrides the disabled grey so the success colour holds even while the button is locked. */
+  .btn-sync.ready:disabled { background: var(--dtf-success-bg); color: var(--dtf-fg-on-brand); opacity: .85; }
   .btn-cancel { background: var(--dtf-surface-alt); color: var(--dtf-fg); border: 1px solid var(--dtf-border-strong); flex: 0 0 auto; padding: 10px 14px; }
   .btn-cancel:hover { background: var(--dtf-surface-deep); border-color: var(--dtf-fg-faint); color: var(--dtf-fg-strong); }
 
@@ -411,7 +413,9 @@
   }
   .btn-generate:not(:disabled) { opacity: 1; }
   .btn-generate:not(:disabled):hover { transform: translateY(-1px); }
-  .btn-generate:disabled { cursor: not-allowed; }
+  /* No cursor:not-allowed — Figma's plugin iframe suppresses tooltips on
+     elements with not-allowed cursors, so disabled buttons lose their
+     'why is this disabled?' hint. Opacity already telegraphs the state. */
 
   .gen-status { font-size: var(--dtf-fs-11); color: var(--dtf-fg-subtle); margin-top: 8px; min-height: 16px; }
   .gen-info {

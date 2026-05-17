@@ -351,7 +351,7 @@
 /* Disabled */
 .switch:disabled,
 .switch[data-disabled] {
-  cursor: not-allowed;
+
   pointer-events: none;
   opacity: var(--_sw-opacity-disabled);
 }
@@ -428,7 +428,7 @@
 }
 
 .switch-label:has(.switch:disabled) {
-  cursor: not-allowed;
+
 }
 .switch-label:has(.switch:disabled) .switch-label__text {
   color: var(--switch-label-color-disabled);

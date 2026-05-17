@@ -137,7 +137,7 @@ body{
   transition:background 120ms,color 120ms;
 }
 .ev2-proj-foot-refresh:hover{background:var(--ev2-chrome-subtle)}
-.ev2-proj-foot-refresh:disabled{opacity:.5;cursor:not-allowed}
+.ev2-proj-foot-refresh:disabled{opacity:.5}
 .ev2-proj-foot-new{
   font:inherit;font-size:11px;font-weight:600;
   color:var(--brand-content-default,#286CE5);
@@ -261,7 +261,7 @@ body{
 }
 .ev2-topbar-ghost-btn:hover:not(:disabled){border-color:var(--danger-component-outline-default,#D61D20);color:var(--danger-content-default,#D61D20)}
 .ev2-topbar-ghost-btn:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px}
-.ev2-topbar-ghost-btn:disabled{opacity:.45;cursor:not-allowed}
+.ev2-topbar-ghost-btn:disabled{opacity:.45}
 
 .ev2-history-btn,
 .ev2-preview-link{
@@ -299,7 +299,7 @@ body{
   font-family:inherit;
 }
 .ev2-deploy:hover:not(:disabled){background:var(--brand-component-bg-hover);border-color:var(--brand-component-bg-hover)}
-.ev2-deploy:disabled{opacity:.4;cursor:not-allowed}
+.ev2-deploy:disabled{opacity:.4}
 .ev2-deploy-count{
   display:inline-flex;align-items:center;justify-content:center;
   min-width:18px;height:18px;padding:0 6px;
@@ -484,7 +484,7 @@ body[data-pane-dragging="true"] .ev2-preview-frame{pointer-events:none}
   outline:2px solid var(--brand-component-outline-default);
   outline-offset:2px;
 }
-.ev2-section-reset:disabled{opacity:.4;cursor:not-allowed}
+.ev2-section-reset:disabled{opacity:.4}
 .ev2-section-reset svg{flex-shrink:0;opacity:.7}
 
 /* T0 sub-view inline switch \u2014 ghost link styling, lower visual
@@ -654,7 +654,7 @@ body[data-pane-dragging="true"] .ev2-preview-frame{pointer-events:none}
   outline:2px solid var(--brand-component-outline-default);
   outline-offset:2px;
 }
-.ev2-role-reset:disabled{opacity:.35;cursor:not-allowed}
+.ev2-role-reset:disabled{opacity:.35}
 .ev2-role-reset svg{flex-shrink:0;opacity:.7}
 .ev2-intent-body{padding:16px}
 
@@ -720,7 +720,7 @@ body[data-pane-dragging="true"] .ev2-preview-frame{pointer-events:none}
   white-space:nowrap;
 }
 .ev2-reset:hover:not(:disabled){color:var(--ev2-chrome-ct-strong);border-color:var(--ev2-chrome-cm-outline-hover)}
-.ev2-reset:disabled{opacity:.35;cursor:not-allowed}
+.ev2-reset:disabled{opacity:.35}
 
 .ev2-anchor{
   display:flex;gap:6px;
@@ -894,7 +894,7 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-modal-btn-danger:active{background:var(--danger-component-bg-pressed,#9E1314);border-color:var(--danger-component-bg-pressed,#9E1314)}
 .ev2-modal-btn-danger:focus-visible{outline:2px solid var(--danger-component-bg-default,#D61D20);outline-offset:2px}
 .ev2-modal-btn:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px}
-.ev2-modal-btn:disabled,.ev2-modal-btn[disabled]{opacity:.5;cursor:not-allowed}
+.ev2-modal-btn:disabled,.ev2-modal-btn[disabled]{opacity:.5}
 
 /* Optional input field inside confirm modal (used by destructive
    actions that need PAT re-entry). Kept hidden unless openModal()
@@ -1269,7 +1269,7 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   transition:all 120ms ease;
 }
 .ev2-discard:hover:not(:disabled){color:var(--danger-content-default,#D61D20);border-color:var(--danger-component-outline-default,#D61D20)}
-.ev2-discard:disabled{opacity:.4;cursor:not-allowed}
+.ev2-discard:disabled{opacity:.4}
 
 /* ── Toast ──────────────────────────────────────────────
    Toasts float above the editor canvas, so they paint on the
@@ -2395,7 +2395,7 @@ body.ev2-modal-open{overflow:hidden}
 .ev2-addpal-hint[data-error]{color:var(--danger-component-bg-default,#D61D20);font-weight:500}
 .ev2-addpal-lever{gap:12px}
 .ev2-addpal-strip{height:18px}
-.ev2-modal-btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.ev2-modal-btn-primary:disabled{opacity:.5}
 
 /* ---------- Custom palette row action buttons ---------- */
 .ev2-sp-row-actions{display:inline-flex;gap:4px;align-items:center;margin-left:auto}
@@ -2576,5 +2576,5 @@ body.ev2-modal-open{overflow:hidden}
   border-color:var(--brand-component-bg-default);
   color:var(--brand-on-component);
 }
-.ev2-history-restore:disabled{opacity:.4;cursor:not-allowed}
+.ev2-history-restore:disabled{opacity:.4}
 .ev2-history-restore[data-restoring="true"]{opacity:.7;cursor:progress}

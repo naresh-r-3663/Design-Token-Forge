@@ -376,7 +376,7 @@
    8.  DISABLED STATE — opacity + cursor
    ──────────────────────────────────────────────────────────────── */
 .input-group[data-disabled] .input-field {
-  cursor: not-allowed;
+
 }
 .input-group[data-disabled]:not([data-variant]) .input-field,
 .input-group[data-disabled][data-variant="outline"] .input-field {
@@ -391,7 +391,7 @@
 
 .input-group[data-disabled] .input-field input,
 .input-group[data-disabled] .input-field textarea {
-  cursor: not-allowed;
+
 }
 
 /* ── Readonly ─────────────────────────────────────────────── */

@@ -581,7 +581,7 @@
 /* Disabled — per-variant */
 .menu-btn:disabled,
 .menu-btn[data-disabled] {
-  cursor: not-allowed;
+
   pointer-events: none;
 }
 

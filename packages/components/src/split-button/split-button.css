@@ -784,7 +784,7 @@
 
 .split-btn[data-disabled] .split-btn__action,
 .split-btn[data-disabled] .split-btn__trigger {
-  cursor: not-allowed;
+
 }
 
 /* Loading — pulse on action zone */

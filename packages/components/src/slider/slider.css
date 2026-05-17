@@ -478,7 +478,7 @@
 /* Disabled */
 .slider[data-disabled],
 .slider[aria-disabled="true"] {
-  cursor: not-allowed;
+
   pointer-events: none;
   opacity: var(--slider-opacity-disabled);
 }

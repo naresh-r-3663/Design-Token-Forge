@@ -202,7 +202,7 @@
 
 .radio:has(:disabled),
 .radio[data-disabled] {
-  cursor: not-allowed;
+
   pointer-events: none;
   opacity: var(--_rd-opacity-disabled);
 }
