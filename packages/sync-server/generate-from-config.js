@@ -9,7 +9,40 @@
    source of truth for the build pipeline.
    ═══════════════════════════════════════════════════════════════ */
 
-import { generatePalette, STEP_NAMES } from '../generator/src/palette-engine.js';
+import { generatePalette, STEP_NAMES, wcagContrast } from '../generator/src/palette-engine.js';
+
+// ── Fixed (theme-immune) colors ───────────────────────────────
+// Must match the editor's solver (demo/editor-v2/solver.js):
+//   white = '#FFFFFF', black = '#0A0A0A' (not pure #000 — slightly
+//   warmer for OLED comfort and to match the editor's preview).
+const FIXED_WHITE = '#FFFFFF';
+const FIXED_BLACK = '#0A0A0A';
+
+// Auto-AA pair: black or white, whichever beats the fill in WCAG.
+// Mirrors demo/editor-v2/solver.js#deriveOnComponent so the value
+// the editor previews is the value the sync server emits.
+function deriveOnComponent(fillHex) {
+  const rW = wcagContrast(fillHex, FIXED_WHITE);
+  const rB = wcagContrast(fillHex, FIXED_BLACK);
+  return rB > rW ? FIXED_BLACK : FIXED_WHITE;
+}
+
+// Resolve a single semantic value. Centralises fixed-* handling so
+// every call site supports the same vocabulary (was: only fixed-white
+// in one place, which left fixed-black unrepresentable and forced the
+// editor to write literal hex into semantic.css — drift waiting to
+// happen).
+function resolveStep(role, prop, stepName, look) {
+  if (stepName === 'fixed-white') return FIXED_WHITE;
+  if (stepName === 'fixed-black') return FIXED_BLACK;
+  const hex = look[stepName];
+  if (hex) return hex;
+  // Loud, not silent. Returning #000 here previously masked typos and
+  // missing palette steps for months. Magenta sentinel + warn so
+  // missing values stand out in design review and CI.
+  console.warn('[generate-from-config] missing palette step for ' + role + '.' + prop + ' (step=' + stepName + ') — emitting #FF00FF sentinel');
+  return '#FF00FF';
+}
 
 // ── Constants (must match color-system.html) ──────────────────
 //
@@ -174,10 +207,38 @@ function generateSemanticTokens(semanticMap, palettes, customRoles) {
     const look = stepLookup(palette);
 
     for (const [prop, stepName] of Object.entries(lightMap)) {
-      light[`${role}-${prop}`] = stepName === 'fixed-white' ? '#FFFFFF' : (look[stepName] || '#000000');
+      light[`${role}-${prop}`] = resolveStep(role, prop, stepName, look);
     }
     for (const [prop, stepName] of Object.entries(darkMap)) {
-      dark[`${role}-${prop}`] = stepName === 'fixed-white' ? '#FFFFFF' : (look[stepName] || '#000000');
+      dark[`${role}-${prop}`] = resolveStep(role, prop, stepName, look);
+    }
+
+    // ── AA auto-swap for on-component ────────────────────────
+    // config.json's semantic map is per-PROPERTY (one on-component
+    // value applied to every role). That can never round-trip what
+    // the editor's per-role AA-fix produces — e.g. Pearl's bright
+    // magenta brand needs DARK text while danger/success/info on
+    // the same project need WHITE. Without this swap the sync
+    // server would emit white for every role and Figma would
+    // diverge from the web preview (the original Pearl bug).
+    //
+    // We re-derive on-component from the role's own component-bg
+    // fill, using the exact same rule as the editor's solver
+    // (deriveOnComponent in demo/editor-v2/solver.js). The config
+    // value is treated as a hint; AA always wins.
+    const lFill = light[`${role}-component-bg-default`];
+    const dFill = dark[`${role}-component-bg-default`];
+    if (lFill) {
+      const wanted = deriveOnComponent(lFill);
+      if (light[`${role}-on-component`] !== wanted) {
+        light[`${role}-on-component`] = wanted;
+      }
+    }
+    if (dFill) {
+      const wanted = deriveOnComponent(dFill);
+      if (dark[`${role}-on-component`] !== wanted) {
+        dark[`${role}-on-component`] = wanted;
+      }
     }
   }
 
