@@ -2807,15 +2807,19 @@
         + '<button type="button" class="ev2-pc-step-btn" data-pc-step="+1" data-tip="Step darker" aria-label="Step darker">+</button>'
         + discloseHTML
         + (function(){
-            // Row-level reset tooltip names the role explicitly so
-            // users can tell it apart from the section-level "Reset
-            // Roles" button at the top of the tier. Without the
-            // role name both buttons read just "Reset to default",
-            // which is ambiguous about scope.
+            // Row-level reset tooltip names the role AND clarifies
+            // 'default' = the last published version (i.e. the
+            // baseline State.baseline that's promoted on every
+            // successful Publish). Without naming the source,
+            // users ask 'default of what?' — the project file?
+            // the brand color? the seed palette? It's none of
+            // those: it's the last shipped state.
             var safeName = String(opts.tokenName || '')
               .replace(/&/g,'&amp;').replace(/</g,'&lt;')
               .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-            var tip = safeName ? ('Reset ' + safeName + ' to project default') : 'Reset to project default';
+            var ver = (typeof State !== 'undefined' && State.lastPublishedVersion) ? State.lastPublishedVersion : '';
+            var dest = ver ? ('last published (' + ver + ')') : 'last published version';
+            var tip = safeName ? ('Reset ' + safeName + ' to ' + dest) : ('Reset to ' + dest);
             return '<button type="button" class="ev2-pc-reset" data-pc-reset' + (opts.isDetached ? '' : ' disabled') + ' data-tip="' + tip + '" aria-label="' + tip + '">\u21BA</button>';
           })()
       + '</div>'
