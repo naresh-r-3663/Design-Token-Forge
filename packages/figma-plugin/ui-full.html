@@ -671,6 +671,7 @@
   }
   .comp-action.idle { color: var(--dtf-fg-faint); font-style: italic; }
   .comp-action .nums { color: var(--dtf-fg-strong); font-weight: 600; }
+  .comp-action .muted { color: var(--dtf-fg-faint); }
 
   /* Status pills — small, uppercase, color-coded by cause. */
   .pill {
@@ -3228,6 +3229,7 @@ function renderBuilderMeta(versions, currentStructureHashes, currentPrototypeHas
       var bm = currentBpMeta && currentBpMeta[key];
       var ledgerFams = (v.families && v.families.slice) ? v.families.slice() : [];
       var ledgerVariants = (typeof v.totalComponents === 'number') ? v.totalComponents : 0;
+      var ledgerDetail = v.familyDetail || null;
       if (bm && bm.families) {
         var liveFams = bm.families;
         var ledgerSet = {}; for (var lf = 0; lf < ledgerFams.length; lf++) ledgerSet[ledgerFams[lf]] = 1;
@@ -3237,28 +3239,68 @@ function renderBuilderMeta(versions, currentStructureHashes, currentPrototypeHas
         var planVariants = bm.plannedVariants || 0;
         var delta = planVariants - ledgerVariants;
         var bits = [];
-        if (addedFams.length) {
-          /* List family names + their variant subcount when we can. */
-          var famBits = addedFams.map(function(fn){
-            var d = bm.familyDetail && bm.familyDetail[fn];
-            return d ? (esc(fn) + ' (' + d.variants + ')') : esc(fn);
-          });
-          bits.push('Adds ' + (addedFams.length === 1 ? 'family' : 'families') + ' ' + famBits.join(', '));
+
+        /* Per-family delta when both ledger and live have detail.
+           Lets us say "Neutral 120 \u2192 40 \u00b7 Brand 144 \u2192 48"
+           instead of "Removes 176 variants" which reads as
+           destructive. The actual operation is in-place: variant
+           rows get normalised to the current spec, instance
+           bindings preserved. */
+        var perFamilyBits = [];
+        if (ledgerDetail) {
+          for (var pf = 0; pf < liveFams.length; pf++) {
+            var fnP = liveFams[pf];
+            var ld = ledgerDetail[fnP];
+            var nd = bm.familyDetail && bm.familyDetail[fnP];
+            if (!nd) continue;
+            if (!ld) {
+              perFamilyBits.push(esc(fnP) + ' <span class="nums">+' + nd.variants + '</span> new');
+            } else if (ld.variants !== nd.variants) {
+              perFamilyBits.push(esc(fnP) + ' <span class="nums">' + ld.variants + ' \u2192 ' + nd.variants + '</span>');
+            }
+          }
+          for (var rf = 0; rf < ledgerFams.length; rf++) {
+            var fnR = ledgerFams[rf];
+            if (!liveSet[fnR]) {
+              var ldR = ledgerDetail[fnR];
+              perFamilyBits.push(esc(fnR) + ' <span class="nums">\u2212' + (ldR ? ldR.variants : '') + '</span> dropped');
+            }
+          }
         }
-        if (removedFams.length) {
-          bits.push('Drops ' + (removedFams.length === 1 ? 'family' : 'families') + ' ' + removedFams.map(esc).join(', '));
-        }
-        if (!bits.length) {
-          /* No family delta, but structure hash differs \u2014 some
-             axis (state list, override semantics, etc.) changed. */
-          if (delta > 0)      bits.push('Adds ' + delta + ' new variants');
-          else if (delta < 0) bits.push('Removes ' + Math.abs(delta) + ' variants');
-          else                bits.push('Updates existing variant structure');
+
+        if (perFamilyBits.length) {
+          bits.push(perFamilyBits.join(' \u00b7 '));
+        } else {
+          /* No per-family detail in ledger (built before V3.1). Use
+             family adds/drops + the aggregate count, with neutral
+             language for the drop case. */
+          if (addedFams.length) {
+            var famBits = addedFams.map(function(fn){
+              var d = bm.familyDetail && bm.familyDetail[fn];
+              return d ? (esc(fn) + ' (' + d.variants + ')') : esc(fn);
+            });
+            bits.push('Adds ' + (addedFams.length === 1 ? 'family' : 'families') + ' ' + famBits.join(', '));
+          }
+          if (removedFams.length) {
+            bits.push('Drops ' + (removedFams.length === 1 ? 'family' : 'families') + ' ' + removedFams.map(esc).join(', '));
+          }
+          if (!addedFams.length && !removedFams.length) {
+            if (delta > 0)      bits.push('Adds ' + delta + ' new variants to existing families');
+            else if (delta < 0) bits.push('Normalises variant matrix to current spec');
+            else                bits.push('Updates existing variant structure');
+          }
         }
         if (planVariants && ledgerVariants && planVariants !== ledgerVariants) {
           bits.push('<span class="nums">' + ledgerVariants + ' \u2192 ' + planVariants + '</span> total');
         } else if (planVariants && !ledgerVariants) {
           bits.push('<span class="nums">' + planVariants + '</span> total');
+        }
+        /* Reassurance line for big drops \u2014 the action looks
+           destructive but isn't. Instances bound to surviving
+           variant rows keep their bindings; only orphaned variant
+           rows (no instance, no longer in spec) get cleaned up. */
+        if (delta < -10) {
+          bits.push('<span class="muted">Existing instance bindings preserved.</span>');
         }
         why = bits.join(' \u00b7 ') + '.';
       } else {

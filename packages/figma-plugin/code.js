@@ -4013,6 +4013,22 @@ async function generateComponentFromBlueprint(blueprint) {
     families: Object.keys(BP.families || {}),
     types: (function(){ var n=0; var ks=Object.keys(BP.families||{}); for (var i=0;i<ks.length;i++) { var f=BP.families[ks[i]]; n += (f.types&&f.types.length)||0; } return n; })(),
     states: (function(){ var rs=(BP.states&&BP.states.length)||0; var m=0; var ks=Object.keys(BP.families||{}); for (var i=0;i<ks.length;i++) { var f=BP.families[ks[i]]; var L=(f.states&&f.states.length)||rs; if (L>m) m=L; } return m; })(),
+    /* V3.1 \u2014 per-family snapshot persisted so the next build's
+       "build needed" delta line can say exactly what's changing
+       per family (not just an aggregate "176 variants removed"
+       number that reads as catastrophic). */
+    familyDetail: (function(){
+      var out = {};
+      var rs = (BP.states && BP.states.length) || 0;
+      var ks = Object.keys(BP.families || {});
+      for (var i = 0; i < ks.length; i++){
+        var f = BP.families[ks[i]] || {};
+        var ty = (f.types && f.types.length) || 0;
+        var st = (f.states && f.states.length) || rs;
+        out[ks[i]] = { types: ty, states: st, variants: ty * st * 2 };
+      }
+      return out;
+    })(),
     totalComponents: stats.components,
     architecture: 'two-tier-master-instance',
 
