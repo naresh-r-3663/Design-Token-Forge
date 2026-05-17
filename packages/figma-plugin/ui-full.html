@@ -817,6 +817,7 @@ var pendingResync = false;
 var lastSeenHash = '', hashStableCount = 0;
 var HASH_SETTLE_POLLS = 2;
 var deploySettling = false;
+var lastPollError = '', consecutivePollFails = 0;
 var documentProject = '', pendingSwitchProject = '';
 var userSwitchedProject = false;   /* true after user picks a new project in the dropdown
                                       so the next scan-result does NOT auto-revert to the
@@ -903,11 +904,20 @@ function render(){
 
   /* Disconnected from server */
   if (!connected){
-    setHero({
-      glyph:'⏻', glyphClass:'neutral',
-      title:'Reconnecting…',
-      sub:'Waiting for the sync server. Check your network or set a custom server URL in the menu.'
-    });
+    var is404 = /HTTP 404/.test(lastPollError);
+    var projectMissing = is404 && CURRENT_PROJECT && isStaticHost();
+    var title, sub;
+    if (projectMissing){
+      title = 'Project not deployed yet';
+      sub = '<strong>' + esc(projectDisplayName(CURRENT_PROJECT)) + '</strong> hasn’t been published to GitHub Pages yet, or its folder was renamed. Pick a different project from the top bar.';
+    } else if (consecutivePollFails > 0){
+      title = 'Can’t reach the sync server';
+      sub = 'Last error: <code>' + esc(lastPollError || 'unknown') + '</code>. Retrying every ' + (POLL_MS/1000) + 's…';
+    } else {
+      title = 'Connecting…';
+      sub = 'Reaching the sync server.';
+    }
+    setHero({ glyph: projectMissing ? '⚠' : '⏻', glyphClass: projectMissing ? 'warn' : 'neutral', title:title, sub:sub });
     changesPanel.hidden = true;
     footerSync.hidden = true;
     body.dataset.conn = 'error';
@@ -1295,6 +1305,8 @@ function poll(){
   fetch(url, { cache:'no-store' })
     .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function(data){
+      lastPollError = '';
+      consecutivePollFails = 0;
       if (!connected){
         connected = true;
         if (!projectsFetched) fetchProjects();
@@ -1322,7 +1334,12 @@ function poll(){
     })
     .catch(function(err){
       connected = false;
-      log('Poll failed: ' + (err.message || err));
+      consecutivePollFails++;
+      lastPollError = err && err.message ? err.message : String(err);
+      log('Poll failed: ' + lastPollError);
+      /* Refresh the project list on the first failure — the dropdown may
+         be stale (a renamed/removed project would 404 on status.json). */
+      if (consecutivePollFails === 1) fetchProjects();
       render();
     });
 }
