@@ -810,12 +810,16 @@
           <input type="checkbox" id="autoSyncCb">
           <span>Auto-sync when tokens change</span>
         </label>
-        <!-- Web handoffs (Version history, Open on web) are deferred:
-             the DTF web app currently exposes the project list to any
-             visitor (no PAT gate), so a one-click handoff from the
-             plugin would surface the user's project names to whoever
-             they share the link with. Re-enable when web supports a
-             PAT-authenticated deep link / history dialog. -->
+        <!-- Version history opens the editor's own history dialog,
+             which is PAT-gated inside (ensureGhCredentials prompts
+             before any GitHub call). Deep-linking straight to that
+             dialog skips the public project list on the launchpad,
+             so no project names leak to anyone the link is shared
+             with. Implemented as a hash-based deep link
+             (…/demo/editor-v2/?project=<id>#history). -->
+        <button class="tb-menu-item connected-only" id="menuChangelog">
+          <span>Version history ↗</span>
+        </button>
         <div class="tb-menu-sep connected-only"></div>
         <button class="tb-menu-item connected-only" id="menuDebug">
           <span>Debug info</span>
@@ -1150,7 +1154,7 @@ var openGroups = new Set();      /* expanded group keys */
 /* Build stamp — bump on every UI-affecting change so you can confirm
    the Figma plugin sandbox isn't serving a cached old copy. Shown in
    the empty-state footer + logged once to the plugin console. */
-var BUILD_VERSION = '2026-05-17-p12';
+var BUILD_VERSION = '2026-05-17-p13';
 function log(msg){ console.log('[DTF] ' + msg); }
 log('plugin UI build ' + BUILD_VERSION);
 
@@ -1830,14 +1834,28 @@ autoSyncCb.addEventListener('change', function(){
   storageSet('dtf-auto-sync', AUTO_SYNC ? '1' : '0');
 });
 
-/* Web handoffs (Version history, Open project on web) are removed
-   until the DTF web app gates project listings behind PAT auth.
-   Right now the github.io deploy exposes the project list to any
-   visitor, so a one-click handoff from the plugin would surface
-   the user's project names to anyone they share the link with.
-   The legacy menuChangelog element no longer exists in the DOM
-   either; the var is null and we skip the wiring. */
-if (menuChangelog) menuChangelog.addEventListener('click', function(){});
+/* Version history: deep-link to the editor's own history dialog.
+   The dialog is PAT-gated inside (ensureGhCredentials prompts on
+   first GitHub call), so we bypass the public launchpad entirely
+   and no project list leaks to the user's browser.
+
+   URL shape: <SERVER>/<projectId>/demo/editor-v2/?project=<id>#history
+   - The per-project dist has its own editor-v2 copy.
+   - ?project= seeds localStorage so the editor picks up the right
+     project even on a fresh browser.
+   - #history triggers the auto-open in editor-v2 boot().
+
+   Falls back to <SERVER>/demo/editor-v2/?project=<id>#history when
+   not running on a static (per-project) host. */
+if (menuChangelog) menuChangelog.addEventListener('click', function(){
+  if (!CURRENT_PROJECT) return;
+  closeMenu();
+  var base = SERVER.replace(/\/$/, '');
+  var url  = isStaticHost()
+    ? base + '/' + encodeURIComponent(CURRENT_PROJECT) + '/demo/editor-v2/?project=' + encodeURIComponent(CURRENT_PROJECT) + '#history'
+    : base + '/demo/editor-v2/?project=' + encodeURIComponent(CURRENT_PROJECT) + '#history';
+  parent.postMessage({pluginMessage:{type:'open-external', url:url}}, '*');
+});
 var menuOpenWeb = null;
 
 /* Identity label opens the connected GitHub profile so the user can

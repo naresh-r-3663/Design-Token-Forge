@@ -4566,6 +4566,11 @@
     // Named-route entry: support ?project=<id> from the project hub.
     // If present, persist as active project and strip the param so
     // reloads stay clean (and ?project= can be deep-linked safely).
+    // Also support #history hash from external deep-links (e.g. the
+    // Figma plugin "Version history" menu item) so we auto-open the
+    // dialog after boot completes. The hash is consumed (stripped)
+    // so a manual refresh doesn't re-trigger.
+    var deepLinkOpenHistory = false;
     try {
       var url = new URL(window.location.href);
       var qp  = (url.searchParams.get('project') || '').trim();
@@ -4576,7 +4581,26 @@
         url.searchParams.delete('project');
         history.replaceState(null, '', url.pathname + (url.search ? url.search : '') + url.hash);
       }
+      if (url.hash === '#history') {
+        deepLinkOpenHistory = true;
+        history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+      }
     } catch (e) { /* ignore — older browsers, file:// quirks */ }
+    /* Deep-link auto-open: defer to next tick so the rest of boot
+       has wired the editor frame. openHistoryDialog() internally
+       calls ensureGhCredentials() which gates on PAT, so external
+       callers (the Figma plugin's "Version history" menu item)
+       don't need to handle auth — they just hand off the URL. */
+    if (deepLinkOpenHistory) {
+      setTimeout(function () {
+        try {
+          var fn = window.openHistoryDialog || openHistoryDialog;
+          fn();
+        } catch (e) { /* dialog wires up after boot — retry once */
+          setTimeout(function () { try { openHistoryDialog(); } catch (e2) {} }, 400);
+        }
+      }, 200);
+    }
 
     /* Promote project's config.customRoles to first-class T1 roles.
        The 5 baseline roles (brand, danger, success, warning, info)
