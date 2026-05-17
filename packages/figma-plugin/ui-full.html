@@ -1519,21 +1519,50 @@ function fmtVal(raw){
        {type:'VARIABLE_ALIAS',name} normalize to the alias target NAME.
        Without the name field on either side, "(alias)" — these compare
        equal so we never flag an unchanged alias as updated. */
-    if (raw.alias || raw.type === 'VARIABLE_ALIAS') return raw.name ? '(→ ' + raw.name + ')' : '(alias)';
+    if (raw.alias || raw.type === 'VARIABLE_ALIAS') return raw.name ? '→ ' + raw.name : 'alias';
   }
   return String(raw);
 }
 
-/* Cheap normalisation used for equality only — strips hex case +
-   trims trailing zeros so "14" === "14.0" === "14.00" and "#FFF"
-   === "#ffffff" (for 6-vs-3 hex). Real display still uses fmtVal. */
+/* Compare two raw values for equivalence. Returns true if they
+   represent the SAME design decision — even when serialised
+   differently. False positives in the diff come from:
+     a) Aliases: file emits {alias:true,id,name?} where name may be
+        unresolved; tokens.json emits {type:'VARIABLE_ALIAS',name}.
+        Two aliases are equal if their target names match, OR if
+        the name is missing on either side (we can't prove a change,
+        so default to equal — aliases only change when the user
+        manually reassigns a binding, never as a consequence of
+        upstream value edits).
+     b) Numeric units: spacing variables come from Figma as raw
+        FLOAT (e.g. 1) but tokens.json emits the px string '1px'.
+        Strip trailing 'px'/'rem'/'%' and parse-then-compare
+        numerically. */
+function rawEqual(a, b){
+  var aIsAlias = a && typeof a === 'object' && (a.alias || a.type === 'VARIABLE_ALIAS');
+  var bIsAlias = b && typeof b === 'object' && (b.alias || b.type === 'VARIABLE_ALIAS');
+  if (aIsAlias !== bIsAlias) return false;   /* one's an alias, other isn't */
+  if (aIsAlias && bIsAlias){
+    if (!a.name || !b.name) return true;   /* can't prove a change — assume equal */
+    return a.name === b.name;
+  }
+  return normForCompare(a) === normForCompare(b);
+}
+
+/* Cheap normalisation used for equality only — strips hex case,
+   trims trailing zeros, and drops common length units so '14' ===
+   '14px' === '14.0'. Real display still uses fmtVal. */
 function normForCompare(s){
-  s = String(s || '').trim().toLowerCase();
+  if (s && typeof s === 'object') return JSON.stringify(s);
+  s = String(s == null ? '' : s).trim().toLowerCase();
   if (/^#[0-9a-f]+$/.test(s)){
     if (s.length === 4) s = '#' + s[1]+s[1] + s[2]+s[2] + s[3]+s[3];   /* #abc → #aabbcc */
     if (s.length === 5) s = '#' + s[1]+s[1] + s[2]+s[2] + s[3]+s[3] + s[4]+s[4]; /* #abcd → #aabbccdd */
+    return s;
   }
-  if (/^-?\d+\.\d+$/.test(s)) s = String(parseFloat(s));   /* 14.00 → 14 */
+  /* Strip common length units before numeric parse: '14px' → '14'. */
+  var stripped = s.replace(/(px|rem|em|%|ms|s)$/, '');
+  if (/^-?\d+(\.\d+)?$/.test(stripped)) return String(parseFloat(stripped));
   return s;
 }
 
@@ -1578,10 +1607,8 @@ function handleStaticDiff(current){
       for (var mi=0; mi<n; mi++){
         var newRaw = nvVals[newModes[mi]];
         var oldRaw = existing.vals[existing.modes[mi]];
-        var newStr = fmtVal(newRaw);
-        var oldStr = fmtVal(oldRaw);
-        if (normForCompare(newStr) !== normForCompare(oldStr)){
-          firstChange = { tag:'upd', collection: nc.name, name: nv.name, from: oldStr, to: newStr };
+        if (!rawEqual(newRaw, oldRaw)){
+          firstChange = { tag:'upd', collection: nc.name, name: nv.name, from: fmtVal(oldRaw), to: fmtVal(newRaw) };
           break;
         }
       }
