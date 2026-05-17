@@ -1,14 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-no-project-theme="1">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Design Token Forge — Projects</title>
+<!-- Hub is the project picker — no project is active here. Clear
+     dtf-active-project BEFORE any deferred script runs (shared.js
+     reads it to inject project tokens, the topbar reads it to
+     decide whether to show the page switcher). Without this, the
+     hub paints with the previously-active project's brand instead
+     of the package default blue. -->
+<script>try{localStorage.removeItem('dtf-active-project');}catch(e){}</script>
 <!-- Auth gate MUST be first, no defer, so body hides before paint. -->
 <script src="auth-gate.js?v=1"></script>
 <link rel="stylesheet" href="../packages/tokens/src/index.css">
 <link rel="stylesheet" href="shared.css?v=1001">
-<script src="dtf-topbar.js?v=8" defer></script>
+<script src="dtf-topbar.js?v=9" defer></script>
 <script src="shared.js?v=999" defer></script>
 <style>
   :root{ color-scheme: light dark; }

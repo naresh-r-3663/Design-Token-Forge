@@ -99,6 +99,22 @@
     var ddHtml = '';
     var activePid = '';
     try { activePid = localStorage.getItem('dtf-active-project') || ''; } catch (e) {}
+    /* On a fresh editor-v2 load the URL has ?project=xyz but the
+       editor hasn't yet written it to localStorage when the topbar
+       mounts. Fall back to the URL so the switcher renders on the
+       very first paint. */
+    if (!activePid) {
+      try {
+        var _qp = new URLSearchParams(location.search).get('project');
+        if (_qp) activePid = _qp;
+      } catch (e) {}
+    }
+    /* Hub is the only page that intentionally has no project. We
+       detect it by filename (index.html or trailing slash on /demo/)
+       — never show the switcher there even if storage is somehow
+       still set. */
+    var isHub = /\/demo\/(index\.html)?$/.test(location.pathname);
+    if (isHub) activePid = '';
     /* All NAV_ITEMS hrefs are written relative to /demo/. If we are
        currently inside a subdir like /demo/editor-v2/, prefix '../'
        so links resolve to the right files instead of 404'ing. */
