@@ -9,8 +9,9 @@
     "dev": "node src/socket.js",
     "audit:naming": "node scripts/audit-naming.cjs",
     "audit:primitives": "node scripts/audit-primitive-aliases.cjs",
+    "audit:token-drift": "node scripts/audit-token-drift.cjs",
     "audit:migration": "node scripts/migrate-v2/audit.cjs",
-    "audit": "pnpm audit:naming",
+    "audit": "pnpm audit:naming && pnpm audit:primitives && pnpm audit:token-drift",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

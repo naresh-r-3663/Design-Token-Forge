@@ -38,6 +38,14 @@ jobs:
             node packages/sync-server/build-static.js --project "$proj" --out-dir ./dist
           done
 
+      - name: Audit token drift (editor source ↔ dist mirror)
+        # Fails the deploy if build-static.js mutated any
+        # projects/<id>/*.css (which would clobber editor saves) or
+        # if a project's dist mirror disagrees with the editor truth.
+        # Re-runs the build internally, so it also catches non-
+        # determinism between the two build invocations.
+        run: node scripts/audit-token-drift.cjs
+
       - name: Copy plugin UI to root
         run: |
           mkdir -p dist/plugin
