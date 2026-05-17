@@ -5,9 +5,8 @@
   "description": "Design tokens for Pearl",
   "created": "2026-05-16",
   "schemaVersion": 2,
-  "paletteAnchor": "exact",
   "paletteKeys": {
-    "brand": "#07cbcf",
+    "brand": "#F7F145",
     "danger": "#DC2626",
     "warning": "#D97706",
     "info": "#0EA5E9",
@@ -67,5 +66,12 @@
     "over-container": "greyscale",
     "float": "greyscale",
     "inverse": "greyscale"
+  },
+  "latestVersion": {
+    "version": "v0.0.1",
+    "name": "May17 13:19",
+    "description": "",
+    "savedAt": "2026-05-17T07:49:03.495Z",
+    "savedBy": "sridhar-ravi-2917"
   }
 }
