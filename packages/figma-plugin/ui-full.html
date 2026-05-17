@@ -934,7 +934,7 @@ var openGroups = new Set();      /* expanded group keys */
 /* Build stamp — bump on every UI-affecting change so you can confirm
    the Figma plugin sandbox isn't serving a cached old copy. Shown in
    the empty-state footer + logged once to the plugin console. */
-var BUILD_VERSION = '2026-05-17-p5';
+var BUILD_VERSION = '2026-05-17-p6';
 function log(msg){ console.log('[DTF] ' + msg); }
 log('plugin UI build ' + BUILD_VERSION);
 
@@ -1854,7 +1854,6 @@ window.dtfAudit = function(varName, collectionFilter){
   else console.log('[dtfAudit] inspected', matched, 'variable(s)');
 };
 console.log('[DTF] audit helper ready — type dtfAudit() in console');
-}
 
 function handleStaticDiff(current){
   if (!tokenData || !current || !current.collections) return;
