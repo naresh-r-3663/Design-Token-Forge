@@ -794,6 +794,8 @@ var DEFAULT_SERVER = 'https://sridhar-ravi-2917.github.io/Design-Token-Forge';
 var SERVER        = storageGet('dtf-server-url') || DEFAULT_SERVER;
 var CURRENT_PROJECT = storageGet('dtf-project-id') || '';
 var GH_USERNAME   = storageGet('dtf-gh-username') || '';
+var GH_PAT        = '';                /* hydrated from figma.clientStorage via code.js (creds-restored msg) */
+var credsRestoredYet = false;          /* false until the first creds-restored OR a short timeout */
 var ADMIN_USER    = 'sridhar-ravi-2917';
 var COLOR_ONLY_COLLECTIONS = ['T0 Primitive Colors','T1 Color Tokens','T2 Surface Context Tokens','T3 Status Context Tokens'];
 var AUTO_SYNC     = storageGet('dtf-auto-sync') === '1';
@@ -858,6 +860,16 @@ function apiUrl(endpoint){
    RENDER — single source of truth for the Sync hero
    ════════════════════════════════════════════════════ */
 function render(){
+  /* While we’re still waiting for code.js to hand us persisted creds,
+     hold the UI on a neutral splash so a saved user doesn’t see the
+     “Connect your GitHub” form flash for ~100ms on every plugin open. */
+  if (!credsRestoredYet && !GH_USERNAME){
+    setHero({ glyph:'…', glyphClass:'neutral', title:'Loading…', sub:'' });
+    setupForm.hidden = true;
+    changesPanel.hidden = true;
+    footerSync.hidden = true;
+    return;
+  }
   if (!GH_USERNAME){
     setHero({ glyph:'⚙', glyphClass:'neutral', title:'Connect your GitHub', sub:'DTF needs a personal access token to sync tokens with this file.' });
     setupForm.hidden = false;
@@ -1288,7 +1300,9 @@ menuServer.addEventListener('click', function(){
 menuDisconnect.addEventListener('click', function(){
   closeMenu();
   GH_USERNAME = '';
+  GH_PAT = '';
   storageSet('dtf-gh-username', '');
+  parent.postMessage({ pluginMessage:{ type:'clear-creds' } }, '*');
   projectsFetched = false;
   fetchProjects();
   render();
@@ -1486,6 +1500,16 @@ parent.postMessage({ pluginMessage:{ type:'scan' } }, '*');
 parent.postMessage({ pluginMessage:{ type:'get-user-info' } }, '*');
 parent.postMessage({ pluginMessage:{ type:'check-gen-prereqs' } }, '*');
 
+/* If code.js never sends creds-restored (no stored creds, or clientStorage
+   is unavailable), unblock the splash after a short grace period so the
+   Connect form still appears. */
+setTimeout(function(){
+  if (!credsRestoredYet){
+    credsRestoredYet = true;
+    render();
+  }
+}, 500);
+
 window.onmessage = function(event){
   var msg = event.data.pluginMessage;
   if (!msg) return;
@@ -1544,6 +1568,18 @@ window.onmessage = function(event){
   if (msg.type === 'progress') setStatus(msg.text, 'work');
 
   if (msg.type === 'set-server-url') setServerUrl(msg.url);
+
+  if (msg.type === 'creds-restored'){
+    credsRestoredYet = true;
+    if (msg.username) GH_USERNAME = msg.username;
+    if (msg.pat)      GH_PAT = msg.pat;
+    if (GH_USERNAME){
+      storageSet('dtf-gh-username', GH_USERNAME);
+      projectsFetched = false;
+      fetchProjects();
+    }
+    render();
+  }
 
   if (msg.type === 'done'){
     syncing = false;
@@ -1665,7 +1701,11 @@ ghVerifyBtn.addEventListener('click', function(){
   })
   .then(function(user){
     GH_USERNAME = user.login;
+    GH_PAT = token;
     storageSet('dtf-gh-username', GH_USERNAME);
+    /* Persist BOTH bits in figma.clientStorage so the next session skips
+       this whole form. localStorage from the iframe is unreliable. */
+    parent.postMessage({ pluginMessage:{ type:'save-creds', username:GH_USERNAME, pat:token } }, '*');
     ghPatInput.value = '';
     setServerUrl(DEFAULT_SERVER);
     projectsFetched = false;

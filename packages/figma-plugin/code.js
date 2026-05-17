@@ -25,6 +25,20 @@ log('code.js loaded — version ' + CODE_VERSION);
   } catch (e) { /* clientStorage unavailable — UI will use its own default */ }
 })();
 
+/* ── Restore persisted GitHub credentials on startup ────────────
+   PAT + username live in figma.clientStorage (account-scoped, survives
+   plugin reloads and Figma restarts). localStorage from the iframe is
+   unreliable in Figma’s sandbox so we don’t rely on it for the secret.   */
+(async function() {
+  try {
+    var ghUser = await figma.clientStorage.getAsync('dtf-gh-username');
+    var ghPat  = await figma.clientStorage.getAsync('dtf-gh-pat');
+    if (ghUser || ghPat) {
+      figma.ui.postMessage({ type: 'creds-restored', username: ghUser || '', pat: ghPat || '' });
+    }
+  } catch (e) { /* clientStorage unavailable — user will have to re-auth */ }
+})();
+
 /* ── Component Builder access ───────────────────────────
    The component builder is available to ALL plugin users.
    We still emit a user-info message (used for telemetry / logging)
@@ -3907,6 +3921,22 @@ figma.ui.onmessage = async function(msg) {
   /* Persist URL to clientStorage when user changes it in UI */
   if (msg.type === 'save-server-url' && msg.url) {
     figma.clientStorage.setAsync('dtf-server-url', msg.url).catch(function() {});
+  }
+
+  /* Persist GitHub credentials (username + PAT) so the user never has to
+     re-enter them after a successful Connect. */
+  if (msg.type === 'save-creds') {
+    try {
+      if (msg.username !== undefined) await figma.clientStorage.setAsync('dtf-gh-username', msg.username || '');
+      if (msg.pat !== undefined)      await figma.clientStorage.setAsync('dtf-gh-pat',      msg.pat || '');
+    } catch (e) { log('save-creds failed: ' + e.message); }
+  }
+
+  if (msg.type === 'clear-creds') {
+    try {
+      await figma.clientStorage.deleteAsync('dtf-gh-username');
+      await figma.clientStorage.deleteAsync('dtf-gh-pat');
+    } catch (e) { /* ignore */ }
   }
 
   /* ── Component Generation ─────────────────────────────── */
