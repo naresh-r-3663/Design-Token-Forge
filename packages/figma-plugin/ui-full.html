@@ -52,11 +52,13 @@
     --dtf-info-content:#1E54B3;
     --dtf-info-border:#BFDBFE;
 
-    /* Identity gradient — kept distinct so the project header
-       still reads as the entry point, but harmonised with the
-       editor's purple T0 badge family. */
-    --dtf-project-grad:linear-gradient(135deg,#5B4BD9 0%,#4338CA 100%);
+    /* Identity gradient — teal-on-teal so the plugin's hero strip
+       reads as the same brand as the editor's Publish CTA. The
+       logo keeps its magenta gradient (DTF wordmark color) so it
+       still pops as the product identity. */
+    --dtf-project-grad:linear-gradient(135deg,#0F766E 0%,#0B5C56 100%);
     --dtf-logo-grad:linear-gradient(135deg,#BD22AB,#FF70E0);
+    --dtf-builder-grad:linear-gradient(135deg,#0F766E,#15A09A);
 
     /* Shape + spacing — mirrors --radius-* / --space-* */
     --dtf-radius-sm:4px;
@@ -203,13 +205,25 @@
     border: none; transition: all 120ms ease;
     font-family: inherit;
   }
+  /* Universal focus ring — every interactive surface in the plugin
+     gets the same 2px brand outline at 2px offset, matching the
+     editor's .ev2-deploy / .ev2-topbar-icon-btn focus style. */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid var(--dtf-brand-bg);
+    outline-offset: 2px;
+    border-radius: var(--dtf-radius-sm);
+  }
   .btn-sync { background: var(--dtf-brand-bg); color: var(--dtf-fg-on-brand); }
   .btn-sync:hover { background: var(--dtf-brand-bg-hover); }
   .btn-sync.ready { background: var(--dtf-success-bg); }
   .btn-sync.ready:hover { background: #097020; }
   .btn-sync:disabled { background: var(--dtf-surface-deep); color: var(--dtf-fg-faint); cursor: not-allowed; }
   .btn-cancel { background: var(--dtf-surface-alt); color: var(--dtf-fg); border: 1px solid var(--dtf-border-strong); flex: 0 0 auto; padding: 10px 14px; }
-  .btn-cancel:hover { background: var(--dtf-surface-deep); }
+  .btn-cancel:hover { background: var(--dtf-surface-deep); border-color: var(--dtf-fg-faint); color: var(--dtf-fg-strong); }
 
   /* ── Status bar ─────────────────────────────────────── */
   .status-bar {
@@ -348,14 +362,19 @@
   }
   .setup-done .disconnect:hover { color: var(--dtf-fg-strong); border-color: var(--dtf-fg-faint); }
 
-  /* ── Component Builder section ──────────────────────── */
+  /* ── Builder section (Phase 3 zone) — kept distinct because
+     it's a separate verb (generate), but lifted into the same
+     card shell as the other zones for visual rhythm. */
   .builder-section {
-    margin-top: 16px; padding-top: 14px; border-top: 2px solid var(--dtf-border);
+    margin-top: 0; padding: 12px 14px; border-top: 0;
+    background: var(--dtf-surface);
+    border: 1px solid var(--dtf-border);
+    border-radius: var(--dtf-radius-lg);
   }
   .builder-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .builder-mark {
     width: 22px; height: 22px; border-radius: 5px;
-    background: linear-gradient(135deg, #7C3AED, #A855F7);
+    background: var(--dtf-builder-grad);
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
   .builder-title { font-size: var(--dtf-fs-12); font-weight: 700; color: var(--dtf-fg-strong); }
@@ -387,7 +406,7 @@
     width: 100%; padding: 10px 16px; border: none; border-radius: var(--dtf-radius-md);
     cursor: pointer; font-size: var(--dtf-fs-12); font-weight: 600; font-family: inherit;
     color: var(--dtf-fg-on-brand);
-    background: linear-gradient(135deg, #7C3AED, #6D28D9);
+    background: var(--dtf-builder-grad);
     opacity: 0.5; transition: opacity 200ms ease, transform 100ms ease;
   }
   .btn-generate:not(:disabled) { opacity: 1; }
@@ -400,6 +419,47 @@
     background: var(--dtf-success-bg-soft); border: 1px solid var(--dtf-success-border);
     border-radius: var(--dtf-radius-md); font-size: var(--dtf-fs-11); color: var(--dtf-success-content);
   }
+
+  /* ════════════════════════════════════════════════════════
+     Phase 3 — IA grouping
+     ────────────────────────────────────────────────────────
+     The plugin body is divided into three vertical zones, each
+     a rounded card:
+       1. Sync — status + change card + Update Variables CTA
+       2. Connection — GitHub PAT + Advanced server URL
+       3. Builder — component generation
+     Cards share a single surface treatment so the rhythm reads
+     as "three things, each scannable" instead of one long scroll.
+     The shell normalises padding so child elements (.conn-bar,
+     .notif, .actions) lose their own margins inside cards.
+     ════════════════════════════════════════════════════════ */
+  .zone {
+    background: var(--dtf-surface);
+    border: 1px solid var(--dtf-border);
+    border-radius: var(--dtf-radius-lg);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .zone-label {
+    display: block;
+    font-size: var(--dtf-fs-9); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--dtf-fg-faint);
+    margin-bottom: 10px;
+  }
+  /* Inside a zone, kill the standalone margins on the original
+     atomic widgets so they pack cleanly. */
+  .zone .conn-bar,
+  .zone .notif,
+  .zone .project-warn,
+  .zone .undo-warn,
+  .zone .status-bar { margin-bottom: 10px; }
+  .zone > *:last-child { margin-bottom: 0; }
+  .zone .actions { margin-top: 0; }
+  .zone .auto-sync-row { margin-top: 8px; padding-bottom: 0; }
+  .zone .stats-row { padding: 4px 0 8px; }
+  .zone .server-config { margin-top: 4px; padding-top: 0; border-top: 0; }
+  .zone .setup-wrap { margin: 0; }
 </style>
 </head>
 <body>
@@ -423,103 +483,119 @@
   </div>
 </div>
 
-<!-- Connection status -->
-<div class="conn-bar" id="connBar">
-  <span class="dot"></span>
-  <span id="connText">Connecting to sync server&hellip;</span>
-  <span class="conn-meta" id="connMeta"></span>
-</div>
+<!-- ─── ZONE 1 / SYNC ────────────────────────────────────
+     Live server status, change card, Update Variables CTA,
+     auto-sync toggle. Everything related to the act of
+     pushing tokens from DTF → Figma lives here. -->
+<section class="zone" aria-label="Sync">
+  <span class="zone-label">Sync</span>
 
-<!-- Project mismatch warning -->
-<div class="project-warn" id="projectWarn">
-  <div class="project-warn-header">
-    <span class="project-warn-icon">&#9888;</span>
-    <span id="projectWarnTitle">Project mismatch</span>
+  <!-- Connection status -->
+  <div class="conn-bar" id="connBar">
+    <span class="dot"></span>
+    <span id="connText">Connecting to sync server&hellip;</span>
+    <span class="conn-meta" id="connMeta"></span>
   </div>
-  <div class="project-warn-body" id="projectWarnBody"></div>
-  <div class="project-warn-actions">
-    <button class="btn-switch" id="projectSwitchBtn">Switch &amp; Sync</button>
-    <button class="btn-keep" id="projectKeepBtn">Keep current</button>
-  </div>
-</div>
 
-<!-- Undo warning -->
-<div class="undo-warn" id="undoWarn">
-  <span class="undo-warn-icon">&#9888;</span>
-  <div class="undo-warn-text">
-    <strong>Variables removed (undo detected)</strong><br>
-    Figma variables were removed — likely by Cmd+Z. Hit <strong>Re-sync</strong> to restore them.
-  </div>
-</div>
-
-<!-- Notification card -->
-<div class="notif" id="notif">
-  <div class="notif-header">
-    <span class="notif-icon" id="notifIcon">&#9889;</span>
-    <span id="notifTitle">Token changes available</span>
-    <span class="notif-badge" id="notifBadge">0</span>
-  </div>
-  <div class="notif-body" id="notifBody"></div>
-  <div class="changes" id="changeList" style="display:none"></div>
-</div>
-
-<!-- Figma state -->
-<div class="stats-row" id="figmaStats" style="display:none">
-  <span>Figma: <strong id="fVars">0</strong> vars</span>
-  <span>in <strong id="fCols">0</strong> collections</span>
-  <span>Hash: <strong id="fHash">-</strong></span>
-</div>
-
-<!-- Actions -->
-<div class="actions">
-  <button class="btn-cancel" id="cancelBtn">Close</button>
-  <button class="btn-sync" id="syncBtn" disabled>Waiting for server&hellip;</button>
-</div>
-
-<div class="status-bar" id="statusBar"></div>
-
-<!-- Auto-sync toggle -->
-<div class="auto-sync-row">
-  <label><input type="checkbox" id="autoSyncCb"> Auto-sync when tokens change</label>
-</div>
-
-<!-- Setup: PAT-first flow -->
-<div id="setupSection">
-  <div id="setupAuth" class="setup-wrap">
-    <div class="setup-title">Connect your GitHub account</div>
-    <div class="server-url-row">
-      <input type="password" id="ghPatInput" placeholder="Paste your GitHub PAT (ghp_...)" spellcheck="false">
-      <button class="btn-url-save" id="ghVerifyBtn">Connect</button>
+  <!-- Project mismatch warning -->
+  <div class="project-warn" id="projectWarn">
+    <div class="project-warn-header">
+      <span class="project-warn-icon">&#9888;</span>
+      <span id="projectWarnTitle">Project mismatch</span>
     </div>
-    <div id="ghIdentityError" class="setup-error"></div>
-    <div class="setup-hint">
-      One-time setup. Needs <code>repo</code> scope.
-      <a href="https://github.com/settings/tokens/new?scopes=repo&description=DTF+Figma+Plugin" target="_blank" rel="noopener">Get a token &rarr;</a>
+    <div class="project-warn-body" id="projectWarnBody"></div>
+    <div class="project-warn-actions">
+      <button class="btn-switch" id="projectSwitchBtn">Switch &amp; Sync</button>
+      <button class="btn-keep" id="projectKeepBtn">Keep current</button>
     </div>
   </div>
-  <div id="setupDone" class="setup-done">
-    <span class="who" id="ghIdentityName"></span>
-    <span class="spacer"></span>
-    <button type="button" id="ghIdentityReset" class="disconnect">Disconnect</button>
-  </div>
-</div>
-<input type="hidden" id="serverUrlInput" value="">
 
-<!-- Advanced: manual server URL override -->
-<details class="server-config" style="margin-top:4px">
-  <summary>Advanced</summary>
-  <div class="server-config-inner">
-    <div class="server-url-row">
-      <input type="text" id="serverUrlOverride" placeholder="Custom server URL (leave blank for default)" spellcheck="false">
-      <button class="btn-url-save" id="saveUrlBtn">Save</button>
-    </div>
-    <div class="server-presets">
-      <button type="button" id="presetLocal">Local</button>
+  <!-- Undo warning -->
+  <div class="undo-warn" id="undoWarn">
+    <span class="undo-warn-icon">&#9888;</span>
+    <div class="undo-warn-text">
+      <strong>Variables removed (undo detected)</strong><br>
+      Figma variables were removed — likely by Cmd+Z. Hit <strong>Re-sync</strong> to restore them.
     </div>
   </div>
-</details>
 
-<!-- Changelog -->
+  <!-- Notification card -->
+  <div class="notif" id="notif">
+    <div class="notif-header">
+      <span class="notif-icon" id="notifIcon">&#9889;</span>
+      <span id="notifTitle">Token changes available</span>
+      <span class="notif-badge" id="notifBadge">0</span>
+    </div>
+    <div class="notif-body" id="notifBody"></div>
+    <div class="changes" id="changeList" style="display:none"></div>
+  </div>
+
+  <!-- Figma state -->
+  <div class="stats-row" id="figmaStats" style="display:none">
+    <span>Figma: <strong id="fVars">0</strong> vars</span>
+    <span>in <strong id="fCols">0</strong> collections</span>
+    <span>Hash: <strong id="fHash">-</strong></span>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn-cancel" id="cancelBtn">Close</button>
+    <button class="btn-sync" id="syncBtn" disabled>Waiting for server&hellip;</button>
+  </div>
+
+  <div class="status-bar" id="statusBar"></div>
+
+  <!-- Auto-sync toggle -->
+  <div class="auto-sync-row">
+    <label><input type="checkbox" id="autoSyncCb"> Auto-sync when tokens change</label>
+  </div>
+</section>
+
+<!-- ─── ZONE 2 / CONNECTION ──────────────────────────────
+     GitHub identity + Advanced server URL. One-time setup
+     that the user touches rarely; lives below Sync so the
+     daily action (Update Variables) stays above the fold. -->
+<section class="zone" aria-label="Connection">
+  <span class="zone-label">Connection</span>
+
+  <!-- Setup: PAT-first flow -->
+  <div id="setupSection">
+    <div id="setupAuth" class="setup-wrap">
+      <div class="setup-title">Connect your GitHub account</div>
+      <div class="server-url-row">
+        <input type="password" id="ghPatInput" placeholder="Paste your GitHub PAT (ghp_...)" spellcheck="false">
+        <button class="btn-url-save" id="ghVerifyBtn">Connect</button>
+      </div>
+      <div id="ghIdentityError" class="setup-error"></div>
+      <div class="setup-hint">
+        One-time setup. Needs <code>repo</code> scope.
+        <a href="https://github.com/settings/tokens/new?scopes=repo&description=DTF+Figma+Plugin" target="_blank" rel="noopener">Get a token &rarr;</a>
+      </div>
+    </div>
+    <div id="setupDone" class="setup-done">
+      <span class="who" id="ghIdentityName"></span>
+      <span class="spacer"></span>
+      <button type="button" id="ghIdentityReset" class="disconnect">Disconnect</button>
+    </div>
+  </div>
+  <input type="hidden" id="serverUrlInput" value="">
+
+  <!-- Advanced: manual server URL override -->
+  <details class="server-config">
+    <summary>Advanced</summary>
+    <div class="server-config-inner">
+      <div class="server-url-row">
+        <input type="text" id="serverUrlOverride" placeholder="Custom server URL (leave blank for default)" spellcheck="false">
+        <button class="btn-url-save" id="saveUrlBtn">Save</button>
+      </div>
+      <div class="server-presets">
+        <button type="button" id="presetLocal">Local</button>
+      </div>
+    </div>
+  </details>
+</section>
+
+<!-- Changelog (kept outside zones — debug-only, hidden by default) -->
 <details class="changelog" id="changelogSection" style="display:none">
   <summary>Change history</summary>
   <div class="log-list" id="logList"></div>
@@ -530,6 +606,7 @@
      `user-info.authorized` gate was removed — the builder is now
      a first-class feature of the plugin, not an owner-only tool. -->
 <div id="componentBuilderSection" class="builder-section">
+  <span class="zone-label">Build</span>
   <div class="builder-head">
     <div class="builder-mark">
       <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="#fff" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="#fff" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="#fff" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="#fff" stroke-width="1.5"/></svg>
