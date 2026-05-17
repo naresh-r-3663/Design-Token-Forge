@@ -5458,18 +5458,13 @@
     }
     var rowsHtml = list.map(function (p) {
       var current = p.id === active;
-      // Slug (p.id) used to render as a muted right-aligned label,
-      // but for projects where name ≈ id (writer-handhelds, pearl,
-      // slate-demo) it doubled the row text and inherited the
-      // current-row brand colour, making it look like a second
-      // active label. Tucked into title= for power users who want
-      // the slug; visually shown only when the name differs.
-      var slug = (p.name && p.name.toLowerCase() !== p.id.toLowerCase())
-        ? '<span class="ev2-proj-row-id">' + p.id + '</span>'
-        : '';
+      // Slug (p.id) is a developer-facing identifier — useful for
+      // copy/paste into URLs, CLI, file paths — but visually noisy
+      // in a chooser where the user picks by name. Tucked into
+      // title= so power users can still see it on hover, keyboard
+      // tools, and screen readers.
       return '<div class="ev2-proj-row" role="option" aria-current="' + current + '" data-proj-id="' + p.id + '" tabindex="0" title="' + p.id + '">'
         + '<span class="ev2-proj-row-name">' + (p.name || p.id) + '</span>'
-        + slug
         + (current
             ? '<svg class="ev2-proj-row-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 5"/></svg>'
             : '')
