@@ -2756,16 +2756,17 @@ window.onmessage = function(event){
   if (msg.type === 'gen-done'){
     var gs = msg.stats;
     generateBtn.disabled = false;
-    generateBtn.textContent = builderHasAnyBuild ? 'Rebuild components' : 'Build components';
     genStatus.textContent = gs.components + ' variants · ' + gs.bindings + ' bindings · ' + gs.reactions + ' reactions' + (gs.errors.length > 0 ? ' — ' + gs.errors.length + ' errors' : '');
     genInfo.classList.add('visible');
     genInfo.textContent = '✓ Components built.';
     setBuilderBusy(false);
     parent.postMessage({ pluginMessage:{ type:'check-gen-prereqs' } }, '*');
+    /* re-derives the CTA verb against the now-fresh ledger */
+    recomputeBuilderCta();
   }
   if (msg.type === 'gen-error'){
     generateBtn.disabled = !genReady;
-    generateBtn.textContent = builderHasAnyBuild ? 'Rebuild components' : 'Build components';
+    recomputeBuilderCta();
     setBuilderBusy(false);
     /* Stack trace is included after the em-dash on the plugin side.
        Show on two lines so the user can copy/paste back to us. */
@@ -3094,6 +3095,7 @@ function renderBuilderMeta(versions, currentStructureHashes, currentPrototypeHas
       actEl.innerHTML = 'Will create variants bound to <span class="nums">' +
         esc(currentProject ? projectDisplayName(currentProject) : 'this project') + '</span> tokens.';
       row.setAttribute('data-tint', '');
+      row.setAttribute('data-state', 'new');
       continue;
     }
     builderHasAnyBuild = true;
@@ -3200,6 +3202,11 @@ function renderBuilderMeta(versions, currentStructureHashes, currentPrototypeHas
     pillsEl.innerHTML = pillsHtml;
     actEl.classList.toggle('idle', !anyChange);
     actEl.innerHTML = action;
+    /* data-state drives selection-aware CTA labelling.
+       changed = existing build with at least one pill firing
+       clean   = existing build, hashes all match
+       new     = no ledger entry (set above) */
+    row.setAttribute('data-state', anyChange ? 'changed' : 'clean');
 
     /* Fingerprint tooltip on the row (copyable on hover). */
     var tip = [
@@ -3214,19 +3221,63 @@ function renderBuilderMeta(versions, currentStructureHashes, currentPrototypeHas
     if (anyChange) pendingExistingCount++;
   }
 
-  /* CTA label. Derive from ledger state alone — checkbox state is
-     separately enforced (gen-click rejects empty selection). */
-  if (generateBtn) {
-    if (!builderHasAnyBuild) {
-      generateBtn.textContent = newCount > 0
-        ? 'Build components'
-        : 'Build components';
-    } else if (pendingExistingCount > 0 || newCount > 0) {
-      generateBtn.textContent = 'Rebuild components';
-    } else {
-      generateBtn.textContent = 'Rebuild components';
-    }
+  /* CTA label is driven by the user's CURRENT SELECTION, not the
+     ledger state alone — picking only a "new" row should not say
+     "Rebuild components". See recomputeBuilderCta() below. */
+  recomputeBuilderCta();
+}
+
+/* CTA label rules (mock-builder scenarios 0–6):
+     0 checked          → "Build components"   (disabled)
+     N>=1 new only      → "Build <Name>"        or "Build N components"
+     N>=1 changed only  → "Rebuild <Name>"      or "Rebuild N components"
+     mix new + changed  → "Build & rebuild N components"
+     only clean checked → "Rebuild N components" (forced rebuild;
+                          rare but legal — user explicitly opted in)
+   The "Building…" / "Rebuilding…" busy label uses the same split. */
+function recomputeBuilderCta(){
+  if (!generateBtn) return;
+  var rows = document.querySelectorAll('.comp-pick label[data-component]');
+  var newSel = [], chgSel = [], cleanSel = [];
+  for (var i = 0; i < rows.length; i++){
+    var row = rows[i];
+    var cb  = row.querySelector('.comp-check');
+    if (!cb || !cb.checked) continue;
+    var state = row.getAttribute('data-state') || '';
+    var name  = (row.querySelector('.comp-name') || {}).textContent || cb.value;
+    if (state === 'new')           newSel.push(name);
+    else if (state === 'changed')  chgSel.push(name);
+    else                           cleanSel.push(name);
   }
+  var totalSel = newSel.length + chgSel.length + cleanSel.length;
+  /* Disabled state is handled by the prereqs/empty-selection check;
+     here we only set the label so the button reads correctly even
+     before the user has ticked anything. */
+  if (totalSel === 0){
+    generateBtn.textContent = 'Build components';
+    return;
+  }
+  if (newSel.length && !chgSel.length && !cleanSel.length){
+    generateBtn.textContent = newSel.length === 1
+      ? ('Build ' + newSel[0])
+      : ('Build ' + newSel.length + ' components');
+    return;
+  }
+  if (chgSel.length && !newSel.length){
+    generateBtn.textContent = chgSel.length === 1 && !cleanSel.length
+      ? ('Rebuild ' + chgSel[0])
+      : ('Rebuild ' + (chgSel.length + cleanSel.length) + ' components');
+    return;
+  }
+  if (!newSel.length){
+    /* Only clean rows checked — explicit forced rebuild. */
+    generateBtn.textContent = cleanSel.length === 1
+      ? ('Rebuild ' + cleanSel[0])
+      : ('Rebuild ' + cleanSel.length + ' components');
+    return;
+  }
+  /* Mixed new + (changed|clean). */
+  generateBtn.textContent = 'Build & rebuild ' + totalSel + ' components';
 }
 generateBtn.addEventListener('click', function(){
   if (!genReady) return;
@@ -3234,12 +3285,36 @@ generateBtn.addEventListener('click', function(){
   var checks = document.querySelectorAll('.comp-check:checked');
   for (var i=0; i<checks.length; i++) selected.push(checks[i].value);
   if (selected.length === 0){ genStatus.textContent = 'Select at least one component.'; return; }
+  /* Busy label echoes the CTA verb (Build vs Rebuild vs both) so
+     the moment-of-truth screen reads consistently with what the user
+     clicked. */
+  var rows = document.querySelectorAll('.comp-pick label[data-component]');
+  var hasNew = false, hasExisting = false;
+  for (var ri = 0; ri < rows.length; ri++){
+    var rc = rows[ri].querySelector('.comp-check');
+    if (!rc || !rc.checked) continue;
+    var st = rows[ri].getAttribute('data-state') || '';
+    if (st === 'new') hasNew = true; else hasExisting = true;
+  }
+  var verb = (hasNew && hasExisting) ? 'Building & rebuilding\u2026'
+           : hasNew ? 'Building\u2026' : 'Rebuilding\u2026';
   generateBtn.disabled = true;
-  generateBtn.textContent = builderHasAnyBuild ? 'Rebuilding…' : 'Building…';
-  genStatus.textContent = 'Starting…';
+  generateBtn.textContent = verb;
+  genStatus.textContent = 'Starting\u2026';
   genInfo.classList.remove('visible');
-  setBuilderBusy(true, 'Snapshotting existing sets, then writing variants.');
+  setBuilderBusy(true, 'Snapshotting existing sets, then writing variants.', verb);
   parent.postMessage({ pluginMessage:{ type:'generate-components', components:selected } }, '*');
+});
+
+/* Selection-aware CTA. Reads each row's data-state (set by
+   renderBuilderMeta) and updates the button label when the user
+   toggles a checkbox. Event-delegated so it survives row re-renders. */
+document.querySelectorAll('.comp-pick').forEach(function(box){
+  box.addEventListener('change', function(ev){
+    if (ev.target && ev.target.classList && ev.target.classList.contains('comp-check')){
+      recomputeBuilderCta();
+    }
+  });
 });
 
 /* M4 / V2 — safe-rebuild flag.
