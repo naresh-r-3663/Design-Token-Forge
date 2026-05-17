@@ -235,9 +235,9 @@
   });
 
   /* The hub is the project picker — it does not consume ?project=.
-     If we arrived here with one in the URL (e.g. via the topbar Home button
-     in an older build, or a stale back-button entry), strip it so the
-     address bar matches what the page actually shows. */
+     If we arrived here with one in the URL (e.g. via the topbar Home
+     button in an older build, or a stale back-button entry), strip it
+     so the address bar matches what the page actually shows. */
   try {
     if (location.search && /[?&]project=/.test(location.search)) {
       var _u = new URL(location.href);
@@ -245,6 +245,16 @@
       history.replaceState(null, '', _u.pathname + (_u.search ? _u.search : '') + _u.hash);
     }
   } catch (_e) {}
+
+  /* Home = no project selected. Without this, the topbar's page
+     switcher reads `dtf-active-project` from a previous visit and
+     re-appends `?project=<stale>` to every dropdown link — so
+     clicking "Button" from the hub would silently enter the last
+     project even though the hub itself shows nothing as selected.
+     Clear it on hub load; the user picks a project explicitly by
+     clicking a card (which sets the param + the editor restores
+     it). */
+  try { localStorage.removeItem('dtf-active-project'); } catch (_e2) {}
 
   /* ── Project list ─────────────────────────────────────── */
   var grid = document.getElementById('projGrid');
