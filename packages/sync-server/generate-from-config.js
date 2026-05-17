@@ -275,7 +275,13 @@ export function generateTokenOverrides(config, basePrimitiveTokens) {
     }
   }
 
-  const palettes = buildPalettes(config.paletteKeys, { anchor: config.paletteAnchor || 'normalized' });
+  // Anchor MUST default to 'exact' so step-500 == the user's key colour.
+  // Defaulting to 'normalized' shifts step-500 onto the L*=49 tone curve
+  // (e.g. #07CBCF -> #008588), so the static build produced primitives.css
+  // that disagreed with what the user picked in onboard and what the editor
+  // (which uses 'exact') shows. Projects can still opt into 'normalized'
+  // explicitly via config.paletteAnchor.
+  const palettes = buildPalettes(config.paletteKeys, { anchor: config.paletteAnchor || 'exact' });
   const result = {};
 
   // Primitives: overlay config-derived colors onto existing tokens

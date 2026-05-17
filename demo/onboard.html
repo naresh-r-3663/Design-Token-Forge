@@ -583,6 +583,11 @@
         // greet every brand-new project with "v1 → v2 migration
         // available". Onboard already writes the v2 shape.
         schemaVersion: 2,
+        // 'exact' anchor: step-500 in the generated 22-step ladder is the
+        // user's key hex byte-for-byte. The editor uses 'exact' by default;
+        // pinning it here means the static build (generate-from-config.js)
+        // produces the same ladder the editor previews.
+        paletteAnchor: 'exact',
         paletteKeys: { ...colors, greyscale: '#747474', desaturated: '#71747C' },
         semanticMap: {
           light: {

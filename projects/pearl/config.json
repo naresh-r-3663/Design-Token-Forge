@@ -5,6 +5,7 @@
   "description": "Design tokens for Pearl",
   "created": "2026-05-16",
   "schemaVersion": 2,
+  "paletteAnchor": "exact",
   "paletteKeys": {
     "brand": "#07cbcf",
     "danger": "#DC2626",
