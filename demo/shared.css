@@ -103,7 +103,11 @@ html[data-theme="dark"] .theme-toggle .theme-icon-sun{display:none}
 html[data-theme="dark"] .theme-toggle .theme-icon-moon{display:inline-block}
 
 /* ── <dtf-topbar> slot containers ──────────────────────── */
-dtf-topbar{display:block}
+/* Make the custom element itself sticky. .explorer-nav inside has
+   position:sticky too, but because dtf-topbar's intrinsic height
+   equals the nav's height, both scroll out together. Pinning the
+   host element keeps the bar visible across all pages. */
+dtf-topbar{display:block;position:sticky;top:0;z-index:150}
 .dtf-topbar-project{display:inline-flex;align-items:center;gap:8px;margin-left:12px}
 .dtf-topbar-actions{display:inline-flex;align-items:center;gap:8px}
 .dtf-topbar-actions:empty{display:none}

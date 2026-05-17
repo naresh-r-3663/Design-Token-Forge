@@ -7,7 +7,7 @@
 <!-- Auth gate — must be first, no defer, so body hides before paint. -->
 <script src="auth-gate.js?v=1"></script>
 <link rel="stylesheet" href="../packages/tokens/src/index.css">
-<link rel="stylesheet" href="shared.css?v=1002">
+<link rel="stylesheet" href="shared.css?v=1003">
 <style>
 /* ════════════════════════════════════════════════════════════
    Color Token Explorer — page-specific styles
@@ -390,7 +390,11 @@ var STEPS=['white','25','50','75','100','150','175','200','250','300','350','400
 
 var PALETTES=[
   {name:'Brand',       prefix:'prim-brand',        key:'#E53F28'},
-  {name:'Monochromatic',prefix:'prim-brand',key:'#286CE5'},
+  /* "Monochromatic" used to be listed here with the same prim-brand
+     prefix, so it rendered an exact duplicate of the Brand row with
+     a stale hardcoded key label. There is no separate
+     --prim-monochromatic-* palette in the system, so the row was
+     visual noise. Removed. */
   {name:'Desaturated', prefix:'prim-desaturated',   key:'#64748B'},
   {name:'Greyscale',   prefix:'prim-greyscale',     key:'#737373'},
   {name:'Danger',      prefix:'prim-danger',        key:'#DC2626'},
