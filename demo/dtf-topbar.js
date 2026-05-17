@@ -119,8 +119,10 @@
     }
 
     /* shell */
+    /* Home is the project picker (hub) — it does NOT consume ?project=.
+       Leaving the param on would create a stale URL once the user is on
+       the hub (URL says project=X but the page shows the picker). */
     var homeHref = prefix + 'index.html';
-    if (activePid) homeHref += '?project=' + encodeURIComponent(activePid);
     var newHtml = noNew ? '' :
       '<a href="' + esc(prefix + 'onboard.html') + '" class="nav-project-new" title="New Project">+ New</a>';
     var themeHtml = noTheme ? '' :

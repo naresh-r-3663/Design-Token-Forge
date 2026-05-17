@@ -4,9 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Design Token Forge — Projects</title>
+<!-- Auth gate MUST be first, no defer, so body hides before paint. -->
+<script src="auth-gate.js?v=1"></script>
 <link rel="stylesheet" href="../packages/tokens/src/index.css">
 <link rel="stylesheet" href="shared.css?v=1000">
-<script src="dtf-topbar.js?v=5" defer></script>
+<script src="dtf-topbar.js?v=6" defer></script>
 <script src="shared.js?v=999" defer></script>
 <style>
   :root{ color-scheme: light dark; }
@@ -232,6 +234,18 @@
     syncThemeBtn();
   });
 
+  /* The hub is the project picker — it does not consume ?project=.
+     If we arrived here with one in the URL (e.g. via the topbar Home button
+     in an older build, or a stale back-button entry), strip it so the
+     address bar matches what the page actually shows. */
+  try {
+    if (location.search && /[?&]project=/.test(location.search)) {
+      var _u = new URL(location.href);
+      _u.searchParams.delete('project');
+      history.replaceState(null, '', _u.pathname + (_u.search ? _u.search : '') + _u.hash);
+    }
+  } catch (_e) {}
+
   /* ── Project list ─────────────────────────────────────── */
   var grid = document.getElementById('projGrid');
   var countEl = document.getElementById('projCount');
@@ -347,7 +361,10 @@
     '</div>';
   }
 
-  tryFetch(0);
+  /* Wait until the PAT gate verifies the visitor before we even fetch
+     projects.json — otherwise an unauthenticated visitor could see
+     the list in DevTools Network while the overlay is up. */
+  (window.DTF_AUTH_READY || Promise.resolve()).then(function(){ tryFetch(0); });
 })();
 </script>
 
