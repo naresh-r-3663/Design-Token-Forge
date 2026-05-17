@@ -4539,6 +4539,39 @@ figma.ui.onmessage = async function(msg) {
         }
       } catch (e) { /* ignore */ }
 
+      /* Drop ledger entries whose component sets no longer exist in
+         the file (designer deleted Button / Split Button from the
+         page). Without this, the row keeps saying "added to Figma
+         1m ago" forever even though there's nothing in Figma. We
+         check every recorded nodeId; if NONE resolve, the build is
+         considered gone and the entry is removed so the row flips
+         back to NEW. (Partial deletes still count as present — user
+         can re-Build to regenerate the missing variants.) */
+      try {
+        var _existDirty = false;
+        var _keys = Object.keys(versions);
+        for (var _ki = 0; _ki < _keys.length; _ki++){
+          var _k = _keys[_ki];
+          var _entry = versions[_k];
+          var _nids = (_entry && _entry.nodeIds) || [];
+          if (!_nids.length) continue; // nothing to check
+          var _anyAlive = false;
+          for (var _ni = 0; _ni < _nids.length; _ni++){
+            try {
+              var _n = await figma.getNodeByIdAsync(_nids[_ni]);
+              if (_n) { _anyAlive = true; break; }
+            } catch (e) { /* node lookup failed → treat as dead */ }
+          }
+          if (!_anyAlive){
+            delete versions[_k];
+            _existDirty = true;
+          }
+        }
+        if (_existDirty){
+          figma.root.setPluginData('dtf-component-versions', JSON.stringify(versions));
+        }
+      } catch (e) { /* ignore */ }
+
       /* M5/V2 — per-component bindings status.
          The OLD behaviour hashed every variable ID in the three
          collections. That meant any sync that added/removed a single
