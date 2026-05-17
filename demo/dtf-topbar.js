@@ -168,18 +168,30 @@
         +   '</div>'
         + '</div>';
     }
+    /* Page switcher is project-scoped. Component pages, the token
+       editor and the framework guide all need an active project to
+       render meaningful content (brand tokens, project-specific
+       config). On Home — or any page reached without a project —
+       hide the switcher entirely so the user can't navigate into a
+       broken state. They re-enter the flow by picking a project
+       card on the hub. */
+    var showSwitcher = !!activePid;
+    var switcherHtml = showSwitcher
+      ? ('<span class="nav-sep">/</span>'
+        + '<div class="nav-switcher">'
+        +   '<button class="nav-switcher-btn" type="button" aria-haspopup="true" aria-expanded="false">'
+        +     esc(pageLabel)
+        +     ' ' + ICON_CARET
+        +   '</button>'
+        +   '<div class="nav-dropdown" role="menu">' + ddHtml + '</div>'
+        + '</div>')
+      : '';
+
     var html = ''
       + '<nav class="explorer-nav dtf-topbar" aria-label="Site navigation">'
       +   '<div class="nav-crumb">'
       +     '<a href="' + esc(homeHref) + '" class="nav-home" aria-label="Home" title="Home">' + ICON_HOME + '</a>'
-      +     '<span class="nav-sep">/</span>'
-      +     '<div class="nav-switcher">'
-      +       '<button class="nav-switcher-btn" type="button" aria-haspopup="true" aria-expanded="false">'
-      +         esc(pageLabel)
-      +         ' ' + ICON_CARET
-      +       '</button>'
-      +       '<div class="nav-dropdown" role="menu">' + ddHtml + '</div>'
-      +     '</div>'
+      +     switcherHtml
       +     '<div class="dtf-topbar-project" data-slot="project"></div>'
       +   '</div>'
       +   '<div class="nav-actions">'
@@ -199,20 +211,23 @@
     for (i = 0; i < slotted.project.length; i++) projZone.appendChild(slotted.project[i]);
     for (i = 0; i < slotted.action.length;  i++) actZone.appendChild(slotted.action[i]);
 
-    /* Dropdown wiring */
+    /* Dropdown wiring (only when switcher is rendered, i.e. inside
+       an active project). */
     var btn = this.querySelector('.nav-switcher-btn');
     var dd  = this.querySelector('.nav-dropdown');
-    function close(){ dd.removeAttribute('data-open'); btn.setAttribute('aria-expanded','false'); }
-    btn.addEventListener('click', function(){
-      if (dd.hasAttribute('data-open')) close();
-      else { dd.setAttribute('data-open',''); btn.setAttribute('aria-expanded','true'); }
-    });
-    document.addEventListener('click', function(e){
-      if (!btn.contains(e.target) && !dd.contains(e.target)) close();
-    });
-    document.addEventListener('keydown', function(e){
-      if (e.key === 'Escape' && dd.hasAttribute('data-open')) { close(); btn.focus(); }
-    });
+    if (btn && dd) {
+      var close = function(){ dd.removeAttribute('data-open'); btn.setAttribute('aria-expanded','false'); };
+      btn.addEventListener('click', function(){
+        if (dd.hasAttribute('data-open')) close();
+        else { dd.setAttribute('data-open',''); btn.setAttribute('aria-expanded','true'); }
+      });
+      document.addEventListener('click', function(e){
+        if (!btn.contains(e.target) && !dd.contains(e.target)) close();
+      });
+      document.addEventListener('keydown', function(e){
+        if (e.key === 'Escape' && dd.hasAttribute('data-open')) { close(); btn.focus(); }
+      });
+    }
 
     /* Account menu wiring (only present when ghUser is set) */
     var acctBtn = this.querySelector('.nav-acct-btn');
