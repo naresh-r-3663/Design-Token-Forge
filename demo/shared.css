@@ -235,8 +235,8 @@ html[data-theme="dark"] .nav-acct-signout:hover{background:rgba(220,38,38,.15);c
    hex, and CSS-var name stacked underneath in a bordered tile. */
 .dtf-ladder--card{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
-  gap:8px;
+  grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
+  gap:6px;
 }
 .dtf-pcard{
   position:relative;
@@ -257,11 +257,11 @@ html[data-theme="dark"] .nav-acct-signout:hover{background:rgba(220,38,38,.15);c
 .dtf-pcard:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px}
 .dtf-pcard[aria-checked="true"]{border-color:var(--brand-component-bg-default,#3366f0);box-shadow:0 0 0 1px var(--brand-component-bg-default,#3366f0)}
 .dtf-pcard--copied{border-color:var(--success-component-bg-default,#16A34A);box-shadow:0 0 0 1px var(--success-component-bg-default,#16A34A)}
-.dtf-pcard-sw{height:56px;width:100%}
-.dtf-pcard-meta{padding:6px 8px 8px;font-size:11px;line-height:1.3;display:flex;flex-direction:column;gap:1px}
-.dtf-pcard-name{font-weight:700;color:var(--demo-fg-strong);font-family:var(--font-family-mono,ui-monospace,SFMono-Regular,Menlo,monospace);letter-spacing:.02em;font-size:11px}
-.dtf-pcard-hex{color:var(--demo-fg-faint);font-family:var(--font-family-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:10px;text-transform:uppercase}
-.dtf-pcard-css{color:var(--demo-fg-faint);font-family:var(--font-family-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:9.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtf-pcard-sw{height:42px;width:100%}
+.dtf-pcard-meta{padding:4px 6px 5px;font-size:10px;line-height:1.25;display:flex;flex-direction:column;gap:1px}
+.dtf-pcard-name{font-weight:700;color:var(--demo-fg-strong);font-family:var(--font-family-mono,ui-monospace,SFMono-Regular,Menlo,monospace);letter-spacing:.02em;font-size:10px}
+.dtf-pcard-hex{color:var(--demo-fg-faint);font-family:var(--font-family-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:9px;text-transform:uppercase}
+.dtf-pcard-css{color:var(--demo-fg-faint);font-family:var(--font-family-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:8.5px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ── Header ────────────────────────────────────────────── */
 .demo-header{padding:24px 32px;border-bottom:1px solid var(--demo-border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
