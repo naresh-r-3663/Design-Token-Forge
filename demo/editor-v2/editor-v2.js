@@ -5318,13 +5318,38 @@
     // Hex collisions inside a single ladder are extremely rare
     // (ladders are tonal sweeps) but if one happens, first match wins
     // \u2014 which is fine because both steps paint identically.
+    //
+    // Use the LIVE computed --prim-<prefix>-<step> values rather than
+    // regenerating via PaletteEngine. The published primitives.css
+    // is the source of truth for hex \u2014 a fresh generatePalette()
+    // call can drift by 1 channel due to engine version differences
+    // or rounding, and then NOTHING in the file matches. Reading
+    // from getComputedStyle guarantees the lookup uses the exact
+    // same hex values that semantic.css was built against.
+    var cs = getComputedStyle(document.documentElement);
+    var ladderCache = {};
+    function buildLadder(roleId) {
+      if (ladderCache[roleId]) return ladderCache[roleId];
+      var roleObj = null;
+      for (var i = 0; i < ROLES.length; i++) {
+        if (ROLES[i].id === roleId) { roleObj = ROLES[i]; break; }
+      }
+      var prefix = (roleObj && roleObj.prefix) || roleId;
+      var ladder = {};
+      ALL_STEPS.forEach(function (step) {
+        var hex = cs.getPropertyValue('--prim-' + prefix + '-' + step).trim().toUpperCase();
+        if (hex) ladder[step] = hex;
+      });
+      ladderCache[roleId] = ladder;
+      return ladder;
+    }
     function findStep(roleId, mode, hex) {
       if (!hex) return null;
-      var ladder = ladderFor(roleId);
+      var ladder = buildLadder(roleId);
       var H = String(hex).toUpperCase();
       var names = Object.keys(ladder);
       for (var i = 0; i < names.length; i++) {
-        if (String(ladder[names[i]]).toUpperCase() === H) return names[i];
+        if (ladder[names[i]] === H) return names[i];
       }
       return null;
     }
