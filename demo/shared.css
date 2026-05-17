@@ -150,6 +150,54 @@ dtf-topbar{display:block;position:sticky;top:0;z-index:150}
 html[data-theme="dark"] .nav-acct-signout:hover{background:rgba(220,38,38,.15);color:#FCA5A5}
 .nav-acct-signout svg{width:14px;height:14px;flex-shrink:0}
 
+/* ── <dtf-palette-ladder> — shared 22-step swatch strip ────
+   Same look in Color Token Explorer (read-only) and Token Editor
+   (interactive). Sizing/gap/labels matched to the editor's
+   .ev2-pal-sw component so the two pages feel like one system. */
+.dtf-ladder{
+  display:grid;
+  grid-template-columns:repeat(22,minmax(0,1fr));
+  gap:3px;
+  padding:3px;
+  border-radius:var(--radius-sm,6px);
+  border:1px solid var(--demo-border);
+  background:var(--demo-surface-alt,var(--demo-cm-bg));
+}
+.dtf-ladder--show-step .dtf-ladder-sw-step{color:currentColor !important;opacity:1}
+.dtf-ladder-sw{
+  position:relative;
+  display:block;
+  height:36px;
+  border:none;
+  border-radius:3px;
+  padding:0;
+  cursor:pointer;
+  font:inherit;
+  transition:transform 100ms ease, box-shadow 120ms ease, opacity 120ms ease;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.10);
+  overflow:hidden;
+}
+.dtf-ladder-sw:hover{transform:translateY(-1px);box-shadow:inset 0 0 0 1px rgba(0,0,0,.18), 0 2px 4px rgba(0,0,0,.10)}
+.dtf-ladder-sw:focus-visible{outline:2px solid var(--brand-component-bg-default,#3366f0);outline-offset:2px;z-index:2}
+.dtf-ladder-sw[aria-checked="true"]{
+  box-shadow:0 0 0 2px var(--brand-component-bg-default,#3366f0), 0 1px 3px rgba(0,0,0,.12);
+  z-index:1;
+}
+.dtf-ladder-sw--copied{box-shadow:0 0 0 2px var(--success-component-bg-default,#16A34A), 0 1px 3px rgba(0,0,0,.12)}
+.dtf-ladder-sw-step{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  font-size:9px;font-weight:700;
+  opacity:0;
+  pointer-events:none;
+  text-shadow:0 1px 2px rgba(0,0,0,.45);
+  letter-spacing:.01em;
+  transition:opacity 100ms ease;
+}
+.dtf-ladder-sw:hover .dtf-ladder-sw-step,
+.dtf-ladder-sw[aria-checked="true"] .dtf-ladder-sw-step,
+.dtf-ladder-sw:focus-visible .dtf-ladder-sw-step{opacity:1}
+
 /* ── Header ────────────────────────────────────────────── */
 .demo-header{padding:24px 32px;border-bottom:1px solid var(--demo-border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .demo-header h1{font-size:var(--font-size-20,20px);font-weight:700;color:var(--demo-fg-strong)}

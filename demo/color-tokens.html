@@ -7,7 +7,7 @@
 <!-- Auth gate — must be first, no defer, so body hides before paint. -->
 <script src="auth-gate.js?v=1"></script>
 <link rel="stylesheet" href="../packages/tokens/src/index.css">
-<link rel="stylesheet" href="shared.css?v=1003">
+<link rel="stylesheet" href="shared.css?v=1004">
 <style>
 /* ════════════════════════════════════════════════════════════
    Color Token Explorer — page-specific styles
@@ -369,6 +369,7 @@
 </div>
 
 <script src="dtf-topbar.js?v=9"></script>
+<script src="dtf-palette-ladder.js?v=1"></script>
 <script src="nav.js?v=3"></script>
 <script>
 /* Clear stale admin-save flags BEFORE shared.js loads, so it always fetches fresh CSS+config */
@@ -587,28 +588,13 @@ function renderPalettes(){
        a 500 step). */
     var liveKey = hex(p.prefix + '-500') || p.key;
     row.innerHTML='<div class="palette-name">'+p.name+' <span class="palette-key">key: '+liveKey+'</span></div>';
-    var strip=document.createElement('div');
-    strip.className='swatch-strip';
-    STEPS.forEach(function(step){
-      var prop=p.prefix+'-'+step;
-      var color=hex(prop);
-      var sw=document.createElement('div');
-      sw.className='swatch';
-      sw.style.background=color||'transparent';
-      sw.dataset.hex=color||'';
-      if(step==='500') sw.setAttribute('data-key','');
-      var stepLabel=document.createElement('span');
-      stepLabel.className='swatch-step';
-      stepLabel.textContent=step;
-      stepLabel.style.color=contrastText(color);
-      sw.appendChild(stepLabel);
-      var tip=document.createElement('span');
-      tip.className='swatch-tip';
-      tip.textContent=step+' · '+color;
-      sw.appendChild(tip);
-      sw.addEventListener('click',function(){copyHex(color)});
-      strip.appendChild(sw);
-    });
+    /* Shared <dtf-palette-ladder> component — same swatch grid used
+       in the Token Editor. Read-only here (no `interactive` attr) so
+       clicks copy the hex to clipboard. Step 500 is highlighted as
+       the key step via `selected`. */
+    var strip = document.createElement('dtf-palette-ladder');
+    strip.setAttribute('prefix', p.prefix);
+    strip.setAttribute('selected', '500');
     row.appendChild(strip);
     container.appendChild(row);
   });
