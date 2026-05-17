@@ -2528,14 +2528,32 @@
     return '--' + prefix + '-' + derivedId;
   }
   // Per-step pass mark for the ladder, mirroring t1LeverLadderHTML.
+  // onComponent is special: the chosen white/black serves all 3
+  // fill states (default + hover + pressed), so its WCAG verdict
+  // must reflect the WORST of those three contrasts — otherwise
+  // the picker shows a green "pass" mark for a colour that fails
+  // on hover/pressed (the bug that motivated the worst-case
+  // solver change).
   function t1DerivedJudgeStep(roleId, derivedId, mode, step) {
     var base = t1DerivedBaseline(roleId, derivedId, mode);
     var hex;
     if (derivedId === 'onComponent') {
       hex = step === 'white' ? '#FFFFFF' : '#0A0A0A';
-    } else {
-      hex = ladderFor(roleId)[step] || '#000';
+      var t = State.t1[mode][roleId];
+      var fills = [
+        stepHexByName(roleId, t.fill),
+        stepHexByName(roleId, stepRel(t.fill, 1)),
+        stepHexByName(roleId, stepRel(t.fill, 2))
+      ].filter(Boolean);
+      if (!fills.length) fills = [base.hex];
+      var minR = Infinity;
+      for (var i = 0; i < fills.length; i++) {
+        var rr = contrastRatio(hex, fills[i]);
+        if (rr < minR) minR = rr;
+      }
+      return { ratio: minR, judge: wcagJudge(minR, base.large) };
     }
+    hex = ladderFor(roleId)[step] || '#000';
     var r = contrastRatio(hex, base.hex);
     return { ratio: r, judge: wcagJudge(r, base.large) };
   }
@@ -2559,10 +2577,23 @@
           var isDef = step === def;
           var jr    = t1DerivedJudgeStep(roleId, derivedId, mode, step);
           var pass  = jr.judge.pass ? 'true' : 'false';
-          var tip   = 'step ' + step + ' \u2022 ' + hex.toUpperCase()
-                    + ' \u00b7 ' + jr.ratio.toFixed(2) + ':1 (' + (jr.judge.pass ? jr.judge.grade : 'Fail') + ')'
-                    + (isDef ? ' \u2022 default' : '')
-                    + (isCur ? ' \u2022 selected' : '');
+          // For onComponent the ratio is worst-of-3-fills; flag it
+          // explicitly so the user understands why a colour can show
+          // a lower ratio than they'd expect by eyeballing default.
+          var tip;
+          if (derivedId === 'onComponent') {
+            tip = step + ' \u2022 ' + hex.toUpperCase()
+                + ' \u00b7 worst-state ' + jr.ratio.toFixed(2) + ':1 ('
+                + (jr.judge.pass ? jr.judge.grade : 'Fail') + ')'
+                + (isDef ? ' \u2022 auto pick' : '')
+                + (isCur ? ' \u2022 selected' : '');
+          } else {
+            tip = 'step ' + step + ' \u2022 ' + hex.toUpperCase()
+                + ' \u00b7 ' + jr.ratio.toFixed(2) + ':1 ('
+                + (jr.judge.pass ? jr.judge.grade : 'Fail') + ')'
+                + (isDef ? ' \u2022 default' : '')
+                + (isCur ? ' \u2022 selected' : '');
+          }
           return '<button type="button" class="ev2-pc-ladder-step"'
             + ' data-pc-ladder-pick="' + step + '"'
             + ' data-current="' + isCur + '"'
