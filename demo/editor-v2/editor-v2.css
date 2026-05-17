@@ -1041,17 +1041,18 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 
 /* T1 Roles — lever blocks + segmented controls + slots table */
 .ev2-levers{display:flex;flex-direction:column;gap:10px}
-/* onComponent has a 2-swatch "ladder" (white/black). Center the
-   two swatches and keep them large enough to read at a glance —
-   otherwise they look like an accidental near-empty row. */
+/* onComponent compact ladder: starts with white/black, can now
+   grow to include any AA-passing palette step. Auto-fit so rows
+   wrap naturally instead of two big tiles forcing extras to a
+   lonely line below. */
 .ev2-pc-ladder[data-pc-ladder-compact="true"]{
-  grid-template-columns:repeat(2, 56px);
+  grid-template-columns:repeat(auto-fill, 44px);
   justify-content:start;
   gap:8px;
 }
 .ev2-pc-ladder[data-pc-ladder-compact="true"] .ev2-pc-ladder-step{
   aspect-ratio:1;
-  width:56px;
+  width:44px;
 }
 .ev2-lever-block{
   border:1px solid var(--ev2-chrome-outline);

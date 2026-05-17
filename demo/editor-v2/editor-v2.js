@@ -2128,52 +2128,58 @@
     };
   }
 
-  /* Human-readable WCAG tip for the sentinel chip. Replaces the
-     old "1.29:1 vs --surface-bright-bg (AA large 3:1)" line, which
-     was technically correct but read as a hash to anyone who isn't
-     fluent in WCAG token names. Built dynamically so the message
-     reflects what FAILED, what the threshold is, and what to do. */
+  /* Human-readable WCAG tip for the sentinel chip.
+
+     Design goal: ONE sentence the user can act on, in plain
+     language. The deep technical "why" (which token, which threshold
+     number, which WCAG section) belongs in the popover's secondary
+     blocks, not the lead paragraph. This text appears next to a
+     ratio chip that already shows the number, so we don't repeat it.
+
+     Cognitive-load rules:
+       1. Lead with the user's WORLD ("Text is easy to read")
+          not the spec's world ("4.5:1 contrast achieved").
+       2. Failure copy is prescriptive, not diagnostic. Skip the
+          threshold value; the chip shows it.
+       3. Never mention CSS variable names in the lead.
+       4. Edge case (border, identifies-region) keeps its own
+          plain-language reframing. */
   function wcagTipText(sent, tokenName) {
     var role = wcagRoleFromToken(tokenName);
-    var threshold = sent.large ? 3 : 4.5;
-    var ratio = sent.ratio.toFixed(2) + ':1';
-    var baselineShort = sent.baseline.replace(/^--surface-[^-]+-/, '');
     // Edge intent (outline / cm-outline trio): 3:1 is ONLY required
     // when the border identifies the region by itself. Most designs
-    // pair a faint border with shadow or spacing, in which case a
-    // sub-3:1 ratio is perfectly fine. We reframe the chip instead
-    // of crying "FAIL".
+    // pair a faint border with shadow or spacing, so a sub-3:1 ratio
+    // is perfectly fine \u2014 reframe instead of crying "FAIL".
     if (sent.intent === 'edge') {
       if (sent.judge.pass) {
-        return (ratio + ' against ' + baselineShort + ' \u2014 clears the 3:1 minimum, so this border can identify the region on its own.').replace(/"/g, '&quot;');
+        return 'Strong enough that this border can identify the region on its own.';
       }
-      return ('Below the 3:1 minimum against ' + baselineShort + '. Fine if you pair this border with a shadow or spacing (WCAG 1.4.11), otherwise step it ' + role.direction + '.').replace(/"/g, '&quot;');
+      return 'Soft border. Fine if paired with a shadow or spacing, otherwise step it ' + role.direction + '.';
     }
-    // Text intent (content family) \u2014 strict pass/fail, prescriptive
-    // remedy when below threshold.
-    var lead = sent.judge.pass
-      ? 'Passes \u2014 '
-      : (sent.ratio >= threshold - 0.5 ? 'Just below \u2014 ' : 'Fails \u2014 ');
-    var body = sent.judge.pass
-      ? role.what + ' reads on ' + baselineShort + '.'
-      : role.what + ' is under the ' + threshold + ':1 minimum against ' + baselineShort + ' for ' + role.usage + '.';
-    var hint = sent.judge.pass ? '' : '  Try stepping it ' + role.direction + ', or step ' + baselineShort + ' the other way.';
-    return (lead + body + hint).replace(/"/g, '&quot;');
+    // Text intent (content / on-component / on-container).
+    if (sent.judge.pass) {
+      return role.whatShort + ' is easy to read here.';
+    }
+    return role.whatShort + ' is hard to read on this background.';
   }
-  /* Per-prop short copy used inside wcagTipText, so a fail on
-     `outline` reads "This outline" rather than "This surface-bright-
-     outline cell". Keeps the tip about the user's intent, not the
-     CSS variable name. */
+  /* Per-prop short copy used inside wcagTipText. Returns:
+       what       \u2014 sentence-case subject for diagnostic text
+                     (e.g. "This outline")
+       whatShort  \u2014 friendly noun for action-first copy
+                     (e.g. "Text", "Border")
+       usage      \u2014 WCAG context (used in deeper "why" blocks only)
+       direction  \u2014 step direction hint */
   function wcagRoleFromToken(tokenName) {
     var prop = (tokenName || '').replace(/^--surface-[^-]+-/, '');
-    if (prop === 'outline')           return { what:'This outline',      usage:'UI borders (WCAG 1.4.11)', direction:'darker' };
+    if (prop === 'outline')
+      return { what:'This outline', whatShort:'Border', usage:'UI borders (WCAG 1.4.11)', direction:'darker' };
     if (prop === 'ct-default' || prop === 'ct-strong')
-                                       return { what:'This body text',    usage:'body copy (WCAG 1.4.3)',  direction:'darker' };
+      return { what:'This body text', whatShort:'Text', usage:'body copy (WCAG 1.4.3)', direction:'darker' };
     if (prop === 'ct-subtle' || prop === 'ct-faint')
-                                       return { what:'This support text', usage:'large/secondary text',     direction:'darker' };
+      return { what:'This support text', whatShort:'Support text', usage:'large/secondary text', direction:'darker' };
     if (prop === 'cm-outline' || prop === 'cm-outline-hover' || prop === 'cm-outline-pressed')
-                                       return { what:'This component border', usage:'UI borders (WCAG 1.4.11)', direction:'darker' };
-    return { what:'This color', usage:'UI elements', direction:'further away from the baseline' };
+      return { what:'This component border', whatShort:'Border', usage:'UI borders (WCAG 1.4.11)', direction:'darker' };
+    return { what:'This color', whatShort:'Text', usage:'UI elements', direction:'further away from the baseline' };
   }
 
   function setT2Step(surfaceId, propId, mode, newStep) {
@@ -2683,11 +2689,11 @@
           // a lower ratio than they'd expect by eyeballing default.
           var tip;
           if (derivedId === 'onComponent') {
-            var verdict = jr.judge.pass ? jr.judge.grade : (step === softStep ? 'Best available (under AA)' : 'Fail');
+            var verdict = jr.judge.pass ? 'readable' : (step === softStep ? 'closest we can get' : 'hard to read');
             var stepLabel = (step === 'white' || step === 'black') ? step : ('step ' + step);
             tip = stepLabel + ' \u2022 ' + hex.toUpperCase()
-                + ' \u00b7 worst-state ' + jr.ratio.toFixed(2) + ':1 ('
-                + verdict + ')'
+                + ' \u00b7 worst state ' + jr.ratio.toFixed(2) + ':1 \u2022 '
+                + verdict
                 + (isDef ? ' \u2022 auto pick' : '')
                 + (isCur ? ' \u2022 selected' : '');
           } else {
@@ -6275,22 +6281,20 @@
       if (sent.judge.pass) {
         // Already passing \u2014 no fix to suggest. Don't lie with the
         // empty-fallback copy that pretends no step works.
-        sugBlock = '<div class="ev2-wcag-pop-fix ev2-wcag-pop-fix-empty">No change needed \u2014 this pairing already meets the threshold.</div>';
+        sugBlock = '<div class="ev2-wcag-pop-fix ev2-wcag-pop-fix-empty">Looks good. No change needed.</div>';
       } else if (sug) {
         var sugPasses = !!(sug.judge && sug.judge.pass);
         var sugGrade  = sugPasses ? (sug.judge.grade === 'AAA' ? 'aaa' : (sent.large ? 'aa-large' : 'aa')) : 'fail';
-        var sugTitle  = sugPasses ? 'Suggested fix' : 'Best available';
+        var sugTitle  = sugPasses ? 'Try this' : 'Closest we can get';
         var sugSym    = sugPasses ? '\u2713' : '\u26A0';
         // onComponent suggestions that don't pass mean BOTH white +
         // black fail against the worst fill state \u2014 the real fix
         // is to move the fill step, not flip the on-component pick.
-        // Surface that explicitly so the user isn't misled into
-        // thinking "Apply" makes them AA-compliant.
+        // One sentence, no jargon.
         var rootCauseNote = '';
         if (!sugPasses && propIdHint === 't1d:onComponent') {
           rootCauseNote = '<div class="ev2-wcag-pop-fix-note">'
-            + 'Neither white nor black reaches AA against your hover/pressed fills. '
-            + 'Move the fill step lighter (Light mode) or darker (Dark mode) to narrow the contrast valley.'
+            + 'The fill itself is too intense for readable text. Soften it (lighter in Light mode, darker in Dark mode) to fix this properly.'
           + '</div>';
         }
         sugBlock =
@@ -6301,22 +6305,18 @@
           + '</div>'
           + '<div class="ev2-wcag-pop-fix-body">'
             + '<span class="ev2-wcag-pop-sw" style="background:' + sug.hex + '"></span>'
-            + '<span class="ev2-wcag-pop-fix-txt">Step <strong>' + sug.step + '</strong> (' + sug.hex.toUpperCase() + ')</span>'
+            + '<span class="ev2-wcag-pop-fix-txt">Step <strong>' + sug.step + '</strong> \u00b7 ' + sug.hex.toUpperCase() + '</span>'
             + '<button type="button" class="ev2-wcag-pop-apply" data-pc-wcag-apply' + applyAttrs + ' data-step="' + sug.step + '">Apply</button>'
           + '</div>'
           + rootCauseNote
         + '</div>';
       } else if (propIdHint === 't1d:onComponent') {
         // Both white and black tested; neither improves materially.
-        // Speak to the real cause (fill step too saturated) instead
-        // of the generic "edit the baseline" copy.
         sugBlock = '<div class="ev2-wcag-pop-fix ev2-wcag-pop-fix-empty">'
-          + 'No on-component colour reaches AA against this role\u2019s fill states. '
-          + 'The hover/pressed fills are too saturated for either white or black to pass on every state. '
-          + 'Move the fill step toward the surface tone (lighter in Light mode, darker in Dark mode) to fix the root cause.'
+          + 'No text color works here. The fill itself is too intense \u2014 soften it (lighter in Light mode, darker in Dark mode) to fix.'
         + '</div>';
       } else {
-        sugBlock = '<div class="ev2-wcag-pop-fix ev2-wcag-pop-fix-empty">No step in this palette reaches the threshold against ' + sent.baseline.replace(/^--[^-]+-/, '') + '. Try editing the baseline instead.</div>';
+        sugBlock = '<div class="ev2-wcag-pop-fix ev2-wcag-pop-fix-empty">No step in this palette works. Try editing the underlying color instead.</div>';
       }
 
       var edgeNote = '';
