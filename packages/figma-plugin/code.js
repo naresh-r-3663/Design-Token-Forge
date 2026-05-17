@@ -19,6 +19,54 @@ figma.showUI(__html__, { width: 480, height: 560 });
 var CODE_VERSION = '2026-05-17-resize';
 log('code.js loaded — version ' + CODE_VERSION);
 
+/* ── Stable hash helpers ────────────────────────────────
+   Used by the component ledger (W1+) to fingerprint blueprints and
+   token bindings. NOT cryptographic — just a stable deterministic
+   short string so the editor / Builder pill can detect drift.
+   FNV-1a 32-bit, output as 8 lowercase hex chars.
+   See docs/architecture/component-builder/
+   component-ledger-and-safe-rebuild.md §6. */
+function dtfHash32(s) {
+  var str = String(s == null ? '' : s);
+  var h = 0x811c9dc5 >>> 0;
+  for (var i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+  }
+  var hex = h.toString(16);
+  while (hex.length < 8) hex = '0' + hex;
+  return hex;
+}
+/* Deterministic JSON stringify — sorts object keys at every level so
+   key-order doesn't influence the hash. Tolerates functions (writes
+   '<fn>') and circular structures (writes '<cycle>'). */
+function dtfStableStringify(value) {
+  var seen = [];
+  function ser(v) {
+    if (v === null || v === undefined) return JSON.stringify(v);
+    if (typeof v === 'function') return '"<fn>"';
+    if (typeof v !== 'object')   return JSON.stringify(v);
+    if (seen.indexOf(v) >= 0)    return '"<cycle>"';
+    seen.push(v);
+    var out;
+    if (Object.prototype.toString.call(v) === '[object Array]') {
+      var parts = [];
+      for (var i = 0; i < v.length; i++) parts.push(ser(v[i]));
+      out = '[' + parts.join(',') + ']';
+    } else {
+      var keys = Object.keys(v).sort();
+      var kparts = [];
+      for (var k = 0; k < keys.length; k++) {
+        kparts.push(JSON.stringify(keys[k]) + ':' + ser(v[keys[k]]));
+      }
+      out = '{' + kparts.join(',') + '}';
+    }
+    seen.pop();
+    return out;
+  }
+  return ser(value);
+}
+
 /* ── URL migration via clientStorage (reliable, not blocked like localStorage) ── */
 (async function() {
   try {
@@ -3893,6 +3941,35 @@ async function generateComponentFromBlueprint(blueprint) {
   var savedProject = '';
   try { savedProject = figma.root.getPluginData('dtf-project') || ''; } catch (e) {}
 
+  /* W1/M5 \u2014 fingerprint the blueprint and bound-token surface so a
+     future Build can diff "spec unchanged · tokens differ" etc.
+     specHash:    deterministic hash of the BP definition object.
+     tokensHash:  hash of the sorted variable IDs we actually bound
+                  during this Build (one entry per id, deduped). */
+  var specHash = '';
+  try { specHash = dtfHash32(dtfStableStringify(BP)); } catch (e) {}
+  var tokensHash = '';
+  try {
+    var ids = [];
+    function _collectIds(map) {
+      if (!map) return;
+      var ks = Object.keys(map);
+      for (var i = 0; i < ks.length; i++) {
+        var v = map[ks[i]];
+        if (v && v.id) ids.push(v.id);
+      }
+    }
+    _collectIds(compSizeVars);
+    _collectIds(t2Vars);
+    _collectIds(t3Vars);
+    ids.sort();
+    tokensHash = dtfHash32(ids.join('|'));
+  } catch (e) {}
+
+  /* Preserve prior hashes so the Builder pill can show "changed since
+     last build" without needing to recompute on every prereq ping. */
+  var _priorEntry = existingVersions[blueprint.name.toLowerCase()] || {};
+
   existingVersions[blueprint.name.toLowerCase()] = {
     /* Legacy fields (kept for any reader of the old shape) */
     version: '2.0.0',
@@ -3910,6 +3987,7 @@ async function generateComponentFromBlueprint(blueprint) {
     schemaVersion:  1,
     writtenAt:      new Date().toISOString(),
     writtenBy:      'dtf-plugin@code.js',
+    pluginVersion:  CODE_VERSION,
     project:        savedProject,
     pageId:         page.id,
     pageName:       page.name,
@@ -3921,6 +3999,11 @@ async function generateComponentFromBlueprint(blueprint) {
       radius:  true,
       motion:  (stats.reactions > 0)
     },
+    /* M5 fingerprints */
+    specHash:       specHash,
+    tokensHash:     tokensHash,
+    prevSpecHash:   _priorEntry.specHash   || '',
+    prevTokensHash: _priorEntry.tokensHash || '',
     priorSnapshot:  priorSnapshot   /* W1 — what we just invalidated */
   };
   figma.root.setPluginData('dtf-component-versions', JSON.stringify(existingVersions));

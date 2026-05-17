@@ -645,6 +645,16 @@
   .comp-pick .comp-meta.is-drift { color: var(--dtf-warning-content); }
   .comp-pick .comp-meta .meta-time { display: block; }
   .comp-pick .comp-meta .meta-count { display: block; opacity: 0.75; }
+  .comp-pick .comp-meta .meta-change {
+    display: block;
+    margin-top: 2px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--dtf-brand-bg);
+    opacity: 0.85;
+  }
   .comp-pick .comp-meta .meta-drift {
     display: inline-block;
     margin-left: 4px;
@@ -2976,11 +2986,35 @@ function renderBuilderMeta(versions){
         '; file is now scoped to ' + esc(nowProject) + '">drift</span>'
       : '';
 
+    /* M5 — line 3 surfaces what changed at last Build vs the one
+       before it. Pure read of fields already in the ledger; no live
+       recomputation. */
+    var changes = [];
+    if (v.specHash && v.prevSpecHash && v.specHash !== v.prevSpecHash) {
+      changes.push('spec');
+    }
+    if (v.tokensHash && v.prevTokensHash && v.tokensHash !== v.prevTokensHash) {
+      changes.push('tokens');
+    }
+    var line3 = changes.length
+      ? ('Changed: ' + changes.join(' + '))
+      : '';
+
+    /* Tooltip = full fingerprint, copyable on hover. */
+    var tip = [
+      v.specHash    ? ('spec '    + v.specHash)    : '',
+      v.tokensHash  ? ('tokens '  + v.tokensHash)  : '',
+      v.pluginVersion ? ('plugin ' + v.pluginVersion) : '',
+      ranProject    ? ('project ' + ranProject)    : ''
+    ].filter(Boolean).join(' · ');
+
     el.hidden = false;
     el.classList.toggle('is-drift', isDrift);
+    if (tip) el.setAttribute('title', tip); else el.removeAttribute('title');
     el.innerHTML =
       '<span class="meta-time">' + esc(line1) + drift + '</span>' +
-      (line2 ? '<span class="meta-count">' + esc(line2) + '</span>' : '');
+      (line2 ? '<span class="meta-count">' + esc(line2) + '</span>' : '') +
+      (line3 ? '<span class="meta-change">' + esc(line3) + '</span>' : '');
   }
 }
 generateBtn.addEventListener('click', function(){
