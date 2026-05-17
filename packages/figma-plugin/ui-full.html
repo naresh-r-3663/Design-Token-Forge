@@ -3081,7 +3081,8 @@ function updateGenPrereqs(data){
     data.currentPrototypeHashes || {},
     data.currentTokensHash || '',
     data.currentProject || '',
-    data.currentTokensHashes || null  /* V2 per-component map */
+    data.currentTokensHashes || null,  /* V2 per-component map */
+    data.currentBpMeta || null         /* V3.1 — planned matrix per BP */
   );
 }
 
@@ -3116,11 +3117,12 @@ var builderHasAnyBuild = false;
                  pills are present (see demo/mock-builder.html).
      • tint:     subtle bg on the row of HIGHEST severity
                  (drift > structure > proto > bindings). */
-function renderBuilderMeta(versions, currentStructureHashes, currentPrototypeHashes, currentTokensHash, currentProject, currentTokensHashes){
+function renderBuilderMeta(versions, currentStructureHashes, currentPrototypeHashes, currentTokensHash, currentProject, currentTokensHashes, currentBpMeta){
   currentStructureHashes = currentStructureHashes || {};
   currentPrototypeHashes = currentPrototypeHashes || {};
   currentTokensHash      = currentTokensHash || '';
   currentTokensHashes    = currentTokensHashes || null;
+  currentBpMeta          = currentBpMeta || null;
   /* Drift = "the project we'd build against next is not the one we
      built against last time". The dropdown (CURRENT_PROJECT) is the
      authoritative source for "next", NOT the file-bound dtf-project
@@ -3217,7 +3219,51 @@ function renderBuilderMeta(versions, currentStructureHashes, currentPrototypeHas
     } else if (structureChanged) {
       pillsHtml = '<span class="pill" data-kind="structure">build needed</span>';
       tint = 'structure';
-      why = 'New variants are available in the latest plugin spec.';
+      /* V3.1 \u2014 try to spell out exactly what changes. Designers
+         deserve more than "New variants are available"; they want to
+         know whether Rebuild adds 4 variants or 40, whether a new
+         family appears, etc. Compare ledger.families + ledger
+         totalComponents against the live BP meta. Falls back to the
+         vague message if meta is missing (older plugin sandbox). */
+      var bm = currentBpMeta && currentBpMeta[key];
+      var ledgerFams = (v.families && v.families.slice) ? v.families.slice() : [];
+      var ledgerVariants = (typeof v.totalComponents === 'number') ? v.totalComponents : 0;
+      if (bm && bm.families) {
+        var liveFams = bm.families;
+        var ledgerSet = {}; for (var lf = 0; lf < ledgerFams.length; lf++) ledgerSet[ledgerFams[lf]] = 1;
+        var liveSet   = {}; for (var lvf = 0; lvf < liveFams.length;   lvf++) liveSet[liveFams[lvf]]   = 1;
+        var addedFams   = liveFams.filter(function(f){   return !ledgerSet[f]; });
+        var removedFams = ledgerFams.filter(function(f){ return !liveSet[f];   });
+        var planVariants = bm.plannedVariants || 0;
+        var delta = planVariants - ledgerVariants;
+        var bits = [];
+        if (addedFams.length) {
+          /* List family names + their variant subcount when we can. */
+          var famBits = addedFams.map(function(fn){
+            var d = bm.familyDetail && bm.familyDetail[fn];
+            return d ? (esc(fn) + ' (' + d.variants + ')') : esc(fn);
+          });
+          bits.push('Adds ' + (addedFams.length === 1 ? 'family' : 'families') + ' ' + famBits.join(', '));
+        }
+        if (removedFams.length) {
+          bits.push('Drops ' + (removedFams.length === 1 ? 'family' : 'families') + ' ' + removedFams.map(esc).join(', '));
+        }
+        if (!bits.length) {
+          /* No family delta, but structure hash differs \u2014 some
+             axis (state list, override semantics, etc.) changed. */
+          if (delta > 0)      bits.push('Adds ' + delta + ' new variants');
+          else if (delta < 0) bits.push('Removes ' + Math.abs(delta) + ' variants');
+          else                bits.push('Updates existing variant structure');
+        }
+        if (planVariants && ledgerVariants && planVariants !== ledgerVariants) {
+          bits.push('<span class="nums">' + ledgerVariants + ' \u2192 ' + planVariants + '</span> total');
+        } else if (planVariants && !ledgerVariants) {
+          bits.push('<span class="nums">' + planVariants + '</span> total');
+        }
+        why = bits.join(' \u00b7 ') + '.';
+      } else {
+        why = 'New variants are available in the latest plugin spec.';
+      }
     } else if (protoChanged) {
       pillsHtml = '<span class="pill" data-kind="proto">build needed</span>';
       tint = 'proto';

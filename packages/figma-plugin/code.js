@@ -4571,6 +4571,13 @@ figma.ui.onmessage = async function(msg) {
       var currentSpecHashes = {};
       var currentStructureHashes = {};
       var currentPrototypeHashes = {};
+      /* V3.1 — per-BP planned-matrix snapshot so the UI can render
+         a human-readable delta in the "build needed" why-line
+         instead of the vague "New variants are available". We send
+         family names + planned variant counts; UI compares against
+         the prior ledger entry's families / totalComponents and
+         formats e.g. "Adds Brand family (40 new variants, 0 \u2192 40)". */
+      var currentBpMeta = {};
       try {
         var _bpKeys = Object.keys(COMPONENT_BLUEPRINTS);
         for (var _bki = 0; _bki < _bpKeys.length; _bki++) {
@@ -4588,6 +4595,29 @@ figma.ui.onmessage = async function(msg) {
                     dtfStableStringify(_bp.states || []) + ':' +
                     'wired';
           currentPrototypeHashes[_bk] = dtfHash32(_ps);
+          /* Planned-matrix snapshot. Matches the actual build loop:
+             for each family, types \u00d7 (family.states || BP.states)
+             \u00d7 2 (rounded variants are always built). */
+          try {
+            var _famNames = Object.keys(_bp.families || {});
+            var _rootStates = (_bp.states && _bp.states.length) || 0;
+            var _plannedVariants = 0;
+            var _famDetail = {};
+            for (var _fi = 0; _fi < _famNames.length; _fi++) {
+              var _fn = _famNames[_fi];
+              var _f = _bp.families[_fn] || {};
+              var _ty = (_f.types && _f.types.length) || 0;
+              var _st = (_f.states && _f.states.length) || _rootStates || 0;
+              var _ct = _ty * _st * 2;  /* rounded \u00d7 2 */
+              _plannedVariants += _ct;
+              _famDetail[_fn] = { types: _ty, states: _st, variants: _ct };
+            }
+            currentBpMeta[_bk] = {
+              families: _famNames,
+              familyDetail: _famDetail,
+              plannedVariants: _plannedVariants
+            };
+          } catch (eMeta) { /* per-BP meta is best-effort */ }
         }
       } catch (e) {}
 
@@ -4602,6 +4632,7 @@ figma.ui.onmessage = async function(msg) {
         currentSpecHashes:     currentSpecHashes,       /* legacy alias */
         currentStructureHashes:currentStructureHashes,
         currentPrototypeHashes:currentPrototypeHashes,
+        currentBpMeta:         currentBpMeta,           /* V3.1 — UI delta */
         currentProject:        (function(){ try { return figma.root.getPluginData('dtf-project') || ''; } catch(e){ return ''; } })(),
         pluginVersion: CODE_VERSION
       });
