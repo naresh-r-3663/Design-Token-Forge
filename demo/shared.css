@@ -17,7 +17,13 @@
   --demo-surface-deep:var(--surface-base-strong);
   --demo-cm-bg:var(--surface-base-cm-bg);
 }
-html{scroll-behavior:smooth}
+html{
+  scroll-behavior:smooth;
+  /* Reserve scrollbar gutter even when content fits — prevents the
+     sticky topbar (and the whole page) from shifting left/right
+     when navigating between scrollable and non-scrollable pages. */
+  scrollbar-gutter:stable;
+}
 html[data-theme="dark"]{color-scheme:dark}
 body{
   font-family:var(--font-family-sans,system-ui,-apple-system,sans-serif);
