@@ -465,17 +465,63 @@
   }
   .change-more:hover { background: var(--dtf-surface-alt); }
 
+  /* ── Rebind banner (in-pane warning card) ──────────
+     Subtle warning-tinted band that orients the user. NO action
+     button inside — the footer CTA is the single source of truth
+     for the "do it" action, to avoid two competing primaries. */
+  .rebind-card {
+    display: flex; flex-direction: column; gap: 6px;
+    margin: 12px 12px 0;
+    padding: 10px 12px;
+    background: var(--dtf-warning-surface, color-mix(in srgb, var(--dtf-warning-content) 10%, var(--dtf-surface)));
+    border: 1px solid color-mix(in srgb, var(--dtf-warning-content) 28%, transparent);
+    border-radius: 6px;
+    color: var(--dtf-fg-strong);
+  }
+  .rebind-head {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--dtf-warning-content);
+    font-size: var(--dtf-fs-12);
+    font-weight: 600;
+  }
+  .rebind-head-icon { flex: 0 0 auto; }
+  .rebind-head-title { color: var(--dtf-fg-strong); }
+  .rebind-flow {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+    font-size: var(--dtf-fs-11);
+  }
+  .rebind-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px;
+    background: var(--dtf-surface);
+    border: 1px solid var(--dtf-surface-alt);
+    border-radius: 999px;
+    color: var(--dtf-fg-subtle);
+    font-weight: 500;
+  }
+  .rebind-chip.target {
+    color: var(--dtf-fg-strong);
+    border-color: color-mix(in srgb, var(--dtf-warning-content) 40%, transparent);
+  }
+  .rebind-chip-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--dtf-fg-faint);
+  }
+  .rebind-chip.target .rebind-chip-dot { background: var(--dtf-warning-content); }
+  .rebind-arrow { color: var(--dtf-fg-faint); font-size: var(--dtf-fs-12); }
+
   /* ── Rebind summary ─────────────────────────────────
      Replaces the per-token change list in mismatch mode. A row-by-row
      diff between two unrelated projects is just noise; users care
      about the SHAPE of the swap (replaced / added / left over) and
      the option to drill in if they want. */
   .rebind-summary-head {
-    padding: 12px 12px 4px;
-    font-size: var(--dtf-fs-11);
-    color: var(--dtf-fg-subtle);
+    padding: 14px 12px 6px;
+    font-size: 10px;
+    color: var(--dtf-fg-faint);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
+    font-weight: 600;
   }
   .rebind-summary-grid {
     display: grid;
@@ -749,19 +795,18 @@
     <!-- ─── Sync tab content ───────────────────────── -->
     <div id="paneSync">
 
-      <!-- Project rebind card (Sync) -->
+      <!-- Project rebind card (Sync) — the footer CTA is the single
+           action; this banner only orients the user (no second button). -->
       <div class="rebind-card" id="mismatchSync" hidden>
         <div class="rebind-head">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 1.5L11 10H1L6 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M6 5v2.5M6 8.5v.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-          Rebind required
+          <svg class="rebind-head-icon" width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 1.5L11 10H1L6 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M6 5v2.5M6 8.5v.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <span class="rebind-head-title">Rebind required</span>
         </div>
         <div class="rebind-flow">
-          <span class="rebind-chip" title="Currently linked"><span class="rebind-chip-dot"></span><span id="mismatchSyncDoc">—</span></span>
-          <span class="rebind-arrow">→</span>
-          <span class="rebind-chip target" title="Will rebind to"><span class="rebind-chip-dot"></span><span id="mismatchSyncNew">—</span></span>
+          <span class="rebind-chip"        title="Variables currently in this file"><span class="rebind-chip-dot"></span><span id="mismatchSyncDoc">—</span></span>
+          <span class="rebind-arrow" aria-hidden="true">→</span>
+          <span class="rebind-chip target" title="Project this panel will sync"><span class="rebind-chip-dot"></span><span id="mismatchSyncNew">—</span></span>
         </div>
-        <div class="rebind-caption">Syncing replaces this file’s variables with the new project’s tokens.</div>
-        <button class="btn btn-primary rebind-card-action" id="mismatchSyncBtn" type="button">Rebind to <span id="mismatchSyncBtnTarget">—</span></button>
       </div>
 
       <!-- Hero: idle / disconnected / undo -->
@@ -1022,7 +1067,7 @@ var openGroups = new Set();      /* expanded group keys */
 /* Build stamp — bump on every UI-affecting change so you can confirm
    the Figma plugin sandbox isn't serving a cached old copy. Shown in
    the empty-state footer + logged once to the plugin console. */
-var BUILD_VERSION = '2026-05-17-p7';
+var BUILD_VERSION = '2026-05-17-p8';
 function log(msg){ console.log('[DTF] ' + msg); }
 log('plugin UI build ' + BUILD_VERSION);
 
@@ -1086,8 +1131,6 @@ function render(){
     mismatchSyncNew.textContent    = projectDisplayName(CURRENT_PROJECT);
     mismatchBuilderDoc.textContent = projectDisplayName(documentProject);
     mismatchBuilderNew.textContent = projectDisplayName(CURRENT_PROJECT);
-    var inCardTarget = document.getElementById('mismatchSyncBtnTarget');
-    if (inCardTarget) inCardTarget.textContent = projectDisplayName(CURRENT_PROJECT);
   }
   if (mismatchSync)    mismatchSync.hidden    = !isMismatch;
   if (mismatchBuilder) mismatchBuilder.hidden = !isMismatch;
@@ -2203,16 +2246,9 @@ syncBtn.addEventListener('click', function(){
   startSync();
 });
 
-/* Inline Rebind button inside the mismatch banner — same action as
-   the footer CTA, but visually anchored to the warning so the user
-   knows what the click actually does. */
-var mismatchSyncBtnEl = document.getElementById('mismatchSyncBtn');
-if (mismatchSyncBtnEl){
-  mismatchSyncBtnEl.addEventListener('click', function(e){
-    e.preventDefault();
-    syncBtn.click();   /* delegate so we keep one code path */
-  });
-}
+/* Inline Rebind button was removed — the footer CTA is the single
+   action source. Keeping a second primary button inside the banner
+   forced the user to pick between two identical CTAs. */
 
 function startSync(){
   /* Mismatch is now surfaced as a persistent inline banner + a contextual
