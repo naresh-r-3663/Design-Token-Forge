@@ -832,6 +832,7 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
    actions that need PAT re-entry). Kept hidden unless openModal()
    asks for it. */
 .ev2-modal-field{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.ev2-modal-field[hidden]{display:none !important}
 .ev2-modal-field-label{font-size:12px;font-weight:600;color:var(--ev2-chrome-ct-strong)}
 .ev2-modal-field-input{
   padding:8px 10px;
