@@ -604,7 +604,17 @@
     <!-- ─── Sync tab content ───────────────────────── -->
     <div id="paneSync">
 
-      <!-- Hero: idle / disconnected / mismatch / undo -->
+      <!-- Project mismatch banner (Sync) -->
+      <div class="mismatch-banner" id="mismatchSync" hidden>
+        <span class="mismatch-glyph">⚠</span>
+        <div>
+          This file is currently linked to <strong id="mismatchSyncDoc">—</strong>.
+          Syncing will <strong>rebind</strong> it to <strong id="mismatchSyncNew">—</strong>
+          and overwrite its variables.
+        </div>
+      </div>
+
+      <!-- Hero: idle / disconnected / undo -->
       <div class="hero" id="syncHero">
         <div class="hero-glyph neutral" id="heroGlyph">●</div>
         <div class="hero-title" id="heroTitle">Connecting…</div>
@@ -637,6 +647,16 @@
 
     <!-- ─── Builder tab content ────────────────────── -->
     <div id="paneBuilder" hidden>
+      <!-- Project mismatch banner (Builder) -->
+      <div class="mismatch-banner" id="mismatchBuilder" hidden>
+        <span class="mismatch-glyph">⚠</span>
+        <div>
+          This file is linked to <strong id="mismatchBuilderDoc">—</strong>.
+          Generating will <strong>rebind &amp; sync</strong> <strong id="mismatchBuilderNew">—</strong>
+          first, then create components against its variables.
+        </div>
+      </div>
+
       <p class="builder-intro">
         Generate Figma components bound to your token variables. Components share the same variable IDs your tokens use, so brand changes in DTF propagate automatically.
       </p>
@@ -852,14 +872,14 @@ function render(){
      Render as a persistent inline banner above the change list and tweak the
      primary action button to make the rebind explicit. */
   var isMismatch = !!(documentProject && CURRENT_PROJECT && CURRENT_PROJECT !== documentProject);
-  if (isMismatch){
+  if (isMismatch && mismatchSyncDoc && mismatchBuilderDoc){
     mismatchSyncDoc.textContent    = projectDisplayName(documentProject);
     mismatchSyncNew.textContent    = projectDisplayName(CURRENT_PROJECT);
     mismatchBuilderDoc.textContent = projectDisplayName(documentProject);
     mismatchBuilderNew.textContent = projectDisplayName(CURRENT_PROJECT);
   }
-  mismatchSync.hidden    = !isMismatch;
-  mismatchBuilder.hidden = !isMismatch;
+  if (mismatchSync)    mismatchSync.hidden    = !isMismatch;
+  if (mismatchBuilder) mismatchBuilder.hidden = !isMismatch;
 
   /* Undo detected */
   if (undoDetected){
@@ -1659,12 +1679,18 @@ function fetchProjects(){
         var found = false;
         for (var j=0; j<list.length; j++) if (list[j].id === documentProject){ found = true; break; }
         if (found){
-          CURRENT_PROJECT = documentProject;
-          storageSet('dtf-project-id', CURRENT_PROJECT);
-          selectProjectInDropdown(CURRENT_PROJECT);
+          /* Only re-adopt the file's bound project when the user hasn't
+             deliberately picked something else in the dropdown. */
+          if (!userSwitchedProject){
+            CURRENT_PROJECT = documentProject;
+            storageSet('dtf-project-id', CURRENT_PROJECT);
+            selectProjectInDropdown(CURRENT_PROJECT);
+          }
         } else {
           log('Linked project "' + documentProject + '" not found on server');
-          setStatus('Previously linked project not found — choose a project and re-sync.', 'err');
+          /* Surface as a soft warning in the log only — the previously-linked
+             project is gone (renamed/removed), so treat the file as unbound
+             rather than nagging the user with a persistent error toast. */
           documentProject = '';
         }
       }
