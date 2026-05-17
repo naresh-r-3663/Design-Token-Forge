@@ -465,6 +465,68 @@
   }
   .change-more:hover { background: var(--dtf-surface-alt); }
 
+  /* ── Rebind summary ─────────────────────────────────
+     Replaces the per-token change list in mismatch mode. A row-by-row
+     diff between two unrelated projects is just noise; users care
+     about the SHAPE of the swap (replaced / added / left over) and
+     the option to drill in if they want. */
+  .rebind-summary-head {
+    padding: 12px 12px 4px;
+    font-size: var(--dtf-fs-11);
+    color: var(--dtf-fg-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .rebind-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 0 12px 12px;
+  }
+  .rebind-summary-stat {
+    background: var(--dtf-surface-alt);
+    border-radius: 6px;
+    padding: 12px;
+    text-align: left;
+  }
+  .rebind-summary-stat[data-kind="replace"] { border-left: 3px solid var(--dtf-warning-content); }
+  .rebind-summary-stat[data-kind="add"]     { border-left: 3px solid var(--dtf-success-content); }
+  .rebind-summary-stat[data-kind="remove"]  { border-left: 3px solid var(--dtf-fg-faint); }
+  .rebind-summary-num {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--dtf-fg-strong);
+  }
+  .rebind-summary-lbl {
+    margin-top: 6px;
+    font-size: var(--dtf-fs-11);
+    color: var(--dtf-fg-strong);
+    line-height: 1.3;
+  }
+  .rebind-summary-lbl span {
+    display: block;
+    color: var(--dtf-fg-faint);
+    font-size: 10px;
+    margin-top: 2px;
+  }
+  .rebind-summary-details {
+    border-top: 1px solid var(--dtf-surface-alt);
+    padding: 8px 12px;
+    font-size: var(--dtf-fs-11);
+  }
+  .rebind-summary-details summary {
+    cursor: pointer;
+    color: var(--dtf-fg-subtle);
+    padding: 4px 0;
+    list-style: none;
+  }
+  .rebind-summary-details summary::-webkit-details-marker { display: none; }
+  .rebind-summary-details summary::before { content: '▸ '; }
+  .rebind-summary-details[open] summary::before { content: '▾ '; }
+  .rebind-summary-details[open] summary { color: var(--dtf-fg-strong); }
+  #rebindFullList { padding-top: 6px; }
+
   /* Resize handle — bottom-right corner. */
   #dtfResizeHandle {
     position: fixed;
@@ -699,6 +761,7 @@
           <span class="rebind-chip target" title="Will rebind to"><span class="rebind-chip-dot"></span><span id="mismatchSyncNew">—</span></span>
         </div>
         <div class="rebind-caption">Syncing replaces this file’s variables with the new project’s tokens.</div>
+        <button class="btn btn-primary rebind-card-action" id="mismatchSyncBtn" type="button">Rebind to <span id="mismatchSyncBtnTarget">—</span></button>
       </div>
 
       <!-- Hero: idle / disconnected / undo -->
@@ -728,6 +791,31 @@
         <input type="search" class="filter-search" id="filterSearch" placeholder="Filter by token name…" hidden>
         <div class="filter-chips" id="filterChips" hidden></div>
         <div id="changeGroups"></div>
+
+        <!-- Rebind summary: replaces the per-token change list when
+             swapping projects. Per-row diff is noise — what matters
+             is the high-level shape of the swap. -->
+        <div id="rebindSummary" hidden>
+          <div class="rebind-summary-head">What changes when you rebind</div>
+          <div class="rebind-summary-grid">
+            <div class="rebind-summary-stat" data-kind="replace">
+              <div class="rebind-summary-num" id="rebindStatReplace">—</div>
+              <div class="rebind-summary-lbl">Replaced<br><span>existing in both projects</span></div>
+            </div>
+            <div class="rebind-summary-stat" data-kind="add">
+              <div class="rebind-summary-num" id="rebindStatAdd">—</div>
+              <div class="rebind-summary-lbl">Added<br><span>new to this file</span></div>
+            </div>
+            <div class="rebind-summary-stat" data-kind="remove">
+              <div class="rebind-summary-num" id="rebindStatRemove">—</div>
+              <div class="rebind-summary-lbl">Left over<br><span>no longer used</span></div>
+            </div>
+          </div>
+          <details class="rebind-summary-details">
+            <summary>Show full per-variable breakdown</summary>
+            <div id="rebindFullList"></div>
+          </details>
+        </div>
       </div>
 
     </div>
@@ -934,7 +1022,7 @@ var openGroups = new Set();      /* expanded group keys */
 /* Build stamp — bump on every UI-affecting change so you can confirm
    the Figma plugin sandbox isn't serving a cached old copy. Shown in
    the empty-state footer + logged once to the plugin console. */
-var BUILD_VERSION = '2026-05-17-p6';
+var BUILD_VERSION = '2026-05-17-p7';
 function log(msg){ console.log('[DTF] ' + msg); }
 log('plugin UI build ' + BUILD_VERSION);
 
@@ -998,6 +1086,8 @@ function render(){
     mismatchSyncNew.textContent    = projectDisplayName(CURRENT_PROJECT);
     mismatchBuilderDoc.textContent = projectDisplayName(documentProject);
     mismatchBuilderNew.textContent = projectDisplayName(CURRENT_PROJECT);
+    var inCardTarget = document.getElementById('mismatchSyncBtnTarget');
+    if (inCardTarget) inCardTarget.textContent = projectDisplayName(CURRENT_PROJECT);
   }
   if (mismatchSync)    mismatchSync.hidden    = !isMismatch;
   if (mismatchBuilder) mismatchBuilder.hidden = !isMismatch;
@@ -1096,8 +1186,32 @@ function render(){
     } else {
       syncBtn.textContent = 'Create variables in Figma';
     }
+    /* In mismatch mode, suppress the noisy per-variable diff — show
+       the rebind summary panel instead. The diff would be tens or
+       hundreds of "modified" rows comparing values from two unrelated
+       projects, which is decision-paralysis, not information. */
+    var changeGroupsEl = document.getElementById('changeGroups');
+    var rebindSummaryEl = document.getElementById('rebindSummary');
+    var changesHeadEl   = document.getElementById('changesHead');
+    var filterSearchEl  = document.getElementById('filterSearch');
+    var filterChipsEl   = document.getElementById('filterChips');
+    if (isMismatch){
+      if (changeGroupsEl) changeGroupsEl.hidden = true;
+      if (changesHeadEl)  changesHeadEl.hidden  = true;
+      if (filterSearchEl) filterSearchEl.hidden = true;
+      if (filterChipsEl)  filterChipsEl.hidden  = true;
+      if (rebindSummaryEl){
+        rebindSummaryEl.hidden = false;
+        renderRebindSummary();
+      }
+      setSyncBadge('!');
+      if (statusBar.classList.contains('err') && /fetch tokens/.test(statusBar.textContent)){ setStatus('', ''); }
+      return;
+    }
+    if (changeGroupsEl) changeGroupsEl.hidden = false;
+    if (rebindSummaryEl) rebindSummaryEl.hidden = true;
     renderChangeList();   /* may overwrite the label with a precise count */
-    setSyncBadge(isMismatch ? '!' : (changeData ? totalChangeCount() : '!'));
+    setSyncBadge(changeData ? totalChangeCount() : '!');
     /* Once the user is in a meaningful state, clear stale fetch toasts. */
     if (statusBar.classList.contains('err') && /fetch tokens/.test(statusBar.textContent)){
       setStatus('', '');
@@ -1329,6 +1443,60 @@ function rowHTML(r){
 var ROW_CAP = 50;   /* max rows rendered per group; "show more" expands */
 var groupRowLimit = {};   /* per-group render limit (mutable when "show more" clicked) */
 
+/* ── Rebind summary ──────────────────────────────────
+   Counts variables by SHAPE of the swap (not per-mode value diff):
+     replaced — variable name exists in BOTH old & new project
+     added    — name only in the incoming project
+     removed  — name only in the file (will be left untouched, NOT
+                deleted, so users won't lose data; we surface them so
+                they can clean up if they want).
+   This is what users actually need to decide before clicking Rebind. */
+function renderRebindSummary(){
+  if (!tokenData || !window.__dtfLastCurrent) return;
+  var current = window.__dtfLastCurrent;
+  var newNames = {};
+  for (var nci=0; nci<tokenData.collections.length; nci++){
+    var nc = tokenData.collections[nci];
+    for (var nvi=0; nvi<nc.variables.length; nvi++) newNames[nc.variables[nvi].name] = nc.name;
+  }
+  var oldNames = {};
+  for (var ci=0; ci<current.collections.length; ci++){
+    var cc = current.collections[ci];
+    for (var vi=0; vi<cc.variables.length; vi++) oldNames[cc.variables[vi].name] = cc.name;
+  }
+  var replaced = [], added = [], removed = [];
+  for (var n in newNames){
+    if (oldNames[n]) replaced.push({name:n, col:newNames[n]});
+    else added.push({name:n, col:newNames[n]});
+  }
+  for (var o in oldNames){
+    if (!newNames[o]) removed.push({name:o, col:oldNames[o]});
+  }
+  var setText = function(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; };
+  setText('rebindStatReplace', replaced.length);
+  setText('rebindStatAdd',     added.length);
+  setText('rebindStatRemove',  removed.length);
+
+  /* Footer button reflects the full impact: replaced + added are
+     written; removed are LEFT in place (we never delete unless
+     explicitly asked). */
+  var willWrite = replaced.length + added.length;
+  syncBtn.textContent = 'Rebind ' + willWrite + ' variable' + (willWrite === 1 ? '' : 's') + ' to ' + projectDisplayName(CURRENT_PROJECT);
+
+  /* Expand-on-demand list. Keep it cheap; chunk by category. */
+  var list = document.getElementById('rebindFullList');
+  if (!list) return;
+  function sect(title, items, kind){
+    if (!items.length) return '';
+    var rows = items.slice(0, 200).map(function(it){
+      return '<div class="change-row"><span class="ch-tag ' + kind + '"></span><span class="ch-name">' + esc(it.name) + '</span><span class="ch-from" style="color:var(--dtf-fg-faint)">' + esc(it.col) + '</span></div>';
+    }).join('');
+    var more = items.length > 200 ? '<div class="change-more" style="cursor:default">+ ' + (items.length - 200) + ' more</div>' : '';
+    return '<section class="change-group" data-open="true"><div class="change-group-head" style="cursor:default"><span>' + title + '</span><span class="change-group-count">' + items.length + '</span></div><div class="change-group-body">' + rows + more + '</div></section>';
+  }
+  list.innerHTML = sect('Replaced', replaced, 'upd') + sect('Added', added, 'add') + sect('Left over', removed, 'rem');
+}
+
 function renderChangeList(){
   var allGroups = buildGroups();
   var total = 0;
@@ -1355,8 +1523,14 @@ function renderChangeList(){
     changesCountText.textContent = head;
   }
 
-  /* Mirror the count into the action button so the CTA is concrete. */
-  if (total > 0 && hasExistingVars){
+  /* Mirror the count into the action button so the CTA is concrete.
+     Mismatch (project rebind) gets a different verb so the user is
+     never in doubt that this REPLACES the file's bindings, not just
+     edits existing values. */
+  var inMismatch = !!(documentProject && CURRENT_PROJECT && CURRENT_PROJECT !== documentProject);
+  if (total > 0 && inMismatch){
+    syncBtn.textContent = 'Rebind ' + total + ' variable' + (total === 1 ? '' : 's') + ' to ' + projectDisplayName(CURRENT_PROJECT);
+  } else if (total > 0 && hasExistingVars){
     syncBtn.textContent = 'Update ' + total + (total === 1 ? ' variable' : ' variables') + ' in Figma';
   } else if (total > 0){
     syncBtn.textContent = 'Create ' + total + (total === 1 ? ' variable' : ' variables') + ' in Figma';
@@ -2029,6 +2203,17 @@ syncBtn.addEventListener('click', function(){
   startSync();
 });
 
+/* Inline Rebind button inside the mismatch banner — same action as
+   the footer CTA, but visually anchored to the warning so the user
+   knows what the click actually does. */
+var mismatchSyncBtnEl = document.getElementById('mismatchSyncBtn');
+if (mismatchSyncBtnEl){
+  mismatchSyncBtnEl.addEventListener('click', function(e){
+    e.preventDefault();
+    syncBtn.click();   /* delegate so we keep one code path */
+  });
+}
+
 function startSync(){
   /* Mismatch is now surfaced as a persistent inline banner + a contextual
      button label (“Rebind file & sync …”), so the user has already opted in
@@ -2139,6 +2324,10 @@ window.onmessage = function(event){
 
   if (msg.type === 'current-tokens'){
     handleStaticDiff(msg.data);
+    /* If user is viewing the rebind summary, re-render once the
+       current snapshot lands so the counts populate. */
+    var rs = document.getElementById('rebindSummary');
+    if (rs && !rs.hidden) renderRebindSummary();
   }
 
   if (msg.type === 'done'){
