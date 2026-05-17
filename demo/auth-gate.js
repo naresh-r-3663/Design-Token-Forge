@@ -259,13 +259,6 @@
             localStorage.setItem(OWNER_KEY, user.login);
           }
           sessionStorage.setItem(SESSION_KEY, '1');
-          /* Backward-compat: editor-legacy.html still uses its own
-             session key (sha-256 hash of the legacy admin phrase) to
-             decide whether to show its own overlay. Set it here so a
-             user who unlocked via this gate doesn't see a second
-             overlay on the legacy editor. */
-          sessionStorage.setItem('dtf-admin-auth',
-            'a045390962f70ed19c75381e7363851bc884304040018e4289402be6165c10f5');
         } catch (_e) {}
         showOk('Welcome, ' + (user.login || 'user') + ' \u2014 unlocking\u2026');
         setTimeout(function () { release(user); }, 200);
