@@ -19,6 +19,54 @@
   <!-- Editor v2 specific layout -->
   <link rel="stylesheet" href="./editor-v2.css?v=128">
 
+  <!-- Per-project token chrome: load the active project's primitives/
+       semantic/surfaces so the editor itself (topbar dropdown, pills,
+       publish button, dialogs, focus rings) paints in the project's
+       brand — same chain shared.js runs for every other demo page.
+       Inlined here because editor-v2 deliberately doesn't load
+       shared.js (would conflict with its own state machine), but
+       the chrome should still feel like part of the project. -->
+  <script>
+  (function(){
+    try {
+      var qp = new URLSearchParams(location.search).get('project');
+      var pid = qp || localStorage.getItem('dtf-active-project') || '';
+      if (!pid) return;
+      var cached = localStorage.getItem('dtf-saved-tokens-' + pid);
+      if (cached) {
+        var s = document.createElement('style');
+        s.id = 'dtfSavedTokens';
+        s.textContent = cached;
+        document.head.appendChild(s);
+      }
+      // Always refresh from server so a project edited elsewhere shows up.
+      var files = ['primitives.css','semantic.css','surfaces.css'];
+      var parts = [];
+      var pending = files.length;
+      files.forEach(function(f, i){
+        fetch('../../projects/' + pid + '/' + f + '?_cb=' + Date.now())
+          .then(function(r){ if(!r.ok) throw 0; return r.text(); })
+          .then(function(t){ parts[i] = t; })
+          .catch(function(){})
+          .finally(function(){
+            if (--pending) return;
+            var css = parts.filter(Boolean).join('\n');
+            if (!css) return;
+            localStorage.setItem('dtf-saved-tokens-' + pid, css);
+            var el = document.getElementById('dtfSavedTokens');
+            if (el) el.textContent = css;
+            else {
+              var s2 = document.createElement('style');
+              s2.id = 'dtfSavedTokens';
+              s2.textContent = css;
+              document.head.appendChild(s2);
+            }
+          });
+      });
+    } catch(e) {}
+  })();
+  </script>
+
   <!-- Unified topbar (custom element) — defined in demo/dtf-topbar.js -->
   <script src="../dtf-topbar.js?v=9" defer></script>
 
