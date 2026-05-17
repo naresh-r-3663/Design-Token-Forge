@@ -155,14 +155,15 @@
      pass through tonalDir(mode) — so dark mode mirrors automatically
      and no inline `± constant` ever leaks in (decision D4). */
   var T2_SURFACES = [
-    { id:'bright',    label:'Bright',    palette:'greyscale', desc:'Brightest page background' },
-    { id:'base',      label:'Base',      palette:'greyscale', desc:'Base page background'      },
-    { id:'dim',       label:'Dim',       palette:'greyscale', desc:'Recessed background'       },
-    { id:'deep',      label:'Deep',      palette:'greyscale', desc:'Most recessed background'  },
-    { id:'accent',    label:'Accent',    palette:'brand',     desc:'Branded panels'            },
-    { id:'container', label:'Container', palette:'greyscale', desc:'Card-on-surface'           },
-    { id:'float',     label:'Float',     palette:'greyscale', desc:'Popovers, menus'           },
-    { id:'inverse',   label:'Inverse',   palette:'greyscale', desc:'Dark on light, light on dark' }
+    { id:'bright',         label:'Bright',         palette:'greyscale', desc:'Brightest page background'              },
+    { id:'base',           label:'Base',           palette:'greyscale', desc:'Base page background'                   },
+    { id:'dim',            label:'Dim',            palette:'greyscale', desc:'Recessed background'                    },
+    { id:'deep',           label:'Deep',           palette:'greyscale', desc:'Most recessed background'               },
+    { id:'accent',         label:'Accent',         palette:'brand',     desc:'Branded panels'                         },
+    { id:'container',      label:'Container',      palette:'greyscale', desc:'Card-on-surface (cards, panels)'        },
+    { id:'over-container', label:'Over container', palette:'greyscale', desc:'Popovers, top-level dropdowns, modals'  },
+    { id:'float',          label:'Float',          palette:'greyscale', desc:'Tooltips, menus, popups'                },
+    { id:'inverse',        label:'Inverse',        palette:'greyscale', desc:'Dark on light, light on dark'           }
   ];
 
   /* Anchor step for each surface's `bg` per mode. All other props on
@@ -172,10 +173,10 @@
      the existing surfaces.css output, and the \u00b1 stepper is the
      escape hatch when a surface needs a different anchor. */
   var T2_BASE_STEPS = {
-    light: { bright:'white', base:'50',  dim:'100', deep:'200',
-             accent:'25',  container:'25', float:'25',  inverse:'900' },
-    dark:  { bright:'850', base:'900', dim:'850', deep:'black',
-             accent:'900', container:'850', float:'800', inverse:'white' }
+    light: { bright:'white', base:'25',  dim:'50',  deep:'75',
+             accent:'25',  container:'white', 'over-container':'white', float:'white', inverse:'900' },
+    dark:  { bright:'850',  base:'900', dim:'900', deep:'black',
+             accent:'900', container:'850',   'over-container':'800',   float:'750',   inverse:'900' }
   };
 
   /* The 16 properties per surface. Default offsets are signed in
