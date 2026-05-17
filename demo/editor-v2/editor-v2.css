@@ -1154,6 +1154,7 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   font-size:12px;
 }
 .ev2-savebar-l{display:flex;align-items:center;gap:8px;color:var(--ev2-chrome-ct-subtle)}
+.ev2-savebar-r{display:flex;align-items:center;gap:8px}
 .ev2-savebar-sep{color:var(--ev2-chrome-ct-faint)}
 .ev2-changes{font-weight:600;color:var(--ev2-chrome-ct-strong)}
 .ev2-autosave{font-style:italic}

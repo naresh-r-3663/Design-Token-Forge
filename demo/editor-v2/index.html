@@ -58,23 +58,6 @@
       <div class="ev2-proj-panel" id="projPanel" role="listbox" hidden></div>
     </div>
 
-    <a slot="action" class="ev2-preview-link" id="previewComponentsLink" href="../components.html"
-       data-tip="Open the components gallery using this project's published tokens. Drafts are not previewed.">
-      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h12v8H2z"/><path d="M5 7h6M5 9h4"/></svg>
-      <span>Preview components</span>
-    </a>
-    <label slot="action" class="ev2-css-toggle">
-      <input type="checkbox" id="showCssNames" checked>
-      <span>Show CSS names</span>
-    </label>
-    <button slot="action" class="ev2-history-btn" id="historyBtn" type="button"
-      data-tip="Browse published versions. Restore any previous release as a new publish.">
-      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M8 4v4l2.5 1.5"/>
-        <circle cx="8" cy="8" r="6"/>
-      </svg>
-      <span>History</span>
-    </button>
     <button slot="action" class="ev2-deploy" id="deployBtn" type="button" disabled
       data-tip="Save your changes as the new default for this project. Figma refreshes automatically.">
       <span class="ev2-deploy-label">Publish</span>
@@ -154,6 +137,10 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>
             <span class="ev2-section-reset-label">Reset section</span>
           </button>
+          <label class="ev2-css-toggle">
+            <input type="checkbox" id="showCssNames" checked>
+            <span>Show CSS names</span>
+          </label>
         </div>
       </header>
 
@@ -172,6 +159,11 @@
           <span class="ev2-preview-title">Live preview</span>
           <span class="ev2-preview-hint">updates as you edit</span>
         </div>
+        <a class="ev2-preview-link" id="previewComponentsLink" href="../components.html"
+           data-tip="Open the components gallery using this project's published tokens. Drafts are not previewed.">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h12v8H2z"/><path d="M5 7h6M5 9h4"/></svg>
+          <span>Preview components</span>
+        </a>
         <button class="ev2-preview-reload" id="previewReload" type="button" title="Reload preview" aria-label="Reload preview">↻</button>
       </header>
 
@@ -186,6 +178,14 @@
           <span class="ev2-autosave" id="autosaveStatus"></span>
         </div>
         <div class="ev2-savebar-r">
+          <button class="ev2-history-btn" id="historyBtn" type="button"
+            data-tip="Browse published versions. Restore any previous release as a new publish.">
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M8 4v4l2.5 1.5"/>
+              <circle cx="8" cy="8" r="6"/>
+            </svg>
+            <span>History</span>
+          </button>
           <button class="ev2-discard" id="discardBtn" disabled
             data-tip="Revert every unsaved change in this draft — Palette + Roles + Surfaces + Components for both light and dark modes. To reset just one section, use the Reset section button above the token list. To reset just one role, use Reset on the role card.">Discard changes</button>
         </div>
