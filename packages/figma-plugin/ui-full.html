@@ -1633,16 +1633,26 @@ function bindMismatchActions(){}
 function totalChangeCount(){
   if (!changeData || !changeData.entries || !changeData.entries[0]) return 0;
   var e = changeData.entries[0].summary || {};
-  /* Count rename pairs once so the tab badge matches the headline
-     ("3 changes · 5 renamed" shows badge 8, not 13). We pair ADDs
-     and REMs with identical resolved values; everything else is a
-     real, paint-affecting change. */
+  /* Count only what the user can author. DTF-authored collections
+     (comp size, primitives-numbers) flow silently through the sync
+     and must not inflate the Tokens-tab badge \u2014 otherwise the
+     designer panics over numbers they can't act on. */
   var vars = e.changedVars || [];
+  function userAuthored(name){
+    if (!name) return true;
+    return COLOR_ONLY_COLLECTIONS.indexOf(name) !== -1;
+  }
+  var visible = [];
+  for (var ai = 0; ai < vars.length; ai++){
+    if (userAuthored(vars[ai].collection)) visible.push(vars[ai]);
+  }
+  /* Collapse rename pairs (ADD+REM with identical resolved value)
+     into single slots so the badge matches the headline. */
   var addsByValue = {};
   var remsByValue = {};
-  for (var i = 0; i < vars.length; i++){
-    var r = vars[i];
-    if (r.tag === 'add' && r.to)   (addsByValue[r.to] = addsByValue[r.to] || []).push(i);
+  for (var i = 0; i < visible.length; i++){
+    var r = visible[i];
+    if (r.tag === 'add' && r.to)        (addsByValue[r.to] = addsByValue[r.to] || []).push(i);
     else if (r.tag === 'rem' && r.from) (remsByValue[r.from] = remsByValue[r.from] || []).push(i);
   }
   var renamed = 0;
@@ -1650,8 +1660,7 @@ function totalChangeCount(){
     if (!addsByValue.hasOwnProperty(val) || !remsByValue[val]) continue;
     renamed += Math.min(addsByValue[val].length, remsByValue[val].length);
   }
-  /* Subtract one slot per pair (ADD+REM collapsed into a single rename). */
-  return vars.length + (e.added || 0) + (e.removed || 0) - renamed;
+  return visible.length - renamed;
 }
 
 /* Derive a group key from token name. "btn-bg-default" → "Button". */
@@ -1751,9 +1760,20 @@ function buildGroups(){
   }
 
   var groups = {};
+  /* Designer-authored collections only. DTF-authored collections
+     (comp size, primitives-numbers) still SYNC silently \u2014 they
+     just don't appear in the diff because the user has no editor
+     surface for them, so listing them as "changes" is panic-bait.
+     COLOR_ONLY_COLLECTIONS is the canonical user-editable set
+     (T0/T1/T2/T3). Anything else gets dropped from the display. */
+  function isUserAuthoredCollection(name){
+    if (!name) return true;   /* unknown collection -> err on the side of showing */
+    return COLOR_ONLY_COLLECTIONS.indexOf(name) !== -1;
+  }
   for (var i=0; i<vars.length; i++){
     if (renamedFromIdx[i]) continue;   /* paired into renames */
     var v = vars[i];
+    if (!isUserAuthoredCollection(v.collection)) continue;
     /* Prefer the collection name we tagged at diff time. Fall back to
        component-prefix inference for legacy / server changelog rows. */
     var k = v.collection || groupKey(v.name);
@@ -1770,12 +1790,18 @@ function buildGroups(){
   var out = keys.map(function(k){ return { key:k, rows:groups[k] }; });
 
   /* Renames sorted to the end so they don't dominate the diff. The
-     key is non-empty but flagged so headline/auto-expand can skip it. */
-  if (renamePairs.length){
+     key is non-empty but flagged so headline/auto-expand can skip it.
+     Also gated by isUserAuthoredCollection \u2014 a rename inside
+     comp size / primitives-numbers is DTF housekeeping and should
+     ride the silent sync, not surface. */
+  var visibleRenames = renamePairs.filter(function(p){
+    return isUserAuthoredCollection(p.collection);
+  });
+  if (visibleRenames.length){
     out.push({
       key: 'Renamed (no visual change)',
       isRename: true,
-      rows: renamePairs.map(function(p){
+      rows: visibleRenames.map(function(p){
         return { tag:'ren', name: p.oldName, to: p.newName, from: p.value };
       })
     });
