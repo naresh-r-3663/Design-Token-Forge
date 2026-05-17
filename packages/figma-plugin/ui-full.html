@@ -995,8 +995,8 @@
 
   <!-- ─── Tabs ─────────────────────────────────────── -->
   <div class="tabs" id="tabs">
-    <button class="tab" id="tabSync" aria-selected="true" data-tab="sync">Sync<span class="tab-badge" id="syncBadge" hidden>0</span></button>
-    <button class="tab" id="tabBuilder" aria-selected="false" data-tab="builder">Builder</button>
+    <button class="tab" id="tabSync" aria-selected="true" data-tab="sync">Tokens<span class="tab-badge" id="syncBadge" hidden>0</span></button>
+    <button class="tab" id="tabBuilder" aria-selected="false" data-tab="builder">Components</button>
   </div>
 
   <!-- ─── Scroll region ────────────────────────────── -->
@@ -1669,6 +1669,19 @@ function groupKey(name){
 
 /* Order for collection-keyed groups (matches Figma's variable panel). */
 var COLLECTION_ORDER = ['T0 Primitive Colors', 'T1 Color Tokens', 'T2 Surface Context Tokens', 'T3 Status Context Tokens', 'primitives-numbers', 'comp size'];
+
+/* Friendly labels for the change-group headers. The internal
+   collection names use the T0/T1/T2/T3 tier vocabulary; designers
+   shouldn't have to learn that to read the diff. */
+var COLLECTION_LABELS = {
+  'T0 Primitive Colors':        'Primitive colors',
+  'T1 Color Tokens':            'Color tokens',
+  'T2 Surface Context Tokens':  'Surfaces',
+  'T3 Status Context Tokens':   'Status colors',
+  'primitives-numbers':         'Spacing & sizing',
+  'comp size':                  'Component sizes'
+};
+function prettyCollectionName(k){ return COLLECTION_LABELS[k] || k; }
 function groupSort(a, b){
   var ai = COLLECTION_ORDER.indexOf(a), bi = COLLECTION_ORDER.indexOf(b);
   if (ai === -1 && bi === -1) return a.localeCompare(b);
@@ -1871,18 +1884,13 @@ function renderChangeList(){
       if (t === 'add') nAdd++; else if (t === 'rem') nRem++; else nMod++;
     }
   }
-  /* Figma-style breakdown: "19 modified · 0 added · 0 removed". */
-  var totalVars = serverStatus && serverStatus.totalVariables ? serverStatus.totalVariables : 0;
   if (total === 0){
     changesCountText.textContent = 'No changes';
   } else {
-    var parts = [];
-    if (nMod) parts.push(nMod + ' modified');
-    if (nAdd) parts.push(nAdd + ' added');
-    if (nRem) parts.push(nRem + ' removed');
-    var head = parts.join(' · ');
-    /* DTF-style quiet hint: "of 571 variables" so the diff has context. */
-    if (totalVars) head += ' · of ' + totalVars + ' variables';
+    /* Single short headline — designer just wants "how many".
+       Per-row tags already say modified/added/removed; the upfront
+       split adds parse cost without action. */
+    var head = total + (total === 1 ? ' change' : ' changes');
     changesCountText.textContent = head;
   }
 
@@ -1945,7 +1953,7 @@ function renderChangeList(){
     html += '<section class="change-group" data-key="' + esc(g2.key) + '" data-open="' + (open ? 'true' : 'false') + '">'
           + '<button class="change-group-head" data-toggle="' + esc(g2.key) + '">'
           +   '<svg class="change-group-caret" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-          +   '<span>' + esc(g2.key) + '</span>'
+          +   '<span>' + esc(prettyCollectionName(g2.key)) + '</span>'
           +   '<span class="change-group-count">' + g2.rows.length + '</span>'
           + '</button>'
           + '<div class="change-group-body">' + rowsHTML + more + '</div>'
@@ -3152,8 +3160,7 @@ function renderBuilderMeta(versions, currentStructureHashes, currentPrototypeHas
       pillsEl.innerHTML = '<span class="pill" data-kind="new">new</span>';
       whenEl && (whenEl.textContent = '');
       actEl.classList.remove('idle');
-      actEl.innerHTML = 'Will create variants bound to <span class="nums">' +
-        esc(currentProject ? projectDisplayName(currentProject) : 'this project') + '</span> tokens.';
+      actEl.innerHTML = 'Not yet in Figma. Will be created.';
       row.setAttribute('data-tint', '');
       row.setAttribute('data-state', 'new');
       continue;
