@@ -5838,9 +5838,9 @@
     // No draft, or draft predates Phase 2 (no stamp), or matches HEAD — nothing to warn about.
     if (!draftVer || !headVer || draftVer === headVer) return;
 
-    $sub.textContent = 'Your unsaved draft is based on v' + draftVer
-      + ', but this project was republished to v' + headVer
-      + ' (likely from another browser or machine). Keep editing on top of v' + draftVer
+    $sub.textContent = 'Your unsaved draft is based on ' + draftVer
+      + ', but this project was republished to ' + headVer
+      + ' (likely from another browser or machine). Keep editing on top of ' + draftVer
       + ', or discard and load the new published baseline.';
     $b.hidden = false;
 
