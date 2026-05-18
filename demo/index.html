@@ -371,6 +371,17 @@
               if (file && file.content) {
                 try {
                   var cfg = JSON.parse(atob(file.content.replace(/\n/g, '')));
+                  /* Stash the full config under the editor's per-project
+                     key so editor-v2's synchronous readProjectConfigSync
+                     hits cache instead of trying a same-origin XHR for
+                     `../../projects/<id>/config.json` (which 404s on the
+                     maintainer's Pages when the project lives on a
+                     colleague's fork). The editor's last-ditch primitives
+                     synth uses cfg.paletteKeys + PaletteEngine, so this
+                     single stash is enough to make brand colours paint
+                     correctly without anyone needing to enable Pages on
+                     their own fork. */
+                  try { localStorage.setItem('dtf-project-config-' + (cfg.id || dir.name), JSON.stringify(cfg)); } catch (_se) {}
                   results.push({ id: cfg.id || dir.name, name: cfg.name || dir.name, owner: cfg.owner || owner, description: cfg.description || '' });
                 } catch (_e) { results.push({ id: dir.name, name: dir.name, owner: owner, description: '' }); }
               } else { results.push({ id: dir.name, name: dir.name, owner: owner, description: '' }); }

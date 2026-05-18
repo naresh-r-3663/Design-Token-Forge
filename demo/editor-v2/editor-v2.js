@@ -5155,9 +5155,41 @@
       xhr.open('GET', url, /* async */ false);
       xhr.send(null);
       if (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 300)) {
-        return JSON.parse(xhr.responseText);
+        var parsed = JSON.parse(xhr.responseText);
+        /* Seed the stash so the next sync read hits the fast path
+           and downstream consumers (injectProjectPrimitivesSync)
+           don't re-fetch. */
+        try { localStorage.setItem('dtf-project-config-' + id, JSON.stringify(parsed)); } catch (_se) {}
+        return parsed;
       }
     } catch (e) { /* missing file, parse error, CORS — fall through */ }
+    /* Cross-origin fallback: deep-link to /editor-v2/?project=<id>
+       on the maintainer's Pages, where same-origin XHR can't reach
+       the colleague's fork. Use the signed-in PAT + GitHub Contents
+       API to fetch config.json from THEIR fork. Sync XHR so the
+       editor's synchronous boot keeps working — adds ~200ms on the
+       first visit per project per browser, then cached. */
+    try {
+      var pat   = localStorage.getItem('dtf-gh-pat')   || '';
+      var owner = localStorage.getItem('dtf-gh-owner') || localStorage.getItem('dtf-gh-user') || '';
+      if (pat && owner) {
+        var apiUrl = 'https://api.github.com/repos/' + owner + '/Design-Token-Forge/contents/projects/' + encodeURIComponent(id) + '/config.json?ref=main';
+        var x2 = new XMLHttpRequest();
+        x2.open('GET', apiUrl, /* async */ false);
+        x2.setRequestHeader('Authorization', 'Bearer ' + pat);
+        x2.setRequestHeader('Accept', 'application/vnd.github+json');
+        x2.send(null);
+        if (x2.status >= 200 && x2.status < 300) {
+          var file = JSON.parse(x2.responseText);
+          if (file && file.content) {
+            var decoded = atob(file.content.replace(/\n/g, ''));
+            var cfgObj = JSON.parse(decoded);
+            try { localStorage.setItem('dtf-project-config-' + id, JSON.stringify(cfgObj)); } catch (_se) {}
+            return cfgObj;
+          }
+        }
+      }
+    } catch (e) { /* API blocked, no PAT, parse error — fall through */ }
     return null;
   }
 
