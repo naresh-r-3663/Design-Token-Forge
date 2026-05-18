@@ -4324,6 +4324,15 @@
     if (dlg) dlg._restoring = true;
 
     var creds; // captured for the recover step
+    var restoredFiles; // captured for the stash-mirror step (the
+                      // .then below this chain can't see the
+                      // inner .then's `files` param — without
+                      // this, the stash write throws TypeError on
+                      // `files['primitives.css']`, gets swallowed
+                      // by the catch, and the reload reads stale
+                      // localStorage → user sees the OLD version
+                      // for ~1s before the Phase-1 version-tag
+                      // check nukes the stash and snaps to HEAD.
     ensureGhCredentials().then(function (cred) {
       creds = cred;
       var hasInline = snap.json.files && !Array.isArray(snap.json.files) && typeof snap.json.files === 'object';
@@ -4334,6 +4343,7 @@
       if (btn) btn.textContent = 'Recovering\u2026';
       return recoverFilesFromGit(cred.user, projId, ver);
     }).then(function (files) {
+      restoredFiles = files; // hoist for the stash-mirror .then below
       var meta = {
         version:     nextVer,
         name:        'Restore of ' + ver,
@@ -4385,11 +4395,22 @@
     }).then(function (meta) {
       // Mirror restored files into localStorage stash so the reload
       // below picks them up immediately (workspace copy / Pages will
-      // lag by ~1 min).
+      // lag by ~1 min). The freshly-bumped config.json must also go
+      // in so the Phase-1 version-tag check sees stash.version ===
+      // HEAD.version and doesn't nuke + reload to defaults.
       try {
-        localStorage.setItem('dtf-project-primitives-' + projId, files['primitives.css'] || '');
-        localStorage.setItem('dtf-project-semantic-' + projId, files['semantic.css'] || '');
-        localStorage.setItem('dtf-project-config-' + projId, newCfgText);
+        var primCss = (restoredFiles && restoredFiles['primitives.css']) || '';
+        var semCss  = (restoredFiles && restoredFiles['semantic.css'])   || '';
+        var surfCss = (restoredFiles && restoredFiles['surfaces.css'])   || '';
+        localStorage.setItem('dtf-project-primitives-' + projId, primCss);
+        localStorage.setItem('dtf-project-semantic-' + projId,   semCss);
+        localStorage.setItem('dtf-project-surfaces-' + projId,   surfCss);
+        localStorage.setItem('dtf-project-config-' + projId,     newCfgText);
+        // Drop any in-flight draft for this project — restoring is
+        // an explicit "discard my edits and go to vX" action, and
+        // the Phase-2 conflict banner would otherwise fire on reload
+        // with draft.baseVersion === oldVer vs HEAD.version === nextVer.
+        localStorage.removeItem('dtf-editor-v2-draft-v2--' + projId);
       } catch (e) { /* non-fatal */ }
       // Fire Pages rebuild — best-effort like normal Publish.
       triggerPagesRebuild().catch(function () {});
