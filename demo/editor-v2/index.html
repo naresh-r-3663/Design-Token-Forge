@@ -153,6 +153,17 @@
       // Background refresh from same-origin server (works for projects
       // owned by the maintainer; cross-fork projects rely on the sync
       // GitHub API fetch above).
+      //
+      // CRITICAL: same-origin Pages lags 30-90s behind a Restore/Publish
+      // commit (deploy-tokens.yml workflow). Without a version check
+      // this fetch would unconditionally overwrite the just-restored
+      // stash with stale CSS → user sees OLD palette flash in over
+      // the freshly-painted NEW one. So:
+      //  1. Read the version comment from the fetched primitives.css
+      //     (every published file carries `/* version: vX.Y.Z … */`).
+      //  2. Compare to cfg.latestVersion.version (HEAD per config stash).
+      //  3. If fetched is OLDER, drop the bytes on the floor — the
+      //     stash we already painted is correct.
       var files = ['primitives.css','semantic.css','surfaces.css'];
       var parts2 = [];
       var pending = files.length;
@@ -165,6 +176,23 @@
             if (--pending) return;
             var css = parts2.filter(Boolean).join('\n');
             if (!css) return;
+            try {
+              var headVer = cfg && cfg.latestVersion && cfg.latestVersion.version;
+              var m = /\/\*\s*version:\s*(v[\d.]+)/i.exec(parts2[0] || '');
+              var fetchedVer = m ? m[1] : '';
+              // Tiny semver-ish compare so v0.0.10 > v0.0.9.
+              function vparts(v){ return String(v||'').replace(/^v/,'').split('.').map(function(n){ return parseInt(n,10)||0; }); }
+              function vlt(a,b){
+                var A=vparts(a), B=vparts(b), n=Math.max(A.length,B.length);
+                for (var k=0;k<n;k++){ var x=A[k]||0, y=B[k]||0; if (x!==y) return x<y; }
+                return false;
+              }
+              if (headVer && fetchedVer && vlt(fetchedVer, headVer)) {
+                // Pages is behind HEAD (just-published commit not deployed
+                // yet). Skip overwrite — stash already holds the right thing.
+                return;
+              }
+            } catch (_ve) {}
             localStorage.setItem('dtf-saved-tokens-' + pid, css);
             var el = document.getElementById('dtfSavedTokens');
             if (el) el.textContent = css;
