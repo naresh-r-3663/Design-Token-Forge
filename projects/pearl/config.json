@@ -6,7 +6,7 @@
   "created": "2026-05-16",
   "schemaVersion": 2,
   "paletteKeys": {
-    "brand": "#A5FF99",
+    "brand": "#FFFC99",
     "danger": "#DC2626",
     "warning": "#D97706",
     "info": "#0EA5E9",
@@ -68,10 +68,10 @@
     "inverse": "greyscale"
   },
   "latestVersion": {
-    "version": "v0.0.12",
-    "name": "May18 18:20 - #A5FF99",
+    "version": "v0.0.13",
+    "name": "May18 18:20 - #FFFC99",
     "description": "",
-    "savedAt": "2026-05-18T12:50:55.416Z",
+    "savedAt": "2026-05-18T12:51:40.612Z",
     "savedBy": "sridhar-ravi-2917"
   },
   "t1Picks": {
