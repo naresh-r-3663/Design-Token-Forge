@@ -242,8 +242,34 @@
             if (!freshVer) return; // remote has no version yet — skip check
             if (stashVer && stashVer === freshVer) return; // in sync
 
-            // Drift. Nuke both stashes unconditionally — they were
-            // built against the old publish and cannot be trusted.
+            // Direction check — critical for Restore/Publish UX.
+            // Pages (and the same-origin workspace served by Pages
+            // in production) deploys 30-90s behind a commit. Right
+            // after the user clicks Restore/Publish, our stash holds
+            // the FRESH version but Pages still serves the OLD one.
+            // Without this check we'd nuke our just-written stash
+            // and reload onto the stale Pages CSS — exactly the
+            // "wrong version flashes for a few seconds" symptom.
+            //
+            // Only nuke when remote is strictly NEWER than stash
+            // (someone else published, or this tab fell behind). If
+            // remote is OLDER, our stash is correct — Pages just
+            // hasn't caught up yet.
+            function vparts(v){ return String(v||'').replace(/^v/,'').split('.').map(function(n){ return parseInt(n,10)||0; }); }
+            function vlt(a,b){
+              var A=vparts(a), B=vparts(b), n=Math.max(A.length,B.length);
+              for (var k=0;k<n;k++){ var x=A[k]||0, y=B[k]||0; if (x!==y) return x<y; }
+              return false;
+            }
+            if (stashVer && vlt(freshVer, stashVer)) {
+              // Remote is behind our stash. We're ahead (just
+              // restored/published). Hold the stash; do nothing.
+              return;
+            }
+
+            // Drift forward. Nuke both stashes unconditionally —
+            // they were built against the old publish and cannot
+            // be trusted against the newer remote.
             try { localStorage.removeItem('dtf-project-config-' + pid); } catch (_se) {}
             try { localStorage.removeItem('dtf-saved-tokens-' + pid); } catch (_se) {}
 
