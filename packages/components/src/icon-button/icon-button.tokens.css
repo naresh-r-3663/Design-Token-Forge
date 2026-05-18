@@ -6,7 +6,7 @@
    ORTHOGONAL MODEL
    ────────────────
    Structure (data-variant): filled | outlined | soft | ghost
-   Role (data-role):         primary | danger | success | warning | brand | info | neutral
+   Role (data-role):         brand | danger | warning | info | success | neutral
 
    Token groups below use legacy names for backward compatibility:
      primary  ≡ filled   (solid background, role-colored)

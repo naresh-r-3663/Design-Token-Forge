@@ -398,7 +398,7 @@
            data-variant="ghost"    data-role="brand"
 
    Structural variants: filled | outlined | soft | ghost
-   Semantic roles:      primary | danger | success | warning | brand | info | neutral
+   Semantic roles:      brand | danger | warning | info | success | neutral
 
    HOW IT WORKS:
    • Structural variants (filled/outlined/soft) read from --brand-* semantic palette.

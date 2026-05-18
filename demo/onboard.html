@@ -176,6 +176,61 @@
 }
 .error-box.visible { display: block; }
 
+/* ── Typography preset cards ──────────────────────── */
+.typo-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px; margin-top: 8px;
+}
+.typo-card {
+  display: block; text-align: left;
+  padding: 16px; border-radius: 10px;
+  border: 1.5px solid var(--demo-border); background: var(--demo-surface);
+  cursor: pointer; transition: border-color 150ms, background 150ms, box-shadow 150ms;
+  font-family: inherit;
+}
+.typo-card:hover {
+  border-color: var(--dtf-onboard-brand);
+  background: var(--demo-cm-bg);
+}
+.typo-card.selected {
+  border-color: var(--dtf-onboard-brand);
+  box-shadow: 0 0 0 3px rgba(40, 108, 229, 0.12);
+  background: var(--demo-surface);
+}
+.typo-card-name {
+  font-size: 14px; font-weight: 700; color: var(--demo-fg-strong);
+  margin: 0 0 4px;
+}
+.typo-card-tag {
+  font-size: 11px; color: var(--demo-fg-faint);
+  margin: 0 0 12px; line-height: 1.4;
+}
+.typo-card-preview {
+  padding: 12px; border-radius: 6px;
+  background: var(--demo-cm-bg);
+  border: 1px solid var(--demo-border);
+}
+.typo-card-preview .tp-head {
+  font-size: 18px; font-weight: 700; line-height: 1.25;
+  color: var(--demo-fg-strong); margin: 0 0 4px;
+}
+.typo-card-preview .tp-body {
+  font-size: 13px; line-height: 1.5;
+  color: var(--demo-fg-subtle); margin: 0;
+}
+.typo-card-fonts {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+}
+.typo-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 999px;
+  font-size: 10px; font-weight: 600;
+  background: var(--demo-cm-bg); color: var(--demo-fg-subtle);
+  border: 1px solid var(--demo-border);
+}
+.typo-chip[data-source="google"] { color: var(--brand-content-default, #286CE5); }
+.typo-chip[data-source="system"] { color: var(--demo-fg-subtle); }
+
 /* ── Responsive ───────────────────────────────────── */
 @media(max-width: 600px) {
   .wizard-container { padding: 20px; }
@@ -195,8 +250,9 @@
   <!-- Steps indicator -->
   <div class="wizard-steps">
     <div class="step-pill active" data-step="1">1. Project &amp; Colors</div>
-    <div class="step-pill" data-step="2">2. Connect GitHub</div>
-    <div class="step-pill" data-step="3">3. Create</div>
+    <div class="step-pill" data-step="2">2. Typography</div>
+    <div class="step-pill" data-step="3">3. Connect GitHub</div>
+    <div class="step-pill" data-step="4">4. Create</div>
   </div>
 
   <!-- ═══ Step 1: Project + Colors ═══ -->
@@ -213,7 +269,20 @@
     </div>
   </div>
 
-  <!-- ═══ Step 2: Connect GitHub ═══ -->
+  <!-- ═══ Step 2: Typography ═══ -->
+  <div class="step-panel" id="stepTypo">
+    <div class="form-group" id="typoDevNotice" style="display:none;padding:12px 14px;border-radius:8px;background:#FFF7E6;border:1px solid #F5C26B;color:#7C4A03;font-size:12px;line-height:1.5;margin-bottom:16px;">
+      <strong style="color:#5A3500">Typography is in dev preview.</strong>
+      The starter feels and font ladder ship to Figma, but the per-token editor and font upload flow are still being built. Pick a feel today — you'll be able to fine-tune everything in a future release.
+    </div>
+    <div class="form-group">
+      <label>Pick a starting feel</label>
+      <p class="hint" style="margin-bottom:12px">Choose a font pairing to start with. The system sets up display, body and code fonts, plus a full size + weight ladder.<br>Don't worry — you can fine-tune every value later from the Typography page.</p>
+      <div class="typo-grid" id="typoGrid"></div>
+    </div>
+  </div>
+
+  <!-- ═══ Step 3: Connect GitHub ═══ -->
   <div class="step-panel" id="step2">
     <p style="font-size:13px;color:var(--demo-fg-subtle);margin-bottom:20px;line-height:1.6;">
       Connect your GitHub account. Your project deploys to <strong>your own</strong> copy of the Design-Token-Forge repo — no special access needed.
@@ -236,7 +305,7 @@
     </div>
   </div>
 
-  <!-- ═══ Step 3: Create ═══ -->
+  <!-- ═══ Step 4: Create ═══ -->
   <div class="step-panel" id="step3">
     <p style="font-size:14px;color:var(--demo-fg-subtle);margin-bottom:16px;">
       Ready to create your project. This commits your configuration and triggers a deploy.
@@ -290,7 +359,7 @@
 
   /* ── State ──────────────────────────────────────── */
   let currentStep = 1;
-  const totalSteps = 3;
+  const totalSteps = 4;
   let ghPat = '';
   let ghOwner = '';
   let ghUsername = '';
@@ -311,6 +380,61 @@
     success: 'Success'
   };
   const colors = { ...defaultColors };
+
+  /* ── Typography presets ─────────────────────────── */
+  /* Mirrors packages/sync-server/typography-presets.js so the
+     onboard preview shows EXACTLY what the generator will emit
+     for the chosen preset (single source of truth in spirit —
+     we keep this inline copy small so onboard stays a static
+     file with no module loader). */
+  const TYPO_PRESETS = {
+    'neutral-system': {
+      id: 'neutral-system', name: 'Neutral System',
+      tagline: 'Native UI fonts on every OS',
+      fonts: {
+        headline: { stack: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', source: 'system', label: 'System UI' },
+        body:     { stack: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', source: 'system', label: 'System UI' },
+        code:     { stack: '"SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", Menlo, Consolas, monospace', source: 'system', label: 'SF Mono' }
+      }
+    },
+    'modern-geometric': {
+      id: 'modern-geometric', name: 'Modern Geometric',
+      tagline: 'Crisp, neutral, product-friendly',
+      fonts: {
+        headline: { stack: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif', source: 'google', label: 'Inter' },
+        body:     { stack: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif', source: 'google', label: 'Inter' },
+        code:     { stack: '"JetBrains Mono", "SF Mono", Menlo, monospace', source: 'google', label: 'JetBrains Mono' }
+      }
+    },
+    'editorial-serif': {
+      id: 'editorial-serif', name: 'Editorial Serif',
+      tagline: 'Display serif over a sans body',
+      fonts: {
+        headline: { stack: 'Fraunces, Georgia, "Times New Roman", serif', source: 'google', label: 'Fraunces' },
+        body:     { stack: 'Inter, system-ui, -apple-system, sans-serif', source: 'google', label: 'Inter' },
+        code:     { stack: '"IBM Plex Mono", "SF Mono", Menlo, monospace', source: 'google', label: 'IBM Plex Mono' }
+      }
+    },
+    'friendly-humanist': {
+      id: 'friendly-humanist', name: 'Friendly Humanist',
+      tagline: 'Approachable, soft, easy on the eye',
+      fonts: {
+        headline: { stack: 'Nunito, "Trebuchet MS", "Lucida Sans", sans-serif', source: 'google', label: 'Nunito' },
+        body:     { stack: 'Nunito, "Trebuchet MS", "Lucida Sans", sans-serif', source: 'google', label: 'Nunito' },
+        code:     { stack: '"Source Code Pro", "SF Mono", Menlo, monospace', source: 'google', label: 'Source Code' }
+      }
+    },
+    'code-first-mono': {
+      id: 'code-first-mono', name: 'Code-first Mono',
+      tagline: 'Dev tools / terminal feel',
+      fonts: {
+        headline: { stack: '"SF Mono", "JetBrains Mono", Menlo, Consolas, monospace', source: 'system', label: 'SF Mono' },
+        body:     { stack: '"SF Mono", "JetBrains Mono", Menlo, Consolas, monospace', source: 'system', label: 'SF Mono' },
+        code:     { stack: '"SF Mono", "JetBrains Mono", Menlo, Consolas, monospace', source: 'system', label: 'SF Mono' }
+      }
+    }
+  };
+  let selectedTypoPreset = 'neutral-system';
 
   /* ── Elements ───────────────────────────────────── */
   const steps = document.querySelectorAll('.step-pill');
@@ -348,6 +472,11 @@
       if (!projName.value.trim()) { projName.focus(); return false; }
     }
     if (step === 2) {
+      // Typography step always has a default preset selected, so
+      // it can't be invalid — the user just clicks Next.
+      return true;
+    }
+    if (step === 3) {
       if (!repoVerified) {
         ghStatusEl.textContent = 'Please connect your GitHub account first.';
         ghStatusEl.className = 'gh-status err';
@@ -417,6 +546,54 @@
     });
   }
   buildColorGrid();
+
+  /* ── Typography preset grid ───────────────────── */
+  const typoGrid = document.getElementById('typoGrid');
+  function buildTypoGrid() {
+    typoGrid.innerHTML = '';
+    Object.keys(TYPO_PRESETS).forEach(function(key) {
+      const p = TYPO_PRESETS[key];
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'typo-card' + (key === selectedTypoPreset ? ' selected' : '');
+      card.dataset.preset = key;
+      // Inline font-family on previews so each card actually
+      // shows its own pairing — not the page default.
+      const previewHead = 'style="font-family:' + p.fonts.headline.stack.replace(/"/g, '&quot;') + '"';
+      const previewBody = 'style="font-family:' + p.fonts.body.stack.replace(/"/g, '&quot;') + '"';
+      card.innerHTML =
+        '<h3 class="typo-card-name">' + p.name + '</h3>' +
+        '<p class="typo-card-tag">' + p.tagline + '</p>' +
+        '<div class="typo-card-preview">' +
+          '<div class="tp-head" ' + previewHead + '>The quick brown fox</div>' +
+          '<p class="tp-body" ' + previewBody + '>Jumps over the lazy dog. Body text gives a feel for how prose reads.</p>' +
+        '</div>' +
+        '<div class="typo-card-fonts">' +
+          '<span class="typo-chip" data-source="' + p.fonts.headline.source + '">Aa Headline · ' + p.fonts.headline.label + '</span>' +
+          '<span class="typo-chip" data-source="' + p.fonts.body.source + '">Aa Body · ' + p.fonts.body.label + '</span>' +
+          '<span class="typo-chip" data-source="' + p.fonts.code.source + '">{} Code · ' + p.fonts.code.label + '</span>' +
+        '</div>';
+      card.addEventListener('click', function() {
+        selectedTypoPreset = key;
+        typoGrid.querySelectorAll('.typo-card').forEach(function(c) {
+          c.classList.toggle('selected', c.dataset.preset === key);
+        });
+      });
+      typoGrid.appendChild(card);
+    });
+  }
+  buildTypoGrid();
+
+  /* ── Show dev-preview notice on Typography step for everyone
+     except the maintainer. Single owner check used consistently
+     across the plugin + DTF (see ADR-008 · Phase 1). */
+  try {
+    var typoNotice = document.getElementById('typoDevNotice');
+    var ghUser = (localStorage.getItem('dtf-gh-user') || '').toLowerCase();
+    if (typoNotice && ghUser !== 'sridhar-ravi-2917') {
+      typoNotice.style.display = 'block';
+    }
+  } catch(e) {}
 
   /* ── Pre-fill PAT from launchpad if user came already authenticated ── */
   (function prefillPat() {
@@ -613,6 +790,16 @@
           bright:'greyscale',base:'greyscale',dim:'greyscale',deep:'greyscale',
           accent:'brand',container:'greyscale','over-container':'greyscale',
           float:'greyscale',inverse:'greyscale'
+        },
+        // Typography config. Mirrors paletteKeys / semanticMap in
+        // structure — a small JSON record the generator turns into
+        // primitive token overrides (font-family-*, font-size-N,
+        // font-weight-*, line-height-*, letter-spacing-*). The
+        // sync server converts letter-spacing em → % at the Figma
+        // boundary so the values land in the right picker.
+        typographyConfig: {
+          preset: selectedTypoPreset,
+          fonts: TYPO_PRESETS[selectedTypoPreset].fonts
         }
       };
 
