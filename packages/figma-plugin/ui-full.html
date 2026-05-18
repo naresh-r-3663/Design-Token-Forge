@@ -2936,6 +2936,12 @@ window.onmessage = function(event){
     genStatus.textContent = msg.text;
     if (builderBusySub && msg.text) builderBusySub.textContent = msg.text;
   }
+  /* Live ledger refresh — code.js fires doc-changed (debounced) when
+     the user deletes/creates a component set on the canvas. Without
+     this, Components tab only updated on tab-switch. */
+  if (msg.type === 'doc-changed'){
+    parent.postMessage({ pluginMessage:{ type:'check-gen-prereqs' } }, '*');
+  }
   if (msg.type === 'gen-done'){
     var gs = msg.stats;
     generateBtn.disabled = false;

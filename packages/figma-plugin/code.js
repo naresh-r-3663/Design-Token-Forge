@@ -6,6 +6,42 @@
 
 figma.showUI(__html__, { width: 480, height: 560 });
 
+/* ── Real-time ledger refresh ──────────────────────────────────────
+   Without this, deleting Button / Split Button from the canvas
+   while the plugin is open didn't update the Components tab
+   until the user switched away and back (tab-switch fires
+   check-gen-prereqs; canvas deletions don't).
+
+   Strategy: subscribe to documentchange, look for DELETE events,
+   debounce 400ms, then ping the UI. UI responds by re-firing
+   check-gen-prereqs so the liveness sweep can drop dead ledger
+   entries. Cheap — we only forward the ping, not the diff itself. */
+(function setupLedgerWatch(){
+  var _ledgerPingTimer = null;
+  function _schedulePing(){
+    if (_ledgerPingTimer) return;
+    _ledgerPingTimer = setTimeout(function(){
+      _ledgerPingTimer = null;
+      try { figma.ui.postMessage({ type: 'doc-changed' }); } catch (e) {}
+    }, 400);
+  }
+  try {
+    figma.on('documentchange', function(ev){
+      var changes = (ev && ev.documentChanges) || [];
+      for (var i = 0; i < changes.length; i++){
+        var c = changes[i];
+        /* DELETE_CHANGE always invalidates ledger. CREATE/PROPERTY changes
+           on COMPONENT_SET also matter (component re-added, renamed). */
+        if (c.type === 'DELETE'){ _schedulePing(); return; }
+        if ((c.type === 'CREATE' || c.type === 'PROPERTY_CHANGE') &&
+            c.node && c.node.type === 'COMPONENT_SET'){
+          _schedulePing(); return;
+        }
+      }
+    });
+  } catch (e) { /* documentchange not supported in this Figma — skip */ }
+})();
+
 /* Restore last user-chosen panel size (set via drag handle in UI). */
 (async function restorePanelSize(){
   try {
