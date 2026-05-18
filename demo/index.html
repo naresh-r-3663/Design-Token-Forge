@@ -262,15 +262,43 @@
   /* ── Project list ─────────────────────────────────────── */
   var grid = document.getElementById('projGrid');
   var countEl = document.getElementById('projCount');
-  // Try relative path first (works on file:// and Pages)
-  var candidates = ['../projects.json', '/projects.json'];
+  // Try every plausible location for projects.json. The build mirrors
+  // `demo/` into every `dist/<project>/demo/` folder, but projects.json
+  // only lives at the dist root — so when the user lands on the
+  // per-project hub mirror (e.g. /Design-Token-Forge/pearl/demo/index.html)
+  // the file is actually one level higher than the usual `../` parent.
+  // Order: nearest-first so file:// + local dev still find the repo root
+  // copy without an extra 404.
+  var candidates = [
+    '../projects.json',       // /…/demo/index.html  →  /…/projects.json
+    '../../projects.json',    // /…/<project>/demo/index.html  →  /…/projects.json (Pages mirror)
+    '/Design-Token-Forge/projects.json',
+    '/projects.json'
+  ];
 
   function tryFetch(i){
-    if (i >= candidates.length) { renderError(); return; }
+    if (i >= candidates.length) { renderFromLocalStorage(); return; }
     fetch(candidates[i], { cache: 'no-store' })
       .then(function(r){ if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
       .then(render)
       .catch(function(){ tryFetch(i+1); });
+  }
+
+  /* Fallback when every fetch candidate fails. Chrome blocks fetch()
+     for file:// pages, so opening demo/index.html by double-clicking
+     used to dead-end on "Couldn't load projects.json". Onboard
+     mirrors every created project into localStorage as
+     `dtf-known-projects`, so we surface that list as a graceful
+     fallback. Same shape as projects.json so render() just works. */
+  function renderFromLocalStorage(){
+    try {
+      var raw = localStorage.getItem('dtf-known-projects');
+      if (raw) {
+        var list = JSON.parse(raw);
+        if (Array.isArray(list) && list.length) { render(list); return; }
+      }
+    } catch (_e) {}
+    renderError();
   }
 
   function colorFromId(id){
@@ -369,8 +397,10 @@
   function renderError(){
     countEl.textContent = '';
     grid.innerHTML = '<div class="hub-empty">' +
-      'Couldn’t load projects.json. ' +
-      '<a href="editor-v2/">Open editor directly →</a>' +
+      'Couldn\u2019t load <code>projects.json</code>. ' +
+      'If you opened this file directly, your browser may be blocking local fetches \u2014 ' +
+      '<a href="onboard.html">create a project</a> or ' +
+      '<a href="editor-v2/">open the editor directly \u2192</a>' +
     '</div>';
   }
 
