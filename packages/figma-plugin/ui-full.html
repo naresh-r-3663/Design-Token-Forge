@@ -1439,6 +1439,8 @@ function render(){
     setupForm.hidden = true;
     changesPanel.hidden = true;
     footerSync.hidden = true;
+    if (mismatchSync)    mismatchSync.hidden    = true;
+    if (mismatchBuilder) mismatchBuilder.hidden = true;
     setBuilderBusy(false);
     applyFooterForActiveTab();
     return;
@@ -1449,6 +1451,10 @@ function render(){
     heroEl.style.display = 'flex';
     changesPanel.hidden = true;
     footerSync.hidden = true;
+    /* Hide rebind banners — they paint above the connect hero from
+       a prior signed-in render and stale otherwise. */
+    if (mismatchSync)    mismatchSync.hidden    = true;
+    if (mismatchBuilder) mismatchBuilder.hidden = true;
     body.dataset.conn = 'off';
     tbAvatar.classList.add('disconnected');
     tbAvatar.textContent = '?';
