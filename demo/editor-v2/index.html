@@ -107,7 +107,52 @@
         s.textContent = cached;
         document.head.appendChild(s);
       }
-      // Always refresh from server so a project edited elsewhere shows up.
+      /* Step 3: cross-fork sync fetch for the published primitives/
+         semantic/surfaces CSS. The packages/tokens/*.css <link>s
+         above paint the maintainer's pearl tokens for a few hundred
+         ms — semantic.css uses var(--prim-*) so the brand synth
+         fixes it, but surfaces.css is LITERAL HEX (--surface-base-
+         bg etc are baked from the maintainer's brand) and can't be
+         re-resolved. Pull the project's three token files from the
+         owner's fork via Contents API (sync XHR — blocks ~300ms
+         once, then localStorage-cached) and inject as the highest-
+         priority style block so surfaces paint with the project's
+         brand on first frame. */
+      if (!cached) {
+        try {
+          var pat   = localStorage.getItem('dtf-gh-pat')   || '';
+          var owner = (cfg && cfg.owner) || localStorage.getItem('dtf-gh-owner') || localStorage.getItem('dtf-gh-user') || '';
+          if (pat && owner) {
+            var ghFiles = ['primitives.css','semantic.css','surfaces.css'];
+            var ghParts = [];
+            ghFiles.forEach(function(f){
+              try {
+                var u = 'https://api.github.com/repos/' + owner + '/Design-Token-Forge/contents/projects/' + encodeURIComponent(pid) + '/' + f + '?ref=main';
+                var xr = new XMLHttpRequest();
+                xr.open('GET', u, /* async */ false);
+                xr.setRequestHeader('Authorization', 'Bearer ' + pat);
+                xr.setRequestHeader('Accept', 'application/vnd.github+json');
+                xr.send(null);
+                if (xr.status >= 200 && xr.status < 300) {
+                  var ff = JSON.parse(xr.responseText);
+                  if (ff && ff.content) ghParts.push(atob(ff.content.replace(/\n/g, '')));
+                }
+              } catch (_fe) {}
+            });
+            if (ghParts.length) {
+              var ghCss = ghParts.join('\n');
+              try { localStorage.setItem('dtf-saved-tokens-' + pid, ghCss); } catch (_se) {}
+              var gs = document.createElement('style');
+              gs.id = 'dtfSavedTokens';
+              gs.textContent = ghCss;
+              document.head.appendChild(gs);
+            }
+          }
+        } catch (_e) {}
+      }
+      // Background refresh from same-origin server (works for projects
+      // owned by the maintainer; cross-fork projects rely on the sync
+      // GitHub API fetch above).
       var files = ['primitives.css','semantic.css','surfaces.css'];
       var parts2 = [];
       var pending = files.length;
