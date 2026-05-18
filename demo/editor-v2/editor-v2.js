@@ -5017,7 +5017,12 @@
       refreshDraftStatus('idle');
     }
     initPaneResizer();
-    initBeforeUnloadGuard();
+    // initBeforeUnloadGuard intentionally not called — the editor
+    // auto-backs up every change to localStorage (`backed up Xm ago`
+    // status), so a "changes may not be saved" prompt is misleading:
+    // reopening the tab restores the same draft state and the
+    // Publish-N-change button is still active. Keeping the guard
+    // function defined for reference but unused.
   }
   // Boot runs at the very bottom, after all helpers are defined.
 
