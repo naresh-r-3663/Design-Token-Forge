@@ -176,6 +176,87 @@
             }
           });
       });
+
+      /* Step 4: stash drift validator (self-heal stale config).
+         The `dtf-project-config-<pid>` stash from Step 1 is used
+         for fast paint, but it only ever gets refreshed when the
+         user Publishes from this editor. If the source config
+         drifts by ANY other means — direct edit to
+         projects/<pid>/config.json on disk, git pull, multi-device
+         publish, restore-from-version, or a teammate's republish —
+         the stash wins forever and the editor shows stale colours
+         (the "Pearl brand stuck at #07CBCF when disk says #E75A6F"
+         bug). Hard refresh doesn't fix it because hard refresh
+         doesn't touch localStorage.
+
+         Strategy: AFTER paint, async-fetch the authoritative
+         config and compare paletteKeys + semanticMap to the stash.
+         On mismatch:
+           • Overwrite the stash with truth.
+           • Clear dtf-saved-tokens-<pid> (it was derived from the
+             stale primitives and would re-poison the next boot).
+           • Auto-reload IF the user has no unsaved draft.
+           • If a draft exists, console.warn + toast (don't destroy
+             work — user must Discard, then we'll reload on next
+             boot). */
+      setTimeout(function validateStash(){
+        try {
+          var stashRaw = localStorage.getItem('dtf-project-config-' + pid);
+          if (!stashRaw) return;
+          var stash; try { stash = JSON.parse(stashRaw); } catch (_pe) { return; }
+
+          function onFresh(fresh){
+            if (!fresh || typeof fresh !== 'object') return;
+            var stashSig = JSON.stringify({ pk: stash.paletteKeys||{}, sm: stash.semanticMap||{} });
+            var freshSig = JSON.stringify({ pk: fresh.paletteKeys||{}, sm: fresh.semanticMap||{} });
+            if (stashSig === freshSig) return;
+
+            // Drift detected. Always heal the stash + token cache.
+            try { localStorage.setItem('dtf-project-config-' + pid, JSON.stringify(fresh)); } catch (_se) {}
+            try { localStorage.removeItem('dtf-saved-tokens-' + pid); } catch (_se) {}
+
+            // Has unsaved draft? Don't auto-reload (would destroy work).
+            var draftKey = 'dtf-editor-v2-draft-v2--' + pid;
+            var hasDraft = false;
+            try { hasDraft = !!localStorage.getItem(draftKey); } catch (_de) {}
+
+            if (hasDraft) {
+              // eslint-disable-next-line no-console
+              console.warn('[ev2] Project config changed on remote. Your draft is preserved. Discard the draft to pick up the new config.');
+              if (window.ev2Toast) {
+                window.ev2Toast('Project config updated on source. Discard your draft to load it.', 'warn', 6000);
+              }
+              return;
+            }
+            // Clean: silently reload to apply fresh config.
+            // eslint-disable-next-line no-console
+            console.info('[ev2] Stale project config stash detected — reloading from source.');
+            window.__ev2BypassUnloadGuard = true;
+            location.reload();
+          }
+
+          // Try same-origin first (workspace / Pages).
+          fetch('../../projects/' + pid + '/config.json?_cb=' + Date.now())
+            .then(function(r){ if (!r.ok) throw 0; return r.json(); })
+            .then(onFresh)
+            .catch(function(){
+              // Cross-fork fallback: GitHub Contents API.
+              try {
+                var pat   = localStorage.getItem('dtf-gh-pat')   || '';
+                var owner = (cfg && cfg.owner) || localStorage.getItem('dtf-gh-owner') || localStorage.getItem('dtf-gh-user') || '';
+                if (!pat || !owner) return;
+                var apiUrl = 'https://api.github.com/repos/' + owner + '/Design-Token-Forge/contents/projects/' + encodeURIComponent(pid) + '/config.json?ref=main&_cb=' + Date.now();
+                fetch(apiUrl, { headers: { 'Authorization': 'Bearer ' + pat, 'Accept': 'application/vnd.github+json' } })
+                  .then(function(r){ if (!r.ok) throw 0; return r.json(); })
+                  .then(function(file){
+                    if (!file || !file.content) return;
+                    try { onFresh(JSON.parse(atob(file.content.replace(/\n/g, '')))); } catch (_je) {}
+                  })
+                  .catch(function(){ /* offline — leave stash, user can manually Reset */ });
+              } catch (_we) {}
+            });
+        } catch (_e) {}
+      }, 1500);
     } catch(e) {}
   })();
   </script>

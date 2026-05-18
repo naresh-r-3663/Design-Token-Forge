@@ -1977,6 +1977,18 @@
     if (role === 'brand') {
       delete _systemPaletteCache.greyscale;
       delete _systemPaletteCache.desaturated;
+      /* Surgically re-render the System palettes panel — we can't
+         call renderT0() here because setHex fires on every input
+         drag tick and a full re-render would kill picker focus.
+         The panel has no inputs of its own, so swapping just its
+         innerHTML is safe. */
+      var sysPanel = document.querySelector('[data-sp-panel="system"]');
+      if (sysPanel && typeof renderSystemPalettesPanel === 'function') {
+        var wrap = document.createElement('div');
+        wrap.innerHTML = renderSystemPalettesPanel();
+        var fresh = wrap.firstChild;
+        if (fresh) sysPanel.parentNode.replaceChild(fresh, sysPanel);
+      }
     }
     pushPreview();
     refreshChangeBar();
