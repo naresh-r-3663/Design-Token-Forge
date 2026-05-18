@@ -5837,6 +5837,21 @@
 
   function renderProjPanel() {
     var list = getKnownProjects();
+    /* Filter to projects the signed-in user owns. A fork inherits
+       projects.json wholesale from upstream, so without this every
+       user sees Canada / Slate / writer-handhelds / Calicut / Pearl
+       (the maintainer's projects) alongside their own. Same filter
+       rule as the hub's fetchFromUserFork (demo/index.html): legacy
+       configs with no owner are treated as belonging to whoever's
+       fork they live in. */
+    try {
+      var ghUserLc = (getGhUser() || localStorage.getItem('dtf-gh-user') || localStorage.getItem('dtf-gh-owner') || '').toLowerCase();
+      if (ghUserLc) {
+        list = list.filter(function (p) {
+          return !p || !p.owner || String(p.owner).toLowerCase() === ghUserLc;
+        });
+      }
+    } catch (_e) {}
     var active = getActiveProjectId();
     if (_projPanelLoading && !list.length) {
       $projPanel.innerHTML = '<div class="ev2-proj-loading"><span class="ev2-proj-loading-spin" aria-hidden="true"></span>Loading projects\u2026</div>';
