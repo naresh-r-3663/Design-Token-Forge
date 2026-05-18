@@ -668,6 +668,76 @@
     return id ? (DRAFT_KEY + '--' + id) : DRAFT_KEY;
   }
 
+  /* ──────────────────────────────────────────────────────────
+     Phase 3-lite: invalidate(key) dispatcher.
+
+     Problem this solves: mutations (setHex, setT1Fill, applyPreset…)
+     historically remembered which DOM panels to patch by hand. Over
+     time this drifted — e.g. `setHex` invalidated the system-palette
+     CACHE but forgot to repaint the system-palette DOM, leaving stale
+     desaturated swatches on screen. Every silent miss is a bug.
+
+     Solution: declare named "invalidation keys" with a fixed dep map.
+     Each panel registers a patcher once. Mutations call invalidate(key)
+     and the dispatcher fans out to every registered patcher for that
+     key (and its fan-out keys). Unknown keys throw — so a typo or a
+     missing registration is loud at dev time, not silent at runtime.
+
+     Migration is incremental: new mutations should use invalidate();
+     legacy hand-rolled DOM patches stay until each one is converted.
+     The bridge case (`setHex` brand block) is converted below as the
+     first usage. */
+  var Invalidator = (function () {
+    var patchers = Object.create(null); // key → [fn,…]
+    /* DEP_MAP: which patcher keys does a logical event fan out to?
+       Mutations call invalidate('event-key') and we walk the deps. */
+    var DEP_MAP = {
+      // Brand hue changed → surface palettes (greyscale/desaturated)
+      // are re-seeded from brand's hue, so the System palettes panel
+      // must repaint.
+      'brand:hue': ['systemPalettesPanel']
+    };
+    function register(key, fn) {
+      if (!patchers[key]) patchers[key] = [];
+      patchers[key].push(fn);
+    }
+    function invalidate(key) {
+      var deps = DEP_MAP[key];
+      if (!deps) {
+        // Loud failure: typos in keys must not silently no-op.
+        throw new Error('Invalidator: unknown key "' + key + '" — add it to DEP_MAP');
+      }
+      for (var i = 0; i < deps.length; i++) {
+        var panelKey = deps[i];
+        var fns = patchers[panelKey];
+        if (!fns || !fns.length) {
+          // Patcher not yet registered (boot race) — silently skip.
+          // First invalidate after registration will catch up.
+          continue;
+        }
+        for (var j = 0; j < fns.length; j++) {
+          try { fns[j](); } catch (e) {
+            try { console.warn('Invalidator: patcher for "' + panelKey + '" threw', e); } catch (_e) {}
+          }
+        }
+      }
+    }
+    return { register: register, invalidate: invalidate };
+  })();
+
+  /* Patcher: System palettes panel (T0 "System" tab).
+     Swap innerHTML in place — no full T0 re-render so we don't
+     kill the color picker's focus during a drag at 60Hz. The
+     panel itself has no inputs, so replaceChild is safe. */
+  Invalidator.register('systemPalettesPanel', function () {
+    var sysPanel = document.querySelector('[data-sp-panel="system"]');
+    if (!sysPanel || typeof renderSystemPalettesPanel !== 'function') return;
+    var wrap = document.createElement('div');
+    wrap.innerHTML = renderSystemPalettesPanel();
+    var fresh = wrap.firstChild;
+    if (fresh) sysPanel.parentNode.replaceChild(fresh, sysPanel);
+  });
+
   /* ── UI state persistence (separate from draft — it survives Discard) ── */
   function saveUIState() {
     try {
@@ -1996,18 +2066,12 @@
     if (role === 'brand') {
       delete _systemPaletteCache.greyscale;
       delete _systemPaletteCache.desaturated;
-      /* Surgically re-render the System palettes panel — we can't
-         call renderT0() here because setHex fires on every input
-         drag tick and a full re-render would kill picker focus.
-         The panel has no inputs of its own, so swapping just its
-         innerHTML is safe. */
-      var sysPanel = document.querySelector('[data-sp-panel="system"]');
-      if (sysPanel && typeof renderSystemPalettesPanel === 'function') {
-        var wrap = document.createElement('div');
-        wrap.innerHTML = renderSystemPalettesPanel();
-        var fresh = wrap.firstChild;
-        if (fresh) sysPanel.parentNode.replaceChild(fresh, sysPanel);
-      }
+      /* Phase 3-lite: was a hand-rolled querySelector +
+         replaceChild block. Now declarative — the patcher is
+         registered once below and any future mutation that affects
+         the system palettes (theme change, etc.) just calls
+         invalidate('brand:hue') with no repaint code locally. */
+      Invalidator.invalidate('brand:hue');
     }
     pushPreview();
     refreshChangeBar();
