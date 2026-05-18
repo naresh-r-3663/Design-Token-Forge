@@ -152,7 +152,10 @@
       var cachedUser = localStorage.getItem(USER_KEY) || null;
       /* Wrong-fork redirect (see verify() for the long-form rationale).
          A returning visitor whose tab cached SESSION_KEY against the
-         maintainer's origin must still be sent to their own fork. */
+         maintainer's origin must still be sent to their own fork.
+         Skip the freshness check here — the verify() path will catch
+         a stale fork on the next full sign-in. Fast-path optimises
+         for the common in-tab-navigation case. */
       var ghMatch = (location.hostname || '').match(/^([^.]+)\.github\.io$/i);
       if (ghMatch && cachedUser && ghMatch[1].toLowerCase() !== cachedUser.toLowerCase()) {
         location.replace('https://' + cachedUser + '.github.io/' + REPO_NAME + '/demo/');
@@ -291,16 +294,44 @@
             var signedInOwner = user.login.toLowerCase();
             if (pageOwner !== signedInOwner) {
               redirected = true;
-              btn.textContent = 'Redirecting to your fork\u2026';
+              btn.textContent = 'Checking your fork\u2026';
               var target = 'https://' + user.login + '.github.io/' + REPO_NAME + '/demo/';
-              /* Quick reachability probe (HEAD on Pages root). If it
-                 404s, the fork's Pages isn't published yet — fall
-                 through to release() and let them use this origin
-                 with a one-time warning toast. */
+              /* Two-stage probe before navigating:
+                   1. HEAD target /demo/ — confirms Pages is published.
+                   2. GET target /demo/auth-gate.js — confirms the fork
+                      is current. The legacy demo (pre-prune) didn't
+                      ship auth-gate.js, so missing/old contents means
+                      the fork hasn't redeployed and would land them
+                      on the stale "Admin Access Required" editor with
+                      a project list that ignores owner filtering.
+                 If either probe fails we DON'T redirect; we show an
+                 actionable error in the gate card so the user can
+                 fix it themselves (enable Pages / sync fork). */
+              var FRESH_MARKER = 'Wrong-fork redirect';   /* unique string only in current auth-gate.js */
               fetch(target, { method: 'HEAD', mode: 'no-cors' })
-                .then(function () { location.replace(target); })
+                .then(function () {
+                  return fetch(target + 'auth-gate.js?cb=' + Date.now(), { mode: 'cors' });
+                })
+                .then(function (r) { return r.ok ? r.text() : ''; })
+                .then(function (body) {
+                  if (body && body.indexOf(FRESH_MARKER) !== -1) {
+                    /* Fork is current — redirect. */
+                    location.replace(target);
+                    return;
+                  }
+                  /* Fork served auth-gate.js but it's stale, OR the
+                     legacy demo at that origin returned no auth-gate.js
+                     at all. Either way the user would land on an
+                     out-of-date UI. Direct them to sync upstream. */
+                  showStaleFork(user.login);
+                })
                 .catch(function () {
-                  showErr('Your fork\u2019s Pages site (' + target + ') isn\u2019t reachable yet. Enable Pages in your repo settings, then reload.');
+                  /* HEAD failed → Pages not enabled. Distinct error. */
+                  showErr(
+                    'Your fork\u2019s Pages site (' + target + ') isn\u2019t reachable yet. ' +
+                    'Open https://github.com/' + user.login + '/' + REPO_NAME + '/settings/pages, ' +
+                    'set Source = "GitHub Actions", then reload.'
+                  );
                   btn.disabled = false;
                   btn.textContent = 'Unlock';
                 });
@@ -308,6 +339,42 @@
             }
           }
         } catch (_e) {}
+
+        function showStaleFork(login) {
+          var card = document.querySelector('.dtf-auth-card');
+          if (!card) {
+            showErr('Your fork is out of date. Sync it from upstream and re-run the deploy workflow.');
+            btn.disabled = false;
+            btn.textContent = 'Unlock';
+            return;
+          }
+          var syncUrl  = 'https://github.com/' + login + '/' + REPO_NAME + '/compare/main...sridhar-ravi-2917:' + REPO_NAME + ':main';
+          var deployUrl = 'https://github.com/' + login + '/' + REPO_NAME + '/actions/workflows/deploy-tokens.yml';
+          card.innerHTML =
+            '<div class="dtf-auth-icon" aria-hidden="true">\u26A0\uFE0F</div>' +
+            '<h2 id="dtf-auth-title">Your fork is out of date</h2>' +
+            '<p class="dtf-auth-sub" style="text-align:left;line-height:1.5">' +
+              'Signed in as <strong>' + login + '</strong>. Your fork\u2019s deployed Pages is older than the ' +
+              'current Design Token Forge \u2014 the editor and project list there won\u2019t work correctly.' +
+            '</p>' +
+            '<ol style="text-align:left;font-size:12px;color:#c8ccd4;padding-left:18px;margin:0 0 16px;line-height:1.7">' +
+              '<li>Open your fork: <a href="https://github.com/' + login + '/' + REPO_NAME + '" target="_blank" rel="noopener" style="color:#9CB7FF">github.com/' + login + '/' + REPO_NAME + '</a></li>' +
+              '<li>Click <strong>Sync fork \u2192 Update branch</strong> to pull the latest from upstream</li>' +
+              '<li>Wait for the <a href="' + deployUrl + '" target="_blank" rel="noopener" style="color:#9CB7FF">deploy workflow</a> to finish (~2 min)</li>' +
+              '<li>Come back here and reload</li>' +
+            '</ol>' +
+            '<a class="dtf-auth-submit" href="' + syncUrl + '" target="_blank" rel="noopener" style="text-decoration:none;display:block">Open sync page \u2192</a>' +
+            '<p class="dtf-auth-hint">' +
+              'Or stay on this origin (read-only \u2014 you\u2019ll see the maintainer\u2019s projects, not your own). ' +
+              '<a href="#" id="dtfStayHere" style="color:#9CB7FF">Stay here anyway</a>' +
+            '</p>';
+          var stay = card.querySelector('#dtfStayHere');
+          if (stay) stay.addEventListener('click', function (e) {
+            e.preventDefault();
+            release({ login: login });
+          });
+        }
+
         if (redirected) return;
         showOk('Welcome, ' + (user.login || 'user') + ' \u2014 unlocking\u2026');
         setTimeout(function () { release(user); }, 200);
