@@ -6,7 +6,7 @@
   "created": "2026-05-16",
   "schemaVersion": 2,
   "paletteKeys": {
-    "brand": "#837272",
+    "brand": "#FF61AD",
     "danger": "#DC2626",
     "warning": "#D97706",
     "info": "#0EA5E9",
@@ -68,35 +68,35 @@
     "inverse": "greyscale"
   },
   "latestVersion": {
-    "version": "v0.0.30",
-    "name": "Restore of v0.0.15",
-    "description": "Restored from v0.0.15 — \"May18 18:24- #837272\"",
-    "savedAt": "2026-05-18T13:46:26.937Z",
+    "version": "v0.0.31",
+    "name": "May19 10:22- rose petal",
+    "description": "",
+    "savedAt": "2026-05-19T05:04:13.057Z",
     "savedBy": "sridhar-ravi-2917"
   },
   "t1Picks": {
     "light": {
       "brand": {
-        "fill": "600",
-        "content": "750",
+        "fill": "550",
+        "content": "600",
         "container": "50",
-        "borderStep": "450",
-        "separatorStep": "350",
+        "borderStep": "500",
+        "separatorStep": "400",
         "onComponent": "white",
-        "onContainerStep": "600"
+        "onContainerStep": "700"
       },
       "danger": {
-        "fill": "550",
-        "content": "550",
+        "fill": "450",
+        "content": "450",
         "container": "75",
-        "borderStep": "450",
+        "borderStep": "200",
         "separatorStep": "350",
         "onComponent": "white",
         "onContainerStep": "550"
       },
       "success": {
         "fill": "600",
-        "content": "700",
+        "content": "600",
         "container": "50",
         "borderStep": "500",
         "separatorStep": "400",
@@ -104,8 +104,8 @@
         "onContainerStep": "700"
       },
       "warning": {
-        "fill": "600",
-        "content": "750",
+        "fill": "350",
+        "content": "600",
         "container": "75",
         "borderStep": "500",
         "separatorStep": "400",
@@ -113,12 +113,12 @@
         "onContainerStep": "750"
       },
       "info": {
-        "fill": "550",
+        "fill": "300",
         "content": "700",
         "container": "50",
         "borderStep": "450",
         "separatorStep": "350",
-        "onComponent": "black",
+        "onComponent": "800",
         "onContainerStep": "700"
       }
     },
