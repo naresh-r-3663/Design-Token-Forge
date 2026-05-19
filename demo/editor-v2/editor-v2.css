@@ -1183,7 +1183,8 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-slot-step{color:var(--ev2-chrome-ct-faint);font-size:10px}
 .ev2-slot-hex{color:var(--ev2-chrome-ct-subtle);text-transform:uppercase;font-size:10px;min-width:54px;text-align:right}
 
-/* Reload button on preview header */
+/* Reload button on preview header (legacy class kept for any code
+   still referencing it; new markup uses .ev2-preview-iconbtn). */
 .ev2-preview-reload{
   width:28px;height:28px;
   border:1px solid var(--ev2-chrome-outline);
@@ -1203,15 +1204,26 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
   min-height:0;
 }
 .ev2-preview-head{
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:12px 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 16px;
   border-bottom:1px solid var(--ev2-chrome-outline);
   background:var(--ev2-chrome-cm-bg);
   flex-shrink:0;
+  min-height:48px;
 }
-.ev2-preview-titlewrap{display:flex;flex-direction:column;line-height:1.15;min-width:0}
-.ev2-preview-title{font-size:13px;font-weight:700;color:var(--ev2-chrome-ct-strong);letter-spacing:.01em}
-.ev2-preview-hint{font-size:10px;font-weight:500;color:var(--ev2-chrome-ct-faint);text-transform:uppercase;letter-spacing:.06em}
+.ev2-preview-titlewrap{display:flex;align-items:center;min-width:0;flex:0 1 auto}
+.ev2-preview-title{
+  font-size:13px;font-weight:700;
+  color:var(--ev2-chrome-ct-strong);
+  letter-spacing:.01em;
+  white-space:nowrap;
+}
+/* Right-cluster: surface picker + icon buttons in a tight group so
+   nothing wraps or hugs awkwardly when the preview pane is narrow. */
+.ev2-preview-actions{
+  display:flex;align-items:center;gap:6px;flex:0 0 auto;
+}
+.ev2-preview-hint{display:none}  /* legacy: subtitle removed for density */
 .ev2-preview-pick{display:inline-flex;align-items:center;gap:8px;font-size:11px;color:var(--ev2-chrome-ct-subtle);font-weight:500}
 .ev2-preview-pick select{
   padding:5px 8px;
@@ -1225,33 +1237,58 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 /* Preview surface override \u2014 lets the designer audit each surface
    family by repainting the preview canvas without changing what they
    are currently editing. Empty value = follow the editor's active
-   surface (default behaviour). */
-.ev2-preview-surface{
-  display:inline-flex;align-items:center;gap:6px;
-  font-size:10px;font-weight:600;color:var(--ev2-chrome-ct-faint);
-  text-transform:uppercase;letter-spacing:.06em;
-  margin-left:auto;
-}
+   surface (default behaviour). Self-labelling via the 'Follow editor'
+   placeholder option \u2014 no separate label needed for density. */
 .ev2-preview-surface-select{
-  padding:4px 8px;
+  height:28px;
+  padding:0 26px 0 10px;
   border:1px solid var(--ev2-chrome-outline);
   border-radius:var(--radius-sm,4px);
   background:var(--ev2-chrome-bg);
   color:var(--ev2-chrome-ct-strong);
-  font:inherit;font-size:11px;font-weight:500;
-  text-transform:none;letter-spacing:0;
+  font:inherit;font-size:11px;font-weight:600;
   cursor:pointer;
+  appearance:none;-webkit-appearance:none;
+  /* Inline chevron so the control stays compact across browsers. */
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M2 4l3 3 3-3' fill='none' stroke='currentColor' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat;
+  background-position:right 8px center;
+  background-size:10px 10px;
 }
+.ev2-preview-surface-select:hover{border-color:var(--ev2-chrome-cm-outline-hover)}
 .ev2-preview-surface-select:focus-visible{
   outline:2px solid var(--brand-component-bg,#3D5EFC);
   outline-offset:1px;
 }
-/* Pill on when overriding (any non-empty value) so the designer
-   can tell at a glance the preview is decoupled from the editor. */
+/* When overriding (any non-empty value) signal it with a brand tint
+   so the designer can tell at a glance the preview is decoupled from
+   the editor. */
 .ev2-preview-surface-select[data-override="1"]{
   border-color:var(--brand-component-bg,#3D5EFC);
   color:var(--brand-component-bg,#3D5EFC);
-  font-weight:600;
+}
+
+/* Compact icon buttons (Open in new tab / Reload) \u2014 unified style
+   so the right cluster reads as a single toolbar instead of three
+   visually different controls. */
+.ev2-preview-iconbtn{
+  width:28px;height:28px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--ev2-chrome-outline);
+  border-radius:var(--radius-sm,4px);
+  background:var(--ev2-chrome-bg);
+  color:var(--ev2-chrome-ct-subtle);
+  cursor:pointer;
+  text-decoration:none;
+  transition:color 120ms ease,border-color 120ms ease,background 120ms ease;
+}
+.ev2-preview-iconbtn:hover{
+  color:var(--ev2-chrome-ct-strong);
+  border-color:var(--ev2-chrome-cm-outline-hover);
+}
+.ev2-preview-iconbtn:focus-visible{
+  outline:2px solid var(--brand-component-bg,#3D5EFC);
+  outline-offset:1px;
 }
 .ev2-preview-pills{display:flex;gap:6px;flex-wrap:wrap}
 

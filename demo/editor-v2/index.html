@@ -570,11 +570,10 @@
       <header class="ev2-preview-head">
         <div class="ev2-preview-titlewrap">
           <span class="ev2-preview-title">Live preview</span>
-          <span class="ev2-preview-hint">updates as you edit</span>
         </div>
-        <label class="ev2-preview-surface" data-tip="Paint the preview canvas on any surface family. Use to verify mappings across surfaces without changing what you're editing.">
-          <span class="ev2-preview-surface-label">Surface</span>
-          <select id="previewSurfaceSelect" class="ev2-preview-surface-select" aria-label="Preview surface family">
+        <div class="ev2-preview-actions">
+          <select id="previewSurfaceSelect" class="ev2-preview-surface-select" aria-label="Preview surface family"
+            data-tip="Paint the preview canvas on any surface family. Use to verify mappings across surfaces without changing what you're editing.">
             <option value="">Follow editor</option>
             <option value="bright">Bright</option>
             <option value="base">Base</option>
@@ -586,13 +585,18 @@
             <option value="float">Float</option>
             <option value="inverse">Inverse</option>
           </select>
-        </label>
-        <a class="ev2-preview-link" id="previewComponentsLink" href="../components.html"
-           data-tip="Open the components gallery using this project's published tokens. Drafts are not previewed.">
-          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h12v8H2z"/><path d="M5 7h6M5 9h4"/></svg>
-          <span>Preview components</span>
-        </a>
-        <button class="ev2-preview-reload" id="previewReload" type="button" title="Reload preview" aria-label="Reload preview">↻</button>
+          <a class="ev2-preview-iconbtn" id="previewComponentsLink" href="../components.html"
+             target="_blank" rel="noopener"
+             aria-label="Open components gallery"
+             data-tip="Open the components gallery using this project's published tokens. Drafts are not previewed.">
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3H3v10h10v-3"/><path d="M10 3h3v3"/><path d="M8 8l5-5"/></svg>
+          </a>
+          <button class="ev2-preview-iconbtn" id="previewReload" type="button"
+                  aria-label="Reload preview"
+                  data-tip="Reload preview">
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.61-3.89"/><path d="M13.5 2.5v3h-3"/></svg>
+          </button>
+        </div>
       </header>
 
       <div class="ev2-preview-stage" id="previewStage">
