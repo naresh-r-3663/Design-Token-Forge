@@ -61,7 +61,7 @@ var LEDGER_TOMBSTONE_TTL_MS = 60 * 1000;
   } catch (e) { /* first run or storage blocked — ignore */ }
 })();
 
-var CODE_VERSION = '2026-05-17-resize';
+var CODE_VERSION = '2026-05-20-ledger-autoheal';
 log('code.js loaded — version ' + CODE_VERSION);
 
 /* ── Stable hash helpers ────────────────────────────────
@@ -4846,9 +4846,13 @@ figma.ui.onmessage = async function(msg) {
               _healedBound.push(_newId);
               _healedNames[_newId] = _stName;
               _entryHealed = true;
-              try { log('Ledger auto-heal: ' + _vk + ' "' + _stName + '" ' + _bid + ' → ' + _newId); } catch (e) {}
+              try { log('Ledger auto-heal HIT: ' + _vk + ' "' + _stName + '" ' + _bid + ' → ' + _newId); } catch (e) {}
             } else {
-              /* Name not found in any collection → genuinely missing. */
+              /* Name not found in any collection → genuinely missing.
+                 Log explicitly so we can tell the difference between
+                 "auto-heal didn't run" and "auto-heal ran but the
+                 variable name truly isn't in the file". */
+              try { log('Ledger auto-heal MISS: ' + _vk + ' "' + (_stName || '(no name in ledger)') + '" id=' + _bid + ' — not present in any local collection'); } catch (e) {}
               _missing.push(_bid);
             }
           }
