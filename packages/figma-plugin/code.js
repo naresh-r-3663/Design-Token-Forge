@@ -61,7 +61,7 @@ var LEDGER_TOMBSTONE_TTL_MS = 60 * 1000;
   } catch (e) { /* first run or storage blocked — ignore */ }
 })();
 
-var CODE_VERSION = '2026-05-20-ledger-autoheal-create';
+var CODE_VERSION = '2026-05-20-proto-hash-stable';
 
 /* Known structural comp-size variables required by the component
    generators. Used by Step 2c (Build) AND by check-gen-prereqs
@@ -4077,8 +4077,14 @@ async function generateComponentFromBlueprint(blueprint) {
   var specHash = structureHash;
   var prototypeHash = '';
   try {
+    /* V6 — CODE_VERSION intentionally NOT included. A plugin update
+       that ships new diagnostics or unrelated logic should NOT fire
+       the 'Prototype interactions need re-wiring' pill on every
+       built component. The real signals are BP.states[] divergence
+       (caller changed the state matrix) and whether reactions were
+       actually wired (stats.reactions > 0). */
     prototypeHash = dtfHash32(
-      'proto:' + CODE_VERSION + ':' +
+      'proto:' +
       dtfStableStringify(BP.states || []) + ':' +
       (stats.reactions > 0 ? 'wired' : 'none')
     );
@@ -4940,14 +4946,33 @@ figma.ui.onmessage = async function(msg) {
           var _sh = dtfHash32(dtfStableStringify(_bp));
           currentStructureHashes[_bk] = _sh;
           currentSpecHashes[_bk] = _sh;  /* legacy alias */
-          /* Prototype: keyed on plugin version + BP's state list.
-             A change in either re-derives the hash and lights the
-             prototype pill. Reactions are baked into plugin code, not
-             BP data, so CODE_VERSION is the right signal here. */
-          var _ps = 'proto:' + CODE_VERSION + ':' +
+          /* V6 — keyed only on BP.states[]. CODE_VERSION removed:
+             unrelated plugin updates should not invalidate prior
+             builds. If we ever ship a real reactions-rewiring change,
+             bump a dedicated REACTIONS_VERSION constant and add it
+             back to BOTH this hash AND the build-time hash above. */
+          var _ps = 'proto:' +
                     dtfStableStringify(_bp.states || []) + ':' +
                     'wired';
           currentPrototypeHashes[_bk] = dtfHash32(_ps);
+          /* V6 migration — if a ledger entry was built under an older
+             plugin version, its stored prototypeHash was computed with
+             CODE_VERSION mixed in and will never match the new V6 hash.
+             For entries whose component sets are still alive (liveness
+             check above already pruned dead entries), overwrite the
+             stored hash so the Prototype pill stops firing on every
+             prereq ping. Real BP.states[] changes still re-fire it. */
+          try {
+            var _veForProto = versions[_bk];
+            if (_veForProto && _veForProto.prototypeHash &&
+                _veForProto.prototypeHash !== currentPrototypeHashes[_bk]) {
+              log('Ledger proto-hash migrate: ' + _bk + ' ' + _veForProto.prototypeHash + ' → ' + currentPrototypeHashes[_bk]);
+              _veForProto.prototypeHash = currentPrototypeHashes[_bk];
+              try {
+                figma.root.setPluginData('dtf-component-versions', JSON.stringify(versions));
+              } catch (ePers2) {}
+            }
+          } catch (eMig) {}
           /* Planned-matrix snapshot. Matches the actual build loop:
              for each family, types \u00d7 (family.states || BP.states)
              \u00d7 2 (rounded variants are always built). */
