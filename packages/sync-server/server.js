@@ -698,6 +698,46 @@ function buildCompSize(extrasCollection) {
       { propCSS: 'padding-x',      propFigma: 'text wrapper padding R' },
     ];
     variables.push(...buildComponentGroup('btn', 'button', btnTokens, extrasVarSet, btnProps));
+
+    // ── button/radius-rounded ─────────────────────────────
+    // CONSTANT (non-per-density) token used by the rounded variant.
+    // CSS:  --btn-radius-rounded: var(--radius-full);
+    // Figma plugin's BUTTON_BLUEPRINT binds the Rounded=True variant to
+    // this variable. Without it the Component Builder reports
+    // "1 token binding need re-linking: button/radius-rounded".
+    const roundedCSS = btnTokens['btn-radius-rounded'];
+    if (roundedCSS) {
+      const roundedAlias = cssVarToExtrasPath(roundedCSS);
+      const values = {};
+      let usable = true;
+      let roundedValue = null;
+      if (roundedAlias && extrasVarSet.has(roundedAlias)) {
+        roundedValue = {
+          type: 'VARIABLE_ALIAS',
+          collection: EXTRAS_COL_NAME,
+          name: roundedAlias
+        };
+      } else {
+        const n = parseFloat(roundedCSS);
+        if (!isNaN(n)) {
+          roundedValue = n;
+        } else {
+          usable = false;
+          console.warn(`❌ DROPPED button/radius-rounded: unresolved value "${roundedCSS}"`);
+        }
+      }
+      if (usable) {
+        for (const mode of COMP_SIZE_MODES) values[mode] = roundedValue;
+        variables.push({
+          name: 'button/radius-rounded',
+          type: 'FLOAT',
+          scopes: ['CORNER_RADIUS'],
+          values
+        });
+      }
+    } else {
+      console.warn(`⚠  button.tokens.css missing --btn-radius-rounded — Rounded variant will report "build needed"`);
+    }
   }
 
   // ── Split Button ──────────────────────────────────────────

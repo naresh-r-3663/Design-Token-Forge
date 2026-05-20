@@ -2323,15 +2323,16 @@ function applyAuthGate(){
     tabBuilder.setAttribute('aria-disabled', locked ? 'true' : 'false');
     tabBuilder.title = locked ? 'Connect GitHub to enable component builder' : '';
   }
-  /* If we're sitting on the Builder pane when creds get cleared,
-     flip back to Sync so the user isn't staring at a half-rendered
-     builder list. Bypasses the user-lock by clearing it first —
-     sign-out is a system-initiated reset, not a programmatic
-     interloper. */
-  if (locked && body.dataset.tab === 'builder'){
-    _tabUserLocked = false;
-    setTab('sync', false);
-  }
+  /* INTENTIONALLY no auto-switch back to Sync when locked.
+     Past behavior cleared _tabUserLocked and forced setTab('sync') if
+     the user happened to be on the Builder tab when creds momentarily
+     became falsy (e.g. an async creds-restored message arriving with
+     only `username` and no `pat`, or a transient PAT verification
+     hiccup). That was the silent "tab keeps switching to Sync" bug.
+     Leave the user on whichever tab they chose — the disabled tab
+     state + setStatus messages tell them what's wrong; we don't
+     yank focus. The explicit menuDisconnect handler still resets
+     state for a deliberate sign-out. */
 }
 
 /* ════════════════════════════════════════════════════
@@ -2467,6 +2468,10 @@ menuDisconnect.addEventListener('click', function(){
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
   if (projectSelect) projectSelect.innerHTML = '<option value="">Connect GitHub first</option>';
   fetchProjects();
+  /* Deliberate sign-out: release the tab lock and land back on Sync
+     so the user sees the connect hero, not a half-rendered Builder. */
+  _tabUserLocked = false;
+  setTab('sync', false);
   render();
 });
 
@@ -2486,7 +2491,7 @@ function startPolling(){
 
 function poll(){
   var url = apiUrl('/status');
-  fetch(url, { cache:'no-store' })
+  return fetch(url, { cache:'no-store' })
     .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function(data){
       lastPollError = '';
@@ -3381,10 +3386,30 @@ if (tbRefresh) tbRefresh.addEventListener('click', function(){
   tbRefresh.classList.add('spinning');
   /* Pretend we're stale so checkForChanges re-fetches tokens unconditionally. */
   lastSeenHash = ''; hashStableCount = 0;
-  poll();
-  fetchTokenData();
-  if (!isStaticHost()) fetchChangelog();
-  else requestStaticDiff();
+  setStatus('Checking for updates…', 'work');
+  /* CRITICAL: chain fetchTokenData AFTER poll() resolves, NOT in parallel.
+     Otherwise the stale-tokens guard inside fetchTokenData compares the
+     NEW tokens.json contentHash against the OLD serverStatus.hash (poll
+     hasn't refreshed it yet) → retries fire and bail with "no changes". */
+  var done = poll();
+  if (done && done.then){
+    done.then(function(){
+      /* poll() already calls checkForChanges → fetchTokenData when the
+         server hash diverges from figmaHash. Only force a fetch when
+         that path wouldn't trigger (e.g. figmaHash matches but the user
+         still wants a fresh diff). */
+      if (!isStaticHost()) fetchChangelog();
+      else requestStaticDiff();
+      setStatus('', '');
+    }).catch(function(){
+      setStatus('Couldn’t reach server — check connection', 'err');
+    });
+  } else {
+    /* Fallback if poll() didn't return a promise (shouldn't happen post-fix). */
+    fetchTokenData();
+    if (!isStaticHost()) fetchChangelog();
+    else requestStaticDiff();
+  }
   setTimeout(function(){ tbRefresh.classList.remove('spinning'); }, 600);
 });
 
