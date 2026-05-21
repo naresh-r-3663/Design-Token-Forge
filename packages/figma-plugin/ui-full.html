@@ -3194,7 +3194,14 @@ window.onmessage = function(event){
       setStatus(text, 'err');
       try { console.error('[DTF] Pass0 rename failures:', s.renameFailures); } catch(e){}
     } else {
-      setStatus(text, s.errors.length > 0 ? 'err' : 'ok');
+      /* Post-sync summary is informational \u2014 use the calm info
+         (blue) banner regardless of soft warnings recorded in
+         stats.errors. Reserve the loud red 'err' banner for the
+         dedicated failure paths (rename failures above, hard
+         exceptions, missing creds, fetch failures). Non-blocking
+         per-variable warnings (scope mismatches, alias misses) are
+         already logged to the dev console for debugging. */
+      setStatus(text, 'work');
     }
     setTimeout(function(){ setStatus('', ''); }, 10000);
 
