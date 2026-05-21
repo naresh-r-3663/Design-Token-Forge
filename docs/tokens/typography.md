@@ -181,13 +181,56 @@ added. Treat this as a Phase 2 feature.
 
 ## 7. Known limitations (Phase 1)
 
-- **No `.woff2` upload.** The `custom` preset takes a family name
-  string but does not yet ship `@font-face` declarations. Designers
-  who use a private font must self-host it and ensure the family name
-  matches.
 - **No per-mode typography.** The system emits light-mode tokens only.
   If a future product needs different fonts in dark mode (very rare),
   the sync server's `dark: {}` is the extension point.
 - **No T1 typography roles.** Components reference primitives directly.
   If we add roles (e.g. `display`, `caption`), they go between
   primitives and components, not as new primitives.
+- **Embedded files are web-only.** `customFontFiles` ships an
+  `@font-face` to every browser-rendered surface (editor, preview,
+  doc consumers). Figma still references the family by **name** —
+  designers need the file installed locally for Figma frames to
+  render in the uploaded face (a future Figma plugin can read the
+  same `customFontFiles` payload to upload the file via Figma's
+  font API).
+
+---
+
+## 8. Custom font file uploads
+
+The Custom Fonts dialog accepts `.woff2`, `.woff`, `.ttf`, and `.otf`
+uploads per role. Each upload is encoded as a base64 `data:` URL and
+stored alongside the typed family name in
+`config.json → typographyConfig.customFontFiles`:
+
+```json
+{
+  "typographyConfig": {
+    "preset": "custom",
+    "customFontFiles": {
+      "headline": {
+        "family":   "MyBrand Display",
+        "format":   "woff2",
+        "fileName": "MyBrand-Display.woff2",
+        "dataUrl":  "data:font/woff2;base64,…"
+      }
+    }
+  }
+}
+```
+
+**Size cap.** A single file is rejected if it exceeds **1 MB**.
+Subset your `.woff2` to the glyphs you actually ship — a 50 KB
+brand-only subset is usually plenty.
+
+**Precedence.** An uploaded file beats the typed family name for the
+same role: the `@font-face` we ship references the file, and
+`--font-family-<role>` points at that family. Per-role overrides
+(advanced) still beat both.
+
+**Lane.** A role with an uploaded file lands in the `embedded` install
+lane — the Designers Need These Fonts dialog reports it as
+"embedded file — no designer install needed" instead of "Install in
+Figma".
+

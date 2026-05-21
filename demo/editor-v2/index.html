@@ -82,7 +82,7 @@
   <link rel="stylesheet" href="../shared.css">
 
   <!-- Editor v2 specific layout -->
-  <link rel="stylesheet" href="./editor-v2.css?v=156">
+  <link rel="stylesheet" href="./editor-v2.css?v=158">
 
   <!-- Palette engine MUST load before the per-project token script
        below so we can synth primitives from cfg.paletteKeys before
@@ -658,23 +658,42 @@
     <div class="ev2-modal-card" role="document">
       <button class="ev2-modal-close" type="button" data-tt-dismiss aria-label="Close dialog">&times;</button>
       <h3 class="ev2-modal-title" id="ev2TtCustomTitle">Custom fonts</h3>
-      <p class="ev2-modal-body">Pick a font for each role. Suggestions are popular Google Fonts &mdash; or type any font name you already have.</p>
+      <p class="ev2-modal-body">Type any font name &mdash; or upload a <code>.woff2</code> / <code>.woff</code> / <code>.ttf</code> / <code>.otf</code> file to embed it in the design (no designer install).</p>
       <div class="ev2-tt-modal-fields">
-        <div class="ev2-tt-modal-row">
+        <div class="ev2-tt-modal-row" data-role-row="headline">
           <label for="ttCustomHeadline">Headline</label>
           <input id="ttCustomHeadline" type="text" list="ttFontSuggest" data-role="headline" autocomplete="off" placeholder="e.g. Playfair Display" />
           <span class="ev2-tt-modal-sample" data-role="headline">Aa</span>
+          <div class="ev2-tt-modal-fileops" data-role="headline">
+            <label class="ev2-tt-modal-file-pick" for="ttCustomFileHeadline">Upload font file</label>
+            <input id="ttCustomFileHeadline" class="ev2-tt-modal-file-input" type="file" data-role="headline" accept=".woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf" />
+            <span class="ev2-tt-modal-file-name" data-role="headline" hidden></span>
+            <button class="ev2-tt-modal-file-clear" type="button" data-role="headline" hidden aria-label="Remove uploaded file">&times;</button>
+          </div>
         </div>
-        <div class="ev2-tt-modal-row">
+        <div class="ev2-tt-modal-row" data-role-row="body">
           <label for="ttCustomBody">Body</label>
           <input id="ttCustomBody" type="text" list="ttFontSuggest" data-role="body" autocomplete="off" placeholder="e.g. Inter" />
           <span class="ev2-tt-modal-sample" data-role="body">Aa</span>
+          <div class="ev2-tt-modal-fileops" data-role="body">
+            <label class="ev2-tt-modal-file-pick" for="ttCustomFileBody">Upload font file</label>
+            <input id="ttCustomFileBody" class="ev2-tt-modal-file-input" type="file" data-role="body" accept=".woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf" />
+            <span class="ev2-tt-modal-file-name" data-role="body" hidden></span>
+            <button class="ev2-tt-modal-file-clear" type="button" data-role="body" hidden aria-label="Remove uploaded file">&times;</button>
+          </div>
         </div>
-        <div class="ev2-tt-modal-row">
+        <div class="ev2-tt-modal-row" data-role-row="code">
           <label for="ttCustomCode">Code</label>
           <input id="ttCustomCode" type="text" list="ttFontSuggest" data-role="code" autocomplete="off" placeholder="e.g. JetBrains Mono" />
           <span class="ev2-tt-modal-sample" data-role="code">Aa</span>
+          <div class="ev2-tt-modal-fileops" data-role="code">
+            <label class="ev2-tt-modal-file-pick" for="ttCustomFileCode">Upload font file</label>
+            <input id="ttCustomFileCode" class="ev2-tt-modal-file-input" type="file" data-role="code" accept=".woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf" />
+            <span class="ev2-tt-modal-file-name" data-role="code" hidden></span>
+            <button class="ev2-tt-modal-file-clear" type="button" data-role="code" hidden aria-label="Remove uploaded file">&times;</button>
+          </div>
         </div>
+        <p class="ev2-tt-modal-hint" id="ttCustomHint" hidden></p>
       </div>
       <datalist id="ttFontSuggest">
         <option value="Inter"></option>
@@ -874,6 +893,6 @@
     </div>
   </div>
 
-  <script src="./editor-v2.js?v=170" defer></script>
+  <script src="./editor-v2.js?v=171" defer></script>
 </body>
 </html>

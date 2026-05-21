@@ -199,3 +199,108 @@ test.describe('Tt tier — live preview round-trip', () => {
     }, { timeout: 5000 }).toMatch(/--line-height-normal\s*:\s*1\.625/);
   });
 });
+
+/* The Custom Fonts modal accepts .woff2 / .woff / .ttf / .otf file
+   uploads. Once a file is attached, the modal shows a "filename
+   pill", the family name pre-fills, and (on Apply) an @font-face
+   block lands in the preview iframe pointing at the data: URL. */
+test.describe('Tt tier — Custom font file upload', () => {
+  // A tiny, valid base64-encoded "file" we hand to the file input via
+  // setInputFiles. The contents aren't a real font — we only assert
+  // the JS pipeline accepts the upload, derives a family name from
+  // the filename, and emits an @font-face block. The browser won't
+  // actually render glyphs from these bytes, but the data: URL still
+  // round-trips into the @font-face src.
+  const FAKE_WOFF2 = Buffer.from('woof', 'utf8');
+
+  test('uploading a .woff2 stages the family name + shows the pill', async ({ page }) => {
+    await gotoTt(page);
+    await page.click('#ttCustomOpen');
+    await page.waitForSelector('#ev2TtCustom:not([hidden])');
+
+    await page.setInputFiles('#ttCustomFileHeadline', {
+      name: 'MyBrand-Display.woff2',
+      mimeType: 'font/woff2',
+      buffer: FAKE_WOFF2
+    });
+
+    /* Filename pill should appear and the text input should
+       pre-fill with the derived family ("MyBrand-Display"). */
+    await expect(page.locator('.ev2-tt-modal-file-name[data-role="headline"]')).toBeVisible();
+    await expect(page.locator('#ttCustomHeadline')).toHaveValue('MyBrand-Display');
+
+    /* The fileops row should mark itself embedded so the Upload
+       button hides and the Clear (×) button appears. */
+    await expect(page.locator('.ev2-tt-modal-fileops[data-role="headline"]'))
+      .toHaveAttribute('data-embedded', '');
+    await expect(page.locator('.ev2-tt-modal-file-clear[data-role="headline"]')).toBeVisible();
+  });
+
+  test('Apply ships @font-face for the upload into the preview iframe', async ({ page }) => {
+    await gotoTt(page);
+    await page.click('#ttCustomOpen');
+    await page.waitForSelector('#ev2TtCustom:not([hidden])');
+
+    await page.setInputFiles('#ttCustomFileBody', {
+      name: 'MyBodyFace.woff2',
+      mimeType: 'font/woff2',
+      buffer: FAKE_WOFF2
+    });
+    await page.click('#ttCustomApply');
+
+    const frame = page.frameLocator('iframe').first();
+
+    await expect.poll(async () => {
+      return await frame.locator('style').evaluateAll(nodes =>
+        nodes.map(n => n.textContent || '').join('')
+      );
+    }, { timeout: 5000 }).toMatch(/@font-face[\s\S]*MyBodyFace[\s\S]*font\/woff2;base64/);
+
+    /* Editor's own document gets the @font-face too so the
+       Custom tile sample paints in the uploaded face. */
+    await expect.poll(async () => {
+      const txt = await page.locator('#ev2-typo-faces').textContent();
+      return txt || '';
+    }, { timeout: 2000 }).toMatch(/MyBodyFace/);
+  });
+
+  test('clearing the staged file removes the pill', async ({ page }) => {
+    await gotoTt(page);
+    await page.click('#ttCustomOpen');
+    await page.waitForSelector('#ev2TtCustom:not([hidden])');
+
+    await page.setInputFiles('#ttCustomFileCode', {
+      name: 'CodeFace.woff2',
+      mimeType: 'font/woff2',
+      buffer: FAKE_WOFF2
+    });
+    await expect(page.locator('.ev2-tt-modal-file-name[data-role="code"]')).toBeVisible();
+
+    await page.click('.ev2-tt-modal-file-clear[data-role="code"]');
+
+    await expect(page.locator('.ev2-tt-modal-file-name[data-role="code"]')).toBeHidden();
+    await expect(page.locator('.ev2-tt-modal-fileops[data-role="code"]'))
+      .not.toHaveAttribute('data-embedded', '');
+  });
+
+  test('install dialog reports embedded fonts in their own row', async ({ page }) => {
+    await gotoTt(page);
+    await page.click('#ttCustomOpen');
+    await page.waitForSelector('#ev2TtCustom:not([hidden])');
+    await page.setInputFiles('#ttCustomFileHeadline', {
+      name: 'BrandHeadline.woff2',
+      mimeType: 'font/woff2',
+      buffer: FAKE_WOFF2
+    });
+    await page.click('#ttCustomApply');
+
+    /* Sticky-footer summary should mention embedded count. */
+    await expect(page.locator('#ttInstallOpen')).toContainText(/embedded/i);
+
+    await page.click('#ttInstallOpen');
+    const modal = page.locator('#ev2TtInstall');
+    await expect(modal).toBeVisible();
+    await expect(modal.locator('.ev2-typo-install-row[data-lane="embedded"]')).toContainText('BrandHeadline');
+  });
+});
+

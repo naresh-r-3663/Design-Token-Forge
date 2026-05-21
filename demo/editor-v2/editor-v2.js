@@ -647,7 +647,7 @@
     // `custom` = the user's last picks {headline, body, code} — kept
     // even when the user switches back to a preset, so the Custom
     // card retains its labels.
-    typo: { preset: 'neutral-system', overrides: { headline: '', body: '', code: '' }, custom: { headline: '', body: '', code: '' }, density: 'base' },
+    typo: { preset: 'neutral-system', overrides: { headline: '', body: '', code: '' }, custom: { headline: '', body: '', code: '' }, customFontFiles: { headline: null, body: null, code: null }, density: 'base' },
     // T0 sub-view selector. 'roles' = key-color editing for the 6
     // primary roles; 'palettes' = inventory + CRUD for the system
     // and custom palettes that surfaces consume in T2. Palette
@@ -2289,9 +2289,10 @@
       var cfg = (typeof readProjectConfigSync === 'function') ? readProjectConfigSync() : null;
       var preset = (cfg && cfg.typographyConfig && cfg.typographyConfig.preset) || 'neutral-system';
       var density = (cfg && cfg.typographyConfig && cfg.typographyConfig.density) || 'base';
-      return { preset: preset, density: density, overrides: { headline:'', body:'', code:'' }, custom: { headline:'', body:'', code:'' } };
+      var files = (cfg && cfg.typographyConfig && cfg.typographyConfig.customFontFiles) || {};
+      return { preset: preset, density: density, overrides: { headline:'', body:'', code:'' }, custom: { headline:'', body:'', code:'' }, customFontFiles: { headline: files.headline || null, body: files.body || null, code: files.code || null } };
     } catch (_e) {
-      return { preset: 'neutral-system', density: 'base', overrides: { headline:'', body:'', code:'' }, custom: { headline:'', body:'', code:'' } };
+      return { preset: 'neutral-system', density: 'base', overrides: { headline:'', body:'', code:'' }, custom: { headline:'', body:'', code:'' }, customFontFiles: { headline:null, body:null, code:null } };
     }
   }
   function loadTypoState() {
@@ -2307,7 +2308,12 @@
       preset:    State.typoBaseline.preset,
       density:   State.typoBaseline.density || 'base',
       overrides: { headline:'', body:'', code:'' },
-      custom:    { headline:'', body:'', code:'' }
+      custom:    { headline:'', body:'', code:'' },
+      customFontFiles: {
+        headline: (State.typoBaseline.customFontFiles && State.typoBaseline.customFontFiles.headline) || null,
+        body:     (State.typoBaseline.customFontFiles && State.typoBaseline.customFontFiles.body)     || null,
+        code:     (State.typoBaseline.customFontFiles && State.typoBaseline.customFontFiles.code)     || null
+      }
     };
     try {
       var raw = localStorage.getItem(typoStorageKey());
@@ -2318,6 +2324,7 @@
           if (parsed.density)   State.typo.density   = parsed.density;
           if (parsed.overrides) State.typo.overrides = parsed.overrides;
           if (parsed.custom)    State.typo.custom    = parsed.custom;
+          if (parsed.customFontFiles) State.typo.customFontFiles = parsed.customFontFiles;
         }
       }
     } catch (_e) {}
@@ -2336,6 +2343,10 @@
       var r = roles[i];
       if (((t.overrides || {})[r] || '') !== ((b.overrides || {})[r] || '')) return 1;
       if (((t.custom    || {})[r] || '') !== ((b.custom    || {})[r] || '')) return 1;
+      var tf = ((t.customFontFiles || {})[r]) || null;
+      var bf = ((b.customFontFiles || {})[r]) || null;
+      if ((tf && tf.dataUrl || '') !== (bf && bf.dataUrl || '')) return 1;
+      if ((tf && tf.family  || '') !== (bf && bf.family  || '')) return 1;
     }
     return 0;
   }
@@ -2371,10 +2382,19 @@
      { headline, body, code } as CSS font-family values. */
   function typoResolvedFonts() {
     var preset = TYPO_PRESETS.find(function (p) { return p.id === State.typo.preset; });
+    var files = State.typo.customFontFiles || {};
     var out = {};
     TYPO_ROLES.forEach(function (r) {
       var override = (State.typo.overrides && State.typo.overrides[r] || '').trim();
       if (override) { out[r] = override; return; }
+      /* Uploaded font file wins over the text-name input for the
+         same role — the file IS the source of truth (we can render
+         it locally + ship it in config.json), the text name might
+         be a future install the user planned. */
+      if (files[r] && files[r].family && files[r].dataUrl) {
+        out[r] = typoStackFor(r, files[r].family);
+        return;
+      }
       if (State.typo.preset === 'custom') {
         var c = (State.typo.custom && State.typo.custom[r] || '').trim();
         out[r] = c ? typoStackFor(r, c) : '';
@@ -2387,12 +2407,24 @@
     return out;
   }
 
+  /* Return per-role "is this family backed by an uploaded file?"
+     boolean. Used by install dialog + lane classifier to surface
+     embedded fonts as a separate, no-action-required category. */
+  function typoIsEmbedded(role) {
+    var f = (State.typo.customFontFiles || {})[role];
+    return !!(f && f.dataUrl && f.family);
+  }
+
   /* Bucket the resolved fonts by install-lane (system / google /
-     custom), de-duped across roles. Used by the sticky-footer
-     summary AND the install dialog so both views agree. */
+     custom / embedded), de-duped across roles. Used by the
+     sticky-footer summary AND the install dialog so both views
+     agree.
+     'embedded' = the user uploaded a .woff2/.woff/.ttf/.otf file
+     for the role; we ship the bytes inline so Figma + the web
+     preview both render it without a designer install step. */
   function typoInstallBuckets() {
     var resolved = typoResolvedFonts();
-    var buckets = { system: [], google: [], custom: [] };
+    var buckets = { system: [], google: [], custom: [], embedded: [] };
     var seen = {};
     TYPO_ROLES.forEach(function (r) {
       var stack = resolved[r] || '';
@@ -2400,7 +2432,10 @@
       if (!first) return;
       var key = first.toLowerCase();
       if (seen[key]) { seen[key].roles.push(r); return; }
-      var lane = typoLaneFor(first);
+      /* Role-level check FIRST so an uploaded file family lands in
+         'embedded' even when its name happens to collide with a
+         Google Font (e.g. user uploads their own subset of "Inter"). */
+      var lane = typoIsEmbedded(r) ? 'embedded' : typoLaneFor(first);
       var entry = { family: first, lane: lane, roles: [r] };
       buckets[lane].push(entry);
       seen[key] = entry;
@@ -2414,12 +2449,16 @@
   function typoInstallStickyLabel(buckets) {
     var g = buckets.google.length;
     var c = buckets.custom.length;
+    var e = buckets.embedded.length;
     if (g === 0 && c === 0) {
-      return { tone: 'ok', label: 'All fonts ready in Figma' };
+      /* All system or all embedded → no Figma install step for anyone. */
+      if (e === 0) return { tone: 'ok', label: 'All fonts ready in Figma' };
+      return { tone: 'ok', label: 'All fonts embedded \u2014 zero designer install' };
     }
     var parts = [];
     if (g) parts.push(g + ' to install');
     if (c) parts.push(c + ' you supply');
+    if (e) parts.push(e + ' embedded');
     return { tone: 'warn', label: parts.join(' \u00b7 ') + ' \u2014 for designers' };
   }
   /* Build the inner HTML of the install dialog body. Pure
@@ -2430,7 +2469,7 @@
     var b = typoInstallBuckets();
     var needsAction = b.google.length + b.custom.length;
     var html = '';
-    if (needsAction === 0) {
+    if (needsAction === 0 && b.embedded.length === 0) {
       html += '<div class="ev2-typo-install-ok">'
            +    '<span class="ev2-typo-install-ok-dot" aria-hidden="true"></span>'
            +    '<span><strong>Nothing to install.</strong> All fonts here come with every computer, so Figma already has them.</span>'
@@ -2438,6 +2477,17 @@
       return html;
     }
     html += '<ul class="ev2-typo-install-list">';
+    /* Embedded files first — they're the strongest position
+       (no designer action at all) so they read as a "win" row. */
+    b.embedded.forEach(function (e) {
+      html += '<li class="ev2-typo-install-row" data-lane="embedded">'
+            +   '<span class="ev2-typo-install-dot" aria-hidden="true"></span>'
+            +   '<span class="ev2-typo-install-body">'
+            +     '<span class="ev2-typo-install-family">' + e.family + '</span>'
+            +     '<span class="ev2-typo-install-roles">' + e.roles.join(' \u00b7 ') + ' \u00b7 embedded file \u2014 no designer install needed</span>'
+            +   '</span>'
+            + '</li>';
+    });
     b.google.forEach(function (e) {
       var url = 'https://fonts.google.com/specimen/' + encodeURIComponent(e.family.replace(/\s+/g, '+'));
       html += '<li class="ev2-typo-install-row" data-lane="google">'
@@ -2487,7 +2537,26 @@
 
   function typoCssBundle() {
     var fonts = typoResolvedFonts();
-    var lines = [':root {'];
+    var lines = [];
+    /* Emit @font-face blocks FIRST so the families they declare
+       resolve before any consumer (component or preset card)
+       references them. One block per role that has an uploaded
+       file; format() helps the browser pick the right decoder
+       even though we always set a real format hint. */
+    var files = State.typo.customFontFiles || {};
+    TYPO_ROLES.forEach(function (r) {
+      var f = files[r];
+      if (!(f && f.dataUrl && f.family)) return;
+      var fmt = f.format || 'woff2';
+      lines.push('@font-face {');
+      lines.push('  font-family: "' + String(f.family).replace(/"/g, '\\"') + '";');
+      lines.push('  src: url("' + f.dataUrl + '") format("' + fmt + '");');
+      lines.push('  font-weight: 100 900;');
+      lines.push('  font-style: normal;');
+      lines.push('  font-display: swap;');
+      lines.push('}');
+    });
+    lines.push(':root {');
     /* Emit the three semantic role tokens first — these are the
        names the editor's list pane and any future per-role demo
        consumes. */
@@ -2585,6 +2654,34 @@
     var stale = document.getElementById('ev2-typo-override');
     if (stale && stale.parentNode) stale.parentNode.removeChild(stale);
     ensureGoogleFontsLink();
+    /* Inject @font-face declarations for any uploaded files into
+       the editor's OWN document — without this the Custom tile
+       sample and the Custom Fonts modal preview can't render the
+       uploaded face, and the picked family silently falls back to
+       system-ui. The CSS rule is identical to what we postMessage
+       into the preview iframe (typoCssBundle's @font-face block). */
+    var faces = document.getElementById('ev2-typo-faces');
+    var files = (State.typo && State.typo.customFontFiles) || {};
+    var blocks = [];
+    TYPO_ROLES.forEach(function (r) {
+      var f = files[r];
+      if (!(f && f.dataUrl && f.family)) return;
+      var fmt = f.format || 'woff2';
+      blocks.push('@font-face{font-family:"' + String(f.family).replace(/"/g, '\\"')
+               + '";src:url("' + f.dataUrl + '") format("' + fmt
+               + '");font-weight:100 900;font-style:normal;font-display:swap;}');
+    });
+    if (!blocks.length) {
+      if (faces && faces.parentNode) faces.parentNode.removeChild(faces);
+      return;
+    }
+    var css = blocks.join('\n');
+    if (!faces) {
+      faces = document.createElement('style');
+      faces.id = 'ev2-typo-faces';
+      document.head.appendChild(faces);
+    }
+    if (faces.textContent !== css) faces.textContent = css;
   }
   function pushTypoToPreview() {
     /* Reuse the existing ev2-overrides postMessage channel — the
@@ -2787,40 +2884,166 @@
   }
 
   /* ── Custom fonts modal ──────────────────────────────── */
+  /* Max accepted file size in bytes. 1 MB is a generous cap for
+     a single .woff2 (the format is heavily compressed); rejecting
+     larger files keeps config.json and localStorage well under
+     their practical limits even with three roles populated. */
+  var TYPO_MAX_FONT_BYTES = 1024 * 1024;
+  /* Working draft of the modal — files picked here do NOT touch
+     State.typo until Apply. Cancel discards the entire draft so
+     uploads can be tried + abandoned without polluting persisted
+     state. Resets on each open. */
+  var ttModalDraft = { headline: null, body: null, code: null };
+
+  function ttModalSetHint(msg, tone) {
+    var hint = document.getElementById('ttCustomHint');
+    if (!hint) return;
+    if (!msg) { hint.hidden = true; hint.removeAttribute('data-tone'); hint.textContent = ''; return; }
+    hint.hidden = false;
+    hint.textContent = msg;
+    if (tone) hint.setAttribute('data-tone', tone); else hint.removeAttribute('data-tone');
+  }
+
+  /* Derive a sensible family name from the uploaded filename when
+     the user has not typed anything yet. "PlayfairDisplay-Bold.woff2"
+     → "PlayfairDisplay-Bold". The text input is the source of truth
+     for the family name shipped in @font-face; this is just a
+     pre-fill so users aren't forced to retype after dropping a file. */
+  function ttModalDeriveFamily(fileName) {
+    return String(fileName || '').replace(/\.(woff2?|ttf|otf)$/i, '').trim();
+  }
+  function ttModalFormatFor(fileName) {
+    var ext = String(fileName || '').toLowerCase().match(/\.(woff2|woff|ttf|otf)$/);
+    if (!ext) return 'woff2';
+    if (ext[1] === 'ttf') return 'truetype';
+    if (ext[1] === 'otf') return 'opentype';
+    return ext[1];
+  }
+
+  /* Update the modal row chrome to reflect whether a role has a
+     draft file attached. */
+  function ttModalRenderRoleFile(role) {
+    var modal = document.getElementById('ev2TtCustom');
+    if (!modal) return;
+    var draft = ttModalDraft[role];
+    var ops    = modal.querySelector('.ev2-tt-modal-fileops[data-role="' + role + '"]');
+    var nameEl = modal.querySelector('.ev2-tt-modal-file-name[data-role="' + role + '"]');
+    var clear  = modal.querySelector('.ev2-tt-modal-file-clear[data-role="' + role + '"]');
+    if (!ops || !nameEl || !clear) return;
+    if (draft && draft.dataUrl) {
+      ops.setAttribute('data-embedded', '');
+      nameEl.hidden = false;
+      nameEl.textContent = draft.fileName || draft.family || 'font file';
+      clear.hidden = false;
+    } else {
+      ops.removeAttribute('data-embedded');
+      nameEl.hidden = true;
+      nameEl.textContent = '';
+      clear.hidden = true;
+    }
+  }
+
   function openTtCustomModal() {
     var modal = document.getElementById('ev2TtCustom');
     if (!modal) return;
-    /* Seed inputs from saved custom picks. */
+    /* Seed text inputs from saved custom picks AND seed the file
+       draft from any previously-uploaded files — so re-opening
+       the modal shows current state, and Cancel preserves it
+       (since Apply is what writes back to State). */
     TYPO_ROLES.forEach(function (r) {
-      var inp = modal.querySelector('input[data-role="' + r + '"]');
-      if (inp) inp.value = (State.typo.custom && State.typo.custom[r]) || '';
+      var inp = modal.querySelector('input[data-role="' + r + '"][type="text"]');
+      var saved = (State.typo.customFontFiles && State.typo.customFontFiles[r]) || null;
+      if (inp) {
+        /* Prefer the saved file's family name when it exists —
+           that's the name baked into @font-face. Falls back to
+           the free-text custom pick so an unembedded role retains
+           its planned font name. */
+        inp.value = (saved && saved.family) || (State.typo.custom && State.typo.custom[r]) || '';
+      }
+      ttModalDraft[r] = saved ? Object.assign({}, saved) : null;
+      ttModalRenderRoleFile(r);
       updateTtCustomSample(r);
     });
+    ttModalSetHint(null);
     modal.hidden = false;
-    setTimeout(function () { var f = modal.querySelector('input'); if (f) f.focus(); }, 0);
+    setTimeout(function () { var f = modal.querySelector('input[type="text"]'); if (f) f.focus(); }, 0);
   }
   function closeTtCustomModal() {
     var modal = document.getElementById('ev2TtCustom');
     if (modal) modal.hidden = true;
+    /* Drop the draft so the next open re-seeds from State. */
+    ttModalDraft = { headline: null, body: null, code: null };
+    ttModalSetHint(null);
   }
   function updateTtCustomSample(role) {
     var modal = document.getElementById('ev2TtCustom');
     if (!modal) return;
-    var inp = modal.querySelector('input[data-role="' + role + '"]');
+    var inp = modal.querySelector('input[data-role="' + role + '"][type="text"]');
     var sample = modal.querySelector('.ev2-tt-modal-sample[data-role="' + role + '"]');
     if (!inp || !sample) return;
-    var v = inp.value.trim();
-    sample.style.fontFamily = v ? ('"' + v.replace(/"/g, '\\"') + '", system-ui, sans-serif') : '';
+    /* If a file is staged for this role, the sample renders in
+       THAT family (the @font-face block in #ev2-typo-faces will
+       resolve it). Otherwise fall back to the typed name + system
+       fallback so the typeahead suggestion previews live too. */
+    var draft = ttModalDraft[role];
+    var fam = (draft && draft.family) || inp.value.trim();
+    sample.style.fontFamily = fam ? ('"' + fam.replace(/"/g, '\\"') + '", system-ui, sans-serif') : '';
   }
+
+  /* Read a File as a base64 data URL. Resolves to { dataUrl,
+     family, format, fileName, sizeBytes } or rejects with a
+     human-readable message. */
+  function ttModalReadFontFile(file, role, currentName) {
+    return new Promise(function (resolve, reject) {
+      if (!file) return reject(new Error('No file selected.'));
+      var name = file.name || '';
+      if (!/\.(woff2|woff|ttf|otf)$/i.test(name)) {
+        return reject(new Error('Only .woff2, .woff, .ttf, or .otf font files are supported.'));
+      }
+      if (file.size > TYPO_MAX_FONT_BYTES) {
+        var kb = Math.round(file.size / 1024);
+        return reject(new Error('Font file is ' + kb + ' KB; the limit is 1024 KB. Try a subset .woff2.'));
+      }
+      var reader = new FileReader();
+      reader.onerror = function () { reject(new Error('Could not read the file.')); };
+      reader.onload  = function () {
+        var dataUrl = String(reader.result || '');
+        if (!dataUrl) return reject(new Error('Empty file.'));
+        resolve({
+          family:    String(currentName || '').trim() || ttModalDeriveFamily(name),
+          dataUrl:   dataUrl,
+          format:    ttModalFormatFor(name),
+          fileName:  name,
+          sizeBytes: file.size
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function applyTtCustomFromModal() {
     var modal = document.getElementById('ev2TtCustom');
     if (!modal) return;
+    /* Commit text inputs to custom-name picks. */
     TYPO_ROLES.forEach(function (r) {
-      var inp = modal.querySelector('input[data-role="' + r + '"]');
+      var inp = modal.querySelector('input[data-role="' + r + '"][type="text"]');
       State.typo.custom[r] = inp ? inp.value.trim() : '';
+      /* Commit the file draft. If the user typed a family name in
+         the text input after picking a file, the typed name wins —
+         the file is stored under the user's chosen identifier. */
+      var draft = ttModalDraft[r];
+      if (draft && draft.dataUrl) {
+        var typed = inp ? inp.value.trim() : '';
+        if (typed) draft.family = typed;
+        State.typo.customFontFiles[r] = draft;
+      } else {
+        State.typo.customFontFiles[r] = null;
+      }
     });
-    /* If user filled at least one role, switch active to 'custom'. */
-    var any = State.typo.custom.headline || State.typo.custom.body || State.typo.custom.code;
+    /* If user filled at least one role (typed family OR uploaded
+       file), switch active to 'custom'. */
+    var any = State.typo.custom.headline || State.typo.custom.body || State.typo.custom.code
+           || State.typo.customFontFiles.headline || State.typo.customFontFiles.body || State.typo.customFontFiles.code;
     if (any) State.typo.preset = 'custom';
     persistTypoState();
     closeTtCustomModal();
@@ -2836,11 +3059,77 @@
     if (e.target && e.target.id === 'ttCustomApply') { applyTtCustomFromModal(); return; }
     if (e.target.closest('[data-tt-install-dismiss]')) { closeTtInstallModal(); return; }
     if (e.target.closest('#ttInstallOpen')) { openTtInstallModal(); return; }
+    /* Per-role "remove uploaded file" buttons inside the Custom
+       modal — drop the draft, repaint the row, refresh the sample
+       so it falls back to the typed family name (if any). */
+    var clearBtn = e.target.closest('.ev2-tt-modal-file-clear');
+    if (clearBtn) {
+      var role = clearBtn.getAttribute('data-role');
+      if (role) {
+        ttModalDraft[role] = null;
+        ttModalRenderRoleFile(role);
+        updateTtCustomSample(role);
+        ttModalSetHint(null);
+      }
+      return;
+    }
   });
   document.addEventListener('input', function (e) {
-    var inp = e.target.closest('.ev2-tt-modal input[data-role]');
+    var inp = e.target.closest('.ev2-tt-modal input[data-role][type="text"]');
     if (!inp) return;
-    updateTtCustomSample(inp.getAttribute('data-role'));
+    /* As the user retypes the family name, keep the draft's
+       family in sync — Apply will commit it. */
+    var role = inp.getAttribute('data-role');
+    if (ttModalDraft[role] && ttModalDraft[role].dataUrl) {
+      ttModalDraft[role].family = inp.value.trim() || ttModalDraft[role].family;
+    }
+    updateTtCustomSample(role);
+  });
+  document.addEventListener('change', function (e) {
+    var fileInput = e.target.closest('.ev2-tt-modal-file-input');
+    if (!fileInput) return;
+    var role = fileInput.getAttribute('data-role');
+    var file = (fileInput.files && fileInput.files[0]) || null;
+    if (!file || !role) return;
+    var modal = document.getElementById('ev2TtCustom');
+    var textInput = modal && modal.querySelector('input[data-role="' + role + '"][type="text"]');
+    var currentName = textInput ? textInput.value.trim() : '';
+    ttModalSetHint('Reading ' + file.name + '…', 'ok');
+    ttModalReadFontFile(file, role, currentName).then(function (payload) {
+      ttModalDraft[role] = payload;
+      /* Pre-fill the text input with the derived family name if
+         the user hadn't typed anything yet — gives them a single
+         starting point that matches what'll ship in @font-face. */
+      if (textInput && !textInput.value.trim()) {
+        textInput.value = payload.family;
+      }
+      /* Inject the @font-face for this draft into the editor doc
+         BEFORE renderRoleFile/updateSample so the preview row
+         actually paints in the uploaded face immediately. We
+         augment (don't overwrite) any committed-state faces. */
+      var faces = document.getElementById('ev2-typo-faces');
+      if (!faces) {
+        faces = document.createElement('style');
+        faces.id = 'ev2-typo-faces';
+        document.head.appendChild(faces);
+      }
+      var draftBlock = '@font-face{font-family:"' + String(payload.family).replace(/"/g, '\\"')
+                    + '";src:url("' + payload.dataUrl + '") format("' + payload.format
+                    + '");font-weight:100 900;font-style:normal;font-display:swap;}';
+      /* Append to whatever is already there — applyTypoToEditor()
+         will rebuild this fully on Apply. */
+      if (faces.textContent.indexOf(payload.dataUrl) < 0) {
+        faces.textContent = faces.textContent + '\n' + draftBlock;
+      }
+      ttModalRenderRoleFile(role);
+      updateTtCustomSample(role);
+      ttModalSetHint('Embedded \u2014 designers won\u2019t need to install ' + payload.family + '.', 'ok');
+    }).catch(function (err) {
+      ttModalSetHint(err && err.message ? err.message : 'Could not read that file.');
+    });
+    /* Reset the input value so the same file can be re-picked
+       after a clear. */
+    fileInput.value = '';
   });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
@@ -4782,13 +5071,26 @@
       }
       var ov = State.typo.overrides || {};
       var cu = State.typo.custom    || {};
-      var ovKept = {}, cuKept = {};
+      var cf = State.typo.customFontFiles || {};
+      var ovKept = {}, cuKept = {}, cfKept = {};
       ['headline','body','code'].forEach(function (r) {
         if (ov[r]) ovKept[r] = ov[r];
         if (cu[r]) cuKept[r] = cu[r];
+        /* Only persist file payloads that actually have bytes —
+           a stray { family: '...' } without dataUrl is meaningless
+           and would also bloat config.json with empty rows. */
+        if (cf[r] && cf[r].dataUrl && cf[r].family) {
+          cfKept[r] = {
+            family:   cf[r].family,
+            format:   cf[r].format || 'woff2',
+            fileName: cf[r].fileName || '',
+            dataUrl:  cf[r].dataUrl
+          };
+        }
       });
       if (Object.keys(ovKept).length) typoOut.overrides = ovKept;
       if (Object.keys(cuKept).length) typoOut.custom    = cuKept;
+      if (Object.keys(cfKept).length) typoOut.customFontFiles = cfKept;
       cfg.typographyConfig = typoOut;
     }
 

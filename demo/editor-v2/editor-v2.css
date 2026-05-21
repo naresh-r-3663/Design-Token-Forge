@@ -2744,7 +2744,7 @@ body.ev2-modal-open{overflow:hidden}
    structure of T0/T1 cards — section heads + per-section
    controls — using its own scoped classes so it can coexist
    with palette/role widgets without selector collisions. */
-.ev2-typo-panel{display:flex;flex-direction:column;gap:14px;min-height:100%}
+.ev2-typo-panel{display:flex;flex-direction:column;gap:14px}
 .ev2-typo-section{display:flex;flex-direction:column;gap:6px}
 .ev2-typo-section-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--demo-fg-strong,#111);margin:0;padding-bottom:4px;border-bottom:1px solid var(--ev2-chrome-outline,#e5e5e5)}
 .ev2-typo-help{font-size:11px;line-height:1.4;color:var(--demo-fg-subtle,#555);margin:0 0 2px}
@@ -2851,11 +2851,35 @@ body.ev2-modal-open{overflow:hidden}
 /* Modal — reuses the ev2-modal shell. */
 .ev2-tt-modal .ev2-modal-card{max-width:480px;width:90vw}
 .ev2-tt-modal-fields{display:flex;flex-direction:column;gap:12px;margin:14px 0 6px}
-.ev2-tt-modal-row{display:grid;grid-template-columns:90px 1fr 44px;align-items:center;gap:10px}
+.ev2-tt-modal-row{display:grid;grid-template-columns:90px 1fr 44px;align-items:center;gap:10px 10px;grid-template-areas:"label input sample" ". fileops fileops"}
+.ev2-tt-modal-row > label{grid-area:label}
+.ev2-tt-modal-row > input[type="text"]{grid-area:input}
+.ev2-tt-modal-row > .ev2-tt-modal-sample{grid-area:sample}
+.ev2-tt-modal-row > .ev2-tt-modal-fileops{grid-area:fileops}
 .ev2-tt-modal-row label{font-size:12px;font-weight:600;color:var(--demo-fg-subtle,#555)}
-.ev2-tt-modal-row input{padding:8px 10px;border:1px solid var(--ev2-chrome-outline,#e5e5e5);border-radius:6px;background:var(--demo-bg,#fff);color:var(--demo-fg,#222);font-size:13px;width:100%;box-sizing:border-box}
-.ev2-tt-modal-row input:focus{outline:2px solid var(--brand-content-default,#3D5EFC);outline-offset:1px;border-color:transparent}
+.ev2-tt-modal-row input[type="text"]{padding:8px 10px;border:1px solid var(--ev2-chrome-outline,#e5e5e5);border-radius:6px;background:var(--demo-bg,#fff);color:var(--demo-fg,#222);font-size:13px;width:100%;box-sizing:border-box}
+.ev2-tt-modal-row input[type="text"]:focus{outline:2px solid var(--brand-content-default,#3D5EFC);outline-offset:1px;border-color:transparent}
 .ev2-tt-modal-sample{display:inline-flex;align-items:center;justify-content:center;height:36px;border:1px solid var(--ev2-chrome-outline,#e5e5e5);border-radius:6px;background:var(--demo-surface-alt,#f8f8f8);font-size:18px;font-weight:600;color:var(--demo-fg-strong,#111)}
+/* Per-role font-file uploader. Sits under the family-name input so the
+   text name is the primary affordance and the upload is the opt-in
+   "embed it" power-user move. */
+.ev2-tt-modal-fileops{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:24px}
+.ev2-tt-modal-file-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.ev2-tt-modal-file-pick{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px dashed var(--ev2-chrome-outline,#d4d4d4);border-radius:6px;background:transparent;color:var(--demo-fg-subtle,#555);font-size:11px;font-weight:500;cursor:pointer;transition:border-color .12s,color .12s}
+.ev2-tt-modal-file-pick:hover{border-color:var(--brand-content-default,#3D5EFC);color:var(--brand-content-default,#3D5EFC)}
+.ev2-tt-modal-file-input:focus-visible + .ev2-tt-modal-file-pick,
+.ev2-tt-modal-file-pick:focus-within{outline:2px solid var(--brand-content-default,#3D5EFC);outline-offset:2px}
+.ev2-tt-modal-file-pick::before{content:"\2191";font-weight:700;line-height:1}
+.ev2-tt-modal-fileops[data-embedded] .ev2-tt-modal-file-pick{display:none}
+.ev2-tt-modal-file-name{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:4px;background:var(--success-component-bg-default,#16a34a);color:var(--success-on-component,#fff);font-size:11px;font-weight:500;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev2-tt-modal-file-name[hidden]{display:none !important}
+.ev2-tt-modal-file-name::before{content:"\2713";font-weight:700}
+.ev2-tt-modal-file-clear{appearance:none;border:none;background:transparent;color:var(--demo-fg-subtle,#666);font-size:18px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:4px}
+.ev2-tt-modal-file-clear[hidden]{display:none !important}
+.ev2-tt-modal-file-clear:hover{background:var(--demo-surface-alt,#f0f0f0);color:var(--danger-content-default,#dc2626)}
+.ev2-tt-modal-hint{margin:6px 0 0;padding:8px 10px;border-radius:6px;background:var(--danger-component-bg-default,#fee2e2);color:var(--danger-on-component,#7f1d1d);font-size:12px;line-height:1.45}
+.ev2-tt-modal-hint[hidden]{display:none !important}
+.ev2-tt-modal-hint[data-tone="ok"]{background:var(--success-component-bg-default,#dcfce7);color:var(--success-on-component,#14532d)}
 /* Breathing room between the last field row and the Cancel/Apply
    actions — the default ev2-modal-actions sits flush against the
    field, which crowds the primary action. */
@@ -2913,7 +2937,7 @@ body.ev2-modal-open{overflow:hidden}
    summary never scrolls out of sight, but stays out of the
    way (single line). Click → opens the install dialog
    (markup in index.html). */
-.ev2-typo-install-sticky{position:sticky;bottom:0;margin:auto -24px -32px 0;padding:10px 24px 14px;background:var(--ev2-chrome-bg);border-top:1px solid var(--ev2-chrome-outline);box-shadow:0 -6px 12px -8px rgba(0,0,0,.08);z-index:2}
+.ev2-typo-install-sticky{position:sticky;bottom:0;margin:14px -24px -32px;padding:10px 24px 14px;background:var(--ev2-chrome-bg);border-top:1px solid var(--ev2-chrome-outline);box-shadow:0 -6px 12px -8px rgba(0,0,0,.08);z-index:2}
 .ev2-typo-install-stickybtn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:1px solid var(--ev2-chrome-outline);border-radius:8px;background:var(--ev2-chrome-surface-2,var(--ev2-chrome-bg));font:inherit;font-size:12px;color:var(--ev2-chrome-ct-strong);cursor:pointer;text-align:left;box-shadow:0 1px 2px rgba(0,0,0,.04);transition:background 120ms,border-color 120ms,box-shadow 120ms,transform 120ms}
 .ev2-typo-install-stickybtn:hover{border-color:var(--brand-content-default,#3D5EFC);box-shadow:0 2px 6px rgba(61,94,252,.18)}
 .ev2-typo-install-stickybtn:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(0,0,0,.06)}

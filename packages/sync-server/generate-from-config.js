@@ -247,6 +247,14 @@ function generateTypographyTokens(typoConfig) {
   // value matches the web preview's stack exactly.
   const overrides = (cfg.overrides && typeof cfg.overrides === 'object') ? cfg.overrides : {};
   const customs   = (cfg.custom    && typeof cfg.custom    === 'object') ? cfg.custom    : {};
+  // Uploaded-font payloads: { headline?: { family, format, dataUrl, fileName }, ... }
+  // Family name takes precedence over the typed customs[role] when both
+  // are set for the same role — the file IS the source of truth (it's
+  // what we'll ship as @font-face) and the typed name might be a
+  // future install the user planned. The full payload (dataUrl, format)
+  // is preserved verbatim in cfg.customFontFiles so consumers (web
+  // bundler, future Figma font upload, doc page) can read it directly.
+  const customFiles = (cfg.customFontFiles && typeof cfg.customFontFiles === 'object') ? cfg.customFontFiles : {};
 
   // Density scales font-size + line-height-normal. Defaults to base
   // so legacy configs (no density key) keep their original ladder.
@@ -278,6 +286,18 @@ function generateTypographyTokens(typoConfig) {
     for (const role of ['headline', 'body', 'code']) {
       const fam = customs[role];
       const stack = typoStackFor(role, fam);
+      if (stack) light[`font-family-${role}`] = stack;
+    }
+  }
+  // 2b. Uploaded font files override the typed custom name for the
+  //     same role — the @font-face block we ship references this
+  //     family, so the token must point at it too. Applies for ANY
+  //     preset (custom OR a built-in preset where the designer only
+  //     swapped out one role with an embedded file).
+  for (const role of ['headline', 'body', 'code']) {
+    const f = customFiles[role];
+    if (f && f.family && f.dataUrl) {
+      const stack = typoStackFor(role, f.family);
       if (stack) light[`font-family-${role}`] = stack;
     }
   }
