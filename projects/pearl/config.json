@@ -67,6 +67,9 @@
     "float": "greyscale",
     "inverse": "greyscale"
   },
+  "typographyConfig": {
+    "preset": "editorial-serif"
+  },
   "latestVersion": {
     "version": "v0.0.36",
     "name": "May21 10:24",

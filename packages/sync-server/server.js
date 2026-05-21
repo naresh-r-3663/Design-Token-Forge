@@ -222,6 +222,7 @@ function scopeForExtras(cssName, type) {
   if (cssName.startsWith('spacing-')) return ['GAP'];
   if (cssName.startsWith('opacity-')) return ['OPACITY'];
   if (cssName.startsWith('z-'))       return [];  // no scope restriction
+  if (cssName.startsWith('font-family-')) return ['FONT_FAMILY'];
   if (cssName.startsWith('font-size-'))    return ['FONT_SIZE'];
   if (cssName.startsWith('font-weight-'))  return ['FONT_WEIGHT'];
   // line-height ships as a unitless FLOAT (e.g. 1.5). letter-spacing ships

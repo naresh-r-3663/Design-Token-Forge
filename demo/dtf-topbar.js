@@ -32,6 +32,7 @@
   var NAV_ITEMS = [
     { label: 'Token Editor',    href: 'editor-v2/'           },
     { label: 'Tokens',          href: 'color-tokens.html'    },
+    { label: 'Typography',      href: 'typography.html'      },
     { label: 'Frameworks',      href: 'frameworks.html'      },
     { sep: true },
     { label: 'All Components',  href: 'components.html'      },

@@ -209,6 +209,30 @@ async function main() {
       if (overrides.semanticTokens  && !editorTruth.semantic)  exportOpts.semanticTokens  = overrides.semanticTokens;
       if (overrides.surfaceTokens   && !editorTruth.surface)   exportOpts.surfaceTokens   = overrides.surfaceTokens;
 
+      // ── Typography overlay (always-on) ───────────────────────────────
+      // Editor truth only covers colour primitives today; typography
+      // primitives (font-*, line-*, letter-*) live in the project's
+      // typographyConfig and must be overlaid onto whatever primitive
+      // base we ended up with — editor truth OR config-generated.
+      // Without this, projects with editor-saved primitives.css ship
+      // zero typography tokens to Figma even when the designer picked
+      // a preset in onboard. Safe to overlay unconditionally because
+      // typography keys never collide with prim-* colour keys.
+      if (editorTruth.primitive && overrides.primitiveTokens) {
+        const typoRe = /^(font-|line-|letter-)/;
+        const baseLight = exportOpts.primitiveTokens.light || {};
+        const baseDark  = exportOpts.primitiveTokens.dark  || {};
+        for (const k of Object.keys(overrides.primitiveTokens.light || {})) {
+          if (typoRe.test(k)) baseLight[k] = overrides.primitiveTokens.light[k];
+        }
+        for (const k of Object.keys(overrides.primitiveTokens.dark || {})) {
+          if (typoRe.test(k)) baseDark[k] = overrides.primitiveTokens.dark[k];
+        }
+        exportOpts.primitiveTokens = { light: baseLight, dark: baseDark };
+        const preset = (projectConfig.typographyConfig && projectConfig.typographyConfig.preset) || 'neutral-system (default)';
+        console.log(`  ✓ Typography overlay → preset: ${preset}`);
+      }
+
       const parts = [];
       if (overrides.primitiveTokens && !editorTruth.primitive) parts.push('primitives');
       if (overrides.semanticTokens  && !editorTruth.semantic)  parts.push('semantic');
@@ -711,6 +735,52 @@ async function main() {
     const srcOfP = mirror('primitives.css', exportOpts.primitiveTokens, 'T0 Primitive Colors');
     const srcOfS = mirror('semantic.css',   exportOpts.semanticTokens,  'T1 Semantic Tokens');
     const srcOfU = mirror('surfaces.css',   exportOpts.surfaceTokens,   'T2 Surface Context Tokens');
+
+    // ── Typography append (editor truth preserves colour, typography
+    //    lives in config) ──────────────────────────────────────────
+    // Editor saves only colour primitives. Typography primitives come
+    // from typographyConfig + neutral-system fallback. To keep editor
+    // truth verbatim AND ship typography to demo pages, we append a
+    // pure-typography block to the mirrored primitives.css file after
+    // the verbatim copy lands. Idempotent: if the editor ever starts
+    // writing font-* tokens we'll just re-overwrite them with the
+    // config values (still correct because typographyConfig is the
+    // single source of truth for fonts today).
+    if (srcOfP === 'editor' && exportOpts.primitiveTokens) {
+      const typoRe = /^(font-|line-|letter-)/;
+      const lightTypo = {};
+      const darkTypo  = {};
+      for (const [k, v] of Object.entries(exportOpts.primitiveTokens.light || {})) {
+        if (typoRe.test(k)) lightTypo[k] = v;
+      }
+      for (const [k, v] of Object.entries(exportOpts.primitiveTokens.dark || {})) {
+        if (typoRe.test(k)) darkTypo[k] = v;
+      }
+      // Idempotent: if the verbatim editor file already contains
+      // font-family-headline (a typography marker key), assume the
+      // typography block is in-file and skip the append. Keeps
+      // re-runs and editor-saved-typography (future) clean.
+      const mirrorPath = path.join(projDistCSSDir, 'primitives.css');
+      const mirrored = fs.readFileSync(mirrorPath, 'utf-8');
+      const alreadyHasTypo = /--font-family-headline\s*:/.test(mirrored);
+      if (!alreadyHasTypo && (Object.keys(lightTypo).length || Object.keys(darkTypo).length)) {
+        const lines = [];
+        lines.push('');
+        lines.push('/* ── Typography primitives (appended by build-static; sourced from typographyConfig) ── */');
+        if (Object.keys(lightTypo).length) {
+          lines.push(':root {');
+          for (const [k, v] of Object.entries(lightTypo)) lines.push(`  --${k}: ${v};`);
+          lines.push('}');
+        }
+        if (Object.keys(darkTypo).length) {
+          lines.push('[data-theme="dark"] {');
+          for (const [k, v] of Object.entries(darkTypo)) lines.push(`  --${k}: ${v};`);
+          lines.push('}');
+        }
+        fs.appendFileSync(mirrorPath, lines.join('\n') + '\n');
+      }
+    }
+
     const sources = [srcOfP, srcOfS, srcOfU].filter(Boolean);
     if (sources.length) {
       const allEditor = sources.every(s => s === 'editor');
