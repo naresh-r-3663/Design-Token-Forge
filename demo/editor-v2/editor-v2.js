@@ -4324,37 +4324,53 @@
     var dir = tonalDir(mode);
     /* Mirrors semanticVarsFor() so the "Resulting slots" table is
        a 1:1 read-out of what gets published to the project file.
-       Previously this table dropped component-outline-*,
-       component-separator, container-separator, container-pressed
-       and content-faint \u2014 making it look like the role only had
-       9 of its 17 published vars. */
-    var rows = [
-      { slot: 'component-bg-default',     step: fillStep },
-      { slot: 'component-bg-hover',       step: stepRel(fillStep, 1) },
-      { slot: 'component-bg-pressed',     step: stepRel(fillStep, 2) },
-      { slot: 'component-outline-default', step: stepRel(fillStep, -2) },
-      { slot: 'component-outline-hover',   step: stepRel(fillStep, -2) },
-      { slot: 'component-outline-pressed', step: stepRel(fillStep, -1) },
-      { slot: 'component-separator',      step: stepRel(fillStep, -4) },
-      { slot: 'content-default',          step: contentStep },
-      { slot: 'content-strong',           step: stepRel(contentStep, 1) },
-      { slot: 'content-subtle',           step: stepRel(contentStep, -2) },
-      { slot: 'content-faint',            step: stepRel(contentStep, -3) },
-      { slot: 'container-bg',             step: containerStep },
-      { slot: 'container-hover',          step: stepRel(containerStep, 1 * dir) },
-      { slot: 'container-pressed',        step: stepRel(containerStep, 2 * dir) },
-      { slot: 'container-outline',        step: resolveBorderStep(roleId, mode) },
-      { slot: 'container-separator',      step: resolveSeparatorStep(roleId, mode) }
+       Grouped into Content / Component / Container at the user's
+       request \u2014 each group corresponds to one of the three T1
+       levers, with the derived cards (outline/separator/on-*)
+       folded into the group whose surface they sit on top of. */
+    var onCompStep = t1DerivedStep(roleId, 'onComponent', mode);
+    var onCompHex  = onComponentHexFor(roleId, onCompStep) || onComponentColor(roleId, mode) || '#000';
+    var onContStep = t1DerivedStep(roleId, 'onContainer', mode);
+    var groups = [
+      { label: 'Content', rows: [
+        { slot: 'content-default', step: contentStep },
+        { slot: 'content-strong',  step: stepRel(contentStep, 1) },
+        { slot: 'content-subtle',  step: stepRel(contentStep, -2) },
+        { slot: 'content-faint',   step: stepRel(contentStep, -3) }
+      ]},
+      { label: 'Component', rows: [
+        { slot: 'component-bg-default',      step: fillStep },
+        { slot: 'component-bg-hover',        step: stepRel(fillStep, 1) },
+        { slot: 'component-bg-pressed',      step: stepRel(fillStep, 2) },
+        { slot: 'component-outline-default', step: stepRel(fillStep, -2) },
+        { slot: 'component-outline-hover',   step: stepRel(fillStep, -2) },
+        { slot: 'component-outline-pressed', step: stepRel(fillStep, -1) },
+        { slot: 'component-separator',       step: stepRel(fillStep, -4) },
+        { slot: 'on-component',              step: onCompStep, hex: onCompHex, stepLabel: (onCompStep === 'white' || onCompStep === 'black') ? onCompStep : ('step ' + onCompStep) }
+      ]},
+      { label: 'Container', rows: [
+        { slot: 'container-bg',        step: containerStep },
+        { slot: 'container-hover',     step: stepRel(containerStep, 1 * dir) },
+        { slot: 'container-pressed',   step: stepRel(containerStep, 2 * dir) },
+        { slot: 'container-outline',   step: resolveBorderStep(roleId, mode) },
+        { slot: 'container-separator', step: resolveSeparatorStep(roleId, mode) },
+        { slot: 'on-container',        step: onContStep }
+      ]}
     ];
+    function rowHTML(r) {
+      var hex = r.hex || stepHexByName(roleId, r.step) || '#000';
+      var stepLabel = r.stepLabel || ('step ' + r.step);
+      return '<div class="ev2-slot-row">'
+        + '<div class="ev2-slot-sw" style="background:' + hex + '"></div>'
+        + '<div class="ev2-slot-name">--' + roleId + '-' + r.slot + '</div>'
+        + '<div class="ev2-slot-step">' + stepLabel + '</div>'
+        + '<div class="ev2-slot-hex">' + hex.toUpperCase().replace('#','') + '</div>'
+      + '</div>';
+    }
     return '<div class="ev2-slots">'
-      + rows.map(function (r) {
-          var hex = stepHexByName(roleId, r.step) || '#000';
-          return '<div class="ev2-slot-row">'
-            + '<div class="ev2-slot-sw" style="background:' + hex + '"></div>'
-            + '<div class="ev2-slot-name">--' + roleId + '-' + r.slot + '</div>'
-            + '<div class="ev2-slot-step">step ' + r.step + '</div>'
-            + '<div class="ev2-slot-hex">' + hex.toUpperCase().replace('#','') + '</div>'
-          + '</div>';
+      + groups.map(function (g) {
+          return '<div class="ev2-slot-group-head">' + g.label + '</div>'
+               + g.rows.map(rowHTML).join('');
         }).join('')
       + '</div>';
   }

@@ -1194,6 +1194,8 @@ html.ev2-tip-js [data-tip]::before { content:none !important; display:none !impo
 .ev2-show-css .ev2-step-css{display:block}
 
 .ev2-slots{display:flex;flex-direction:column;gap:2px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px}
+.ev2-slot-group-head{font-family:var(--demo-font-sans,system-ui);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ev2-chrome-ct-subtle);padding:10px 8px 4px;border-bottom:1px solid var(--ev2-chrome-outline);margin-bottom:2px}
+.ev2-slot-group-head:first-child{padding-top:2px}
 .ev2-slot-row{
   display:grid;
   grid-template-columns:18px 1fr auto auto;
