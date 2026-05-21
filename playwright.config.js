@@ -12,7 +12,8 @@ const { defineConfig } = require("@playwright/test");
  * Baselines live in tests/visual/__screenshots__/ (committed to git).
  */
 module.exports = defineConfig({
-  testDir: "./tests/visual",
+  testDir: "./tests",
+  testMatch: ["visual/**/*.spec.js", "editor-v2/**/*.spec.js"],
   snapshotDir: "./tests/visual/__screenshots__",
   snapshotPathTemplate:
     "{snapshotDir}/{testFilePath}/{arg}-{projectName}{ext}",
