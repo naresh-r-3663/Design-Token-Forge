@@ -49,7 +49,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --no-frozen-lockfile --filter .
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
