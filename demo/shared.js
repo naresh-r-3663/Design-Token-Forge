@@ -91,6 +91,8 @@ try {
   var ddBtn = document.createElement('button');
   ddBtn.className = 'nav-proj-btn';
   ddBtn.type = 'button';
+  ddBtn.setAttribute('aria-haspopup', 'listbox');
+  ddBtn.setAttribute('aria-expanded', 'false');
   ddBtn.textContent = '…';
   var ddPanel = document.createElement('div');
   ddPanel.className = 'nav-proj-panel';
@@ -367,13 +369,28 @@ try {
   function closePanel() {
     panelOpen = false;
     ddPanel.removeAttribute('data-open');
+    ddBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  function togglePanel() {
+    if (panelOpen) closePanel();
+    else {
+      openPanel();
+      ddBtn.setAttribute('aria-expanded', 'true');
+    }
   }
 
   /* Toggle on button click */
   ddBtn.addEventListener('click', function(e) {
     e.stopPropagation();
-    if (panelOpen) closePanel();
-    else openPanel();
+    togglePanel();
+  });
+
+  /* Make the PROJECT label a valid hit target too. */
+  label.style.cursor = 'pointer';
+  label.addEventListener('click', function (e) {
+    e.stopPropagation();
+    togglePanel();
   });
 
   /* Close on outside click */
