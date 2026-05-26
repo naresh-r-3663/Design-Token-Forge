@@ -240,8 +240,9 @@
    data-role="brand" is the default (no remap needed).
    ════════════════════════════════════════════════════════════════ */
 
-/* ── data-role="danger" ─────────────────────────────────── */
-.switch[data-role="danger"] {
+/* ── data-role="danger" / "error" alias ─────────────────── */
+.switch[data-role="danger"],
+.switch[data-role="error"] {
   --brand-component-bg-default: var(--danger-component-bg-default);
   --brand-component-bg-hover: var(--danger-component-bg-hover);
   --brand-component-bg-pressed: var(--danger-component-bg-pressed);

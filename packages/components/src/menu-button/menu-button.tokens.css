@@ -37,9 +37,9 @@
   --menu-btn-radius-medium: var(--radius-md);
   --menu-btn-radius-large: var(--radius-DEFAULT);
   --menu-btn-radius-big: var(--radius-DEFAULT);
-  --menu-btn-radius-huge: var(--radius-lg);
-  --menu-btn-radius-mega: var(--radius-xl);
-  --menu-btn-radius-ultra: var(--radius-xl);
+   --menu-btn-radius-huge: var(--radius-lg);
+   --menu-btn-radius-mega: var(--radius-xl);
+   --menu-btn-radius-ultra: var(--radius-2xl);
 
   /* Border */
   --menu-btn-border-width: 1px;

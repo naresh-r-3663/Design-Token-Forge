@@ -37,9 +37,9 @@
   --icon-btn-radius-medium: var(--radius-md);
   --icon-btn-radius-large: var(--radius-DEFAULT);
   --icon-btn-radius-big: var(--radius-DEFAULT);
-  --icon-btn-radius-huge: var(--radius-lg);
-  --icon-btn-radius-mega: var(--radius-xl);
-  --icon-btn-radius-ultra: var(--radius-xl);
+   --icon-btn-radius-huge: var(--radius-lg);
+   --icon-btn-radius-mega: var(--radius-xl);
+   --icon-btn-radius-ultra: var(--radius-2xl);
 
   /* Border */
   --icon-btn-border-width: 1px;
