@@ -31,7 +31,7 @@ permissions:
 
 jobs:
   demo-qc:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
       - name: Checkout
@@ -52,7 +52,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile --ignore-workspace
 
       - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install chromium
 
       - name: Run demo QC tests
         run: pnpm run test:demo-qc:ci
