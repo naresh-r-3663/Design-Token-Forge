@@ -150,6 +150,7 @@ try {
   var currentId = localStorage.getItem('dtf-active-project') || '';
   var panelOpen = false;
   var cachedList = []; /* last-known project list for switching */
+  var authExpired = false;
 
   /* GitHub API setup — owner is ALWAYS the signed-in user's login
      (set by auth-gate.js on PAT verify). No fallback to the canonical
@@ -298,7 +299,15 @@ try {
 
   function _fetchFromApi(cb) {
     fetch(ghApiBase + '/contents/projects?ref=main&_cb=' + Date.now(), { headers: ghHdrs })
-      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(r){
+        if (r.status === 401 || r.status === 403) {
+          authExpired = true;
+          try { sessionStorage.removeItem('dtf-auth-ok'); } catch (e) {}
+          return [];
+        }
+        authExpired = false;
+        return r.ok ? r.json() : null;
+      })
       .then(function(dirs){
         if (!dirs || !Array.isArray(dirs)) { cb(null); return; }
         var projects = dirs.filter(function(d){ return d.type === 'dir'; });
@@ -362,8 +371,19 @@ try {
         if (localList.length > 0) {
           cachedList = localList;
           renderPanel(getVisibleProjects(localList));
+        } else if (authExpired) {
+          ddPanel.innerHTML = '';
+          var expired = document.createElement('button');
+          expired.type = 'button';
+          expired.className = 'nav-proj-item';
+          expired.textContent = 'Session expired — re-authenticate';
+          expired.addEventListener('click', function () {
+            if (typeof window.DtfAuthLogout === 'function') window.DtfAuthLogout();
+            else window.location.reload();
+          });
+          ddPanel.appendChild(expired);
         } else {
-          window.location.href = 'onboard.html';
+          renderPanel([]);
         }
       } else {
         /* API failed — show cached */
