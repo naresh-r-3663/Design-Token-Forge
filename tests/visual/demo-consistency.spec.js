@@ -463,4 +463,83 @@ test.describe("demo consistency QC", () => {
       }
     }
   });
+
+  test("blueprint enforcement: no legacy naming and surface uses shared helper", async ({ page }) => {
+    const projectId = "desktop-pdf-editor";
+    const projectCss = readProjectCss(projectId);
+
+    await seedAuthState(page);
+    await seedProjectTheme(page, projectId, projectCss);
+
+    const BANNED_LABELS = ["Base", "Elevated", "Sunken"];
+
+    for (const component of COMPONENTS) {
+      await page.goto(demoURL(component));
+      await page.waitForLoadState("load");
+      await page.waitForTimeout(150);
+
+      // 1. No "Hero Preview" anywhere — must be "Hero Inspector"
+      const heroText = await page.$$eval(
+        ".section-header h2, .sidebar-nav a",
+        (els) => els.map((e) => e.textContent.trim())
+      );
+      const hasLegacyHero = heroText.some((t) => t.includes("Hero Preview"));
+      expect(
+        hasLegacyHero,
+        `${component}: still uses "Hero Preview" — must be "Hero Inspector"`
+      ).toBe(false);
+
+      // 2. No banned surface labels (Base/Elevated/Sunken)
+      const surfaceLabels = await page.$$eval(
+        ".surface-panel .surface-label, .surface-panel .surface-panel-label",
+        (els) => els.map((e) => e.textContent.trim())
+      );
+      for (const label of surfaceLabels) {
+        expect(
+          BANNED_LABELS.includes(label),
+          `${component}: surface panel uses banned label "${label}" — use token names (surface-base-bg, surface-base-subtle, surface-deep-bg)`
+        ).toBe(false);
+      }
+
+      // 3. Surface panels use CSS classes (not inline background) — except panels
+      //    with a surface-panel--* modifier (deep/alt/accent get inline bg from applySurface)
+      const inlineBgPanels = await page.$$eval(".surface-panel", (panels) =>
+        panels
+          .filter((p) => {
+            if (!(p.style.background || p.style.backgroundColor)) return false;
+            // Allow if panel has any modifier class
+            const cls = p.className;
+            if (/surface-panel--/.test(cls)) return false;
+            // Allow if bg uses a CSS var (intentional override like accent)
+            const bg = p.style.background || p.style.backgroundColor;
+            if (/var\(--/.test(bg)) return false;
+            return true;
+          })
+          .map((p) => p.style.background || p.style.backgroundColor)
+      );
+      expect(
+        inlineBgPanels.length,
+        `${component}: ${inlineBgPanels.length} surface panel(s) use inline background instead of CSS classes`
+      ).toBe(0);
+
+      // 4. If sec-surface exists, it must have .surface-panel--base and .surface-panel--deep
+      const hasSurfaceSection = await page.$("#sec-surface");
+      if (hasSurfaceSection) {
+        const panelClasses = await page.$$eval(
+          "#sec-surface .surface-panel",
+          (panels) => panels.map((p) => p.className)
+        );
+        const hasBase = panelClasses.some((c) => c.includes("surface-panel--base"));
+        const hasDeep = panelClasses.some((c) => c.includes("surface-panel--deep"));
+        expect(
+          hasBase,
+          `${component}: sec-surface missing .surface-panel--base`
+        ).toBe(true);
+        expect(
+          hasDeep,
+          `${component}: sec-surface missing .surface-panel--deep`
+        ).toBe(true);
+      }
+    }
+  });
 });
