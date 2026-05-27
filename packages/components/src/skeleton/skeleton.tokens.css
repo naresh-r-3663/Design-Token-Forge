@@ -54,7 +54,7 @@
   --skel-width-rect:    100%;
 
   /* Gap between stacked lines */
-  --skel-gap:           var(--spacing-3);
+  --skel-gap:           var(--spacing-10);
 
   /* ────────────────────────────────────────────────────────────
      🎨 SURFACE  (4 vars)
