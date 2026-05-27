@@ -1,0 +1,103 @@
+component: skeleton
+prefix: skel
+category: Display & Feedback
+description: Placeholder shapes that indicate loading content. Renders as text, rectangle, or circle with animated shimmer.
+
+classification:
+  type: display-feedback
+  has_variants: true
+  has_roles: false
+  density_modes: [micro, tiny, small, base, medium, large, big, huge, mega, ultra]
+
+variants:
+  structural:
+    - name: text
+      description: Single line text placeholder (default)
+      default: true
+    - name: rect
+      description: Rectangle block placeholder (image/card area)
+    - name: circle
+      description: Circle placeholder (avatar/icon area)
+
+roles: []
+
+slots:
+  - name: shimmer
+    element: "::after pseudo-element"
+    tokens: [gradient, opacity, width]
+
+states:
+  - default
+  - disabled (animation paused)
+
+variables:
+  shape:
+    - name: --skel-radius-text
+      count: 1
+      description: Border-radius for text variant
+    - name: --skel-radius-rect
+      count: 1
+      description: Border-radius for rect variant
+    - name: --skel-radius-circle
+      count: 1
+      description: Border-radius for circle variant (50%)
+
+  dimension:
+    - name: --skel-height-{size}
+      per_density: true
+      count: 10
+      range: [8px, 40px]
+      description: Height of text/rect skeleton
+    - name: --skel-width-text
+      count: 1
+      description: Default width for text variant (100%)
+    - name: --skel-width-rect
+      count: 1
+      description: Default width for rect variant (100%)
+    - name: --skel-circle-size-{size}
+      per_density: true
+      count: 10
+      range: [16px, 64px]
+      description: Diameter of circle skeleton
+    - name: --skel-gap
+      count: 1
+      description: Gap between stacked skeleton lines
+
+  surface:
+    - name: --skel-bg
+      count: 1
+      description: Base fill color of the skeleton shape
+    - name: --skel-shimmer-from
+      count: 1
+      description: Shimmer gradient start color (transparent)
+    - name: --skel-shimmer-via
+      count: 1
+      description: Shimmer gradient mid color (highlight)
+    - name: --skel-shimmer-to
+      count: 1
+      description: Shimmer gradient end color (transparent)
+
+  typography: []
+
+  slots:
+    - name: --skel-shimmer-width
+      count: 1
+      description: Width of the shimmer highlight band
+
+  motion:
+    - name: --skel-animation-duration
+      count: 1
+      description: Duration of one shimmer or pulse cycle
+    - name: --skel-animation-mode
+      count: 1
+      description: "Animation name: shimmer (wave) or pulse"
+    - name: --skel-easing
+      count: 1
+      description: Easing curve for the animation
+
+  a11y:
+    - name: --skel-min-contrast
+      count: 1
+      description: Minimum contrast ratio of skeleton vs background
+
+variable_count: ~45

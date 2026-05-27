@@ -26,7 +26,7 @@
 @import './progress-bar/index.css';
 @import './progress-ring/index.css';
 @import './spinner/index.css';
-/* @import './skeleton/index.css'; */
+@import './skeleton/index.css';
 @import './kbd/index.css';
 
 /* Layout & Structure */
