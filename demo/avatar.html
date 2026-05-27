@@ -514,16 +514,23 @@
     });
   }
 
+  var SURFACE_TOKENS=['bg','hover','pressed','outline','separator','ct-default','ct-strong','ct-subtle','ct-faint','cm-bg','cm-bg-hover','cm-bg-pressed','cm-outline','cm-outline-hover','cm-outline-pressed','cm-separator'];
+  function applySurface(el,sid){
+    if(sid==='base'){SURFACE_TOKENS.forEach(function(t){el.style.removeProperty('--surface-base-'+t);});el.style.background='var(--surface-base-bg)';}
+    else{SURFACE_TOKENS.forEach(function(t){el.style.setProperty('--surface-base-'+t,'var(--surface-'+sid+'-'+t+')');});el.style.background='var(--surface-'+sid+'-bg)';}
+  }
+
   function renderSurface(){
     var el = clr('surfaceStrip');
     var surfaces = [
-      {label:'surface-base-bg',      cls:'surface-panel--base'},
-      {label:'surface-base-subtle',   cls:'surface-panel--alt'},
-      {label:'surface-base-strong', cls:'surface-panel--deep'}
+      {label:'surface-base-bg',      cls:'surface-panel--base', sid:'base'},
+      {label:'surface-base-subtle',   cls:'surface-panel--alt', sid:'alt'},
+      {label:'surface-deep-bg', cls:'surface-panel--deep', sid:'deep'}
     ];
     surfaces.forEach(function(s){
       var panel = document.createElement('div');
       panel.className = 'surface-panel ' + s.cls;
+      if(s.sid === 'deep'){ applySurface(panel, 'deep'); }
       var lbl = document.createElement('span');
       lbl.className = 'surface-panel-label';
       lbl.textContent = s.label;

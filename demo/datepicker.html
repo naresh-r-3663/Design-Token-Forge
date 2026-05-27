@@ -22,6 +22,9 @@
 .state-row:last-child{border-bottom:none}
 .state-card{display:flex;flex-direction:column;align-items:center;gap:8px}
 .state-label{font-size:11px;color:var(--demo-fg-faint);font-weight:600;text-transform:uppercase}
+/* A11y grid: calendars need more room than default 200px min-width */
+.a11y-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px}
+.a11y-card{overflow:hidden}
 </style>
 </head>
 <body>

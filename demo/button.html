@@ -154,7 +154,7 @@
       <div class="surface-strip">
         <div class="surface-panel surface-panel--base" id="surfaceBase"><span class="surface-panel-label">surface-base-bg</span></div>
         <div class="surface-panel surface-panel--alt" id="surfaceAlt"><span class="surface-panel-label">surface-base-subtle</span></div>
-        <div class="surface-panel surface-panel--deep" id="surfaceDeep"><span class="surface-panel-label">surface-base-strong</span></div>
+        <div class="surface-panel surface-panel--deep" id="surfaceDeep"><span class="surface-panel-label">surface-deep-bg</span></div>
       </div>
     </div>
   </section>
@@ -454,10 +454,13 @@
     });
   }
 
+  var SURFACE_TOKENS=['bg','hover','pressed','outline','separator','ct-default','ct-strong','ct-subtle','ct-faint','cm-bg','cm-bg-hover','cm-bg-pressed','cm-outline','cm-outline-hover','cm-outline-pressed','cm-separator'];
+
   function renderSurface() {
     ['surfaceBase','surfaceAlt','surfaceDeep'].forEach(function(id) {
       var p=document.getElementById(id);
       while(p.children.length>1) p.removeChild(p.lastChild);
+      if(id==='surfaceDeep'){applySurface(p,'deep');}
       STRUCTS.forEach(function(st) { p.appendChild(makeBtn(st, curRole, curS, cap(st), {iconStart:true})); });
     });
   }
@@ -584,7 +587,6 @@
   applyGlobals();
 
   /* ── Context Playground ─────────────────────────────────── */
-  var SURFACE_TOKENS=['bg','hover','pressed','outline','separator','ct-default','ct-strong','ct-subtle','ct-faint','cm-bg','cm-bg-hover','cm-bg-pressed','cm-outline','cm-outline-hover','cm-outline-pressed','cm-separator'];
   var ROLE_REMAP=['component-bg-default','component-bg-hover','component-bg-pressed','on-component','content-default','content-strong','content-subtle','content-faint','component-outline-default','component-outline-hover','component-outline-pressed','component-separator','container-bg','container-hover','container-pressed','container-outline','container-separator','on-container'];
   var pgSize='base';
 

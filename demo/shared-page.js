@@ -114,14 +114,15 @@ window.DTFPage = (function() {
     if (!el) return;
 
     var levels = [
-      { css: 'surface-panel--base', label: 'surface-base-bg' },
-      { css: 'surface-panel--alt',  label: 'surface-base-subtle' },
-      { css: 'surface-panel--deep', label: 'surface-base-strong' }
+      { css: 'surface-panel--base', label: 'surface-base-bg', sid: 'base' },
+      { css: 'surface-panel--alt',  label: 'surface-base-subtle', sid: 'alt' },
+      { css: 'surface-panel--deep', label: 'surface-deep-bg', sid: 'deep' }
     ];
 
     levels.forEach(function(lvl) {
       var panel = document.createElement('div');
       panel.className = 'surface-panel ' + lvl.css;
+      if (lvl.sid === 'deep') { applySurface(panel, 'deep'); }
 
       var lbl = document.createElement('span');
       lbl.className = 'surface-panel-label';

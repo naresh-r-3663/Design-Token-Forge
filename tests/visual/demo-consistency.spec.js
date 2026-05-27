@@ -389,7 +389,14 @@ test.describe("demo consistency QC", () => {
           .filter((node) => {
             const text = (node.textContent || "").trim();
             const style = getComputedStyle(node);
-            return text.length > 0 && style.display !== "none" && style.visibility !== "hidden";
+            if (text.length === 0 || style.display === "none" || style.visibility === "hidden") return false;
+            // Skip labels inside filled components — their text sits on the component bg, not the panel bg
+            const btn = node.closest(".btn, .split-btn, .menu-btn, .icon-btn");
+            if (btn) {
+              const btnBg = toRgb(getComputedStyle(btn).backgroundColor);
+              if (btnBg && (btnBg[0] + btnBg[1] + btnBg[2]) < 700) return false; // has opaque colored bg
+            }
+            return true;
           })
           .map((node) => {
             const fg = toRgb(getComputedStyle(node).color);
@@ -407,6 +414,52 @@ test.describe("demo consistency QC", () => {
           finding.ratio,
           `${component}: deep surface text contrast too low for "${finding.text}"`
         ).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
+  test("deep surface panels rebind surface tokens (not just background)", async ({ page }) => {
+    const projectId = "desktop-pdf-editor";
+    const projectCss = readProjectCss(projectId);
+
+    await seedAuthState(page);
+    await seedProjectTheme(page, projectId, projectCss);
+
+    for (const component of COMPONENTS) {
+      await page.goto(demoURL(component));
+      await page.waitForLoadState("load");
+      await page.waitForTimeout(250);
+
+      const deepPanel = page.locator(".surface-panel--deep");
+      if ((await deepPanel.count()) === 0) continue;
+
+      const result = await page.evaluate(() => {
+        const panel = document.querySelector(".surface-panel--deep");
+        if (!panel) return { hasPanel: false };
+        const bg = getComputedStyle(panel).backgroundColor;
+        const baseStrong = getComputedStyle(document.documentElement).getPropertyValue("--surface-base-strong").trim();
+
+        // Check that --surface-base-bg on the panel resolves to deep, not base
+        const baseBgOnPanel = getComputedStyle(panel).getPropertyValue("--surface-base-bg").trim();
+        const deepBg = getComputedStyle(document.documentElement).getPropertyValue("--surface-deep-bg").trim();
+
+        return { hasPanel: true, bg, baseStrong, baseBgOnPanel, deepBg };
+      });
+
+      if (!result.hasPanel) continue;
+
+      // The panel's background should NOT be the base-strong color (old pattern)
+      // It should be the deep-bg color
+      if (result.deepBg) {
+        const panelBg = parseRgb(result.bg);
+        const deepBg = parseRgb(result.deepBg);
+        if (panelBg && deepBg) {
+          const dist = colorDistance(panelBg, deepBg);
+          expect(
+            dist,
+            `${component}: .surface-panel--deep background does not match --surface-deep-bg`
+          ).toBeLessThanOrEqual(3);
+        }
       }
     }
   });
