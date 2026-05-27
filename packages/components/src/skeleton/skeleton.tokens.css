@@ -60,9 +60,9 @@
      🎨 SURFACE  (4 vars)
      ──────────────────────────────────────────────────────────── */
 
-  --skel-bg:            var(--surface-base-hover);
+  --skel-bg:            var(--surface-base-outline);
   --skel-shimmer-from:  transparent;
-  --skel-shimmer-via:   var(--surface-base-ct-subtle);
+  --skel-shimmer-via:   rgba(255, 255, 255, 0.45);
   --skel-shimmer-to:    transparent;
 
   /* ────────────────────────────────────────────────────────────
@@ -73,15 +73,15 @@
      🧩 SLOTS  (1 var)
      ──────────────────────────────────────────────────────────── */
 
-  --skel-shimmer-width: 50%;
+  --skel-shimmer-width: 60%;
 
   /* ────────────────────────────────────────────────────────────
      🎬 MOTION  (3 vars)
      ──────────────────────────────────────────────────────────── */
 
-  --skel-animation-duration: 1.5s;
+  --skel-animation-duration: 1.8s;
   --skel-animation-mode:     shimmer;
-  --skel-easing:             var(--easing-in-out);
+  --skel-easing:             ease-in-out;
 
   /* ────────────────────────────────────────────────────────────
      ♿ A11Y  (1 var)

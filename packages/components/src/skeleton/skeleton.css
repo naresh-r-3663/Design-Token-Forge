@@ -7,13 +7,13 @@
 /* ── Keyframes ──────────────────────────────────────────────── */
 
 @keyframes skel-shimmer {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0%   { transform: translateX(-150%); }
+  100% { transform: translateX(150%); }
 }
 
 @keyframes skel-pulse {
   0%, 100% { opacity: 1; }
-  50%      { opacity: 0.4; }
+  50%      { opacity: 0.5; }
 }
 
 /* ── Base ───────────────────────────────────────────────────── */
