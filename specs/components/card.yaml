@@ -1,0 +1,126 @@
+component: card
+prefix: card
+category: Layout & Structure
+description: Container surface with shadow, radius, and optional header/body/footer slots. The brand signature container.
+
+classification:
+  type: layout-structure
+  has_variants: true
+  has_roles: false
+  density_modes: [micro, tiny, small, base, medium, large, big, huge, mega, ultra]
+
+variants:
+  structural:
+    - name: raised
+      description: Elevated with box-shadow (default)
+      default: true
+    - name: outlined
+      description: Border only, no shadow
+    - name: flat
+      description: No border, no shadow — background fill only
+    - name: ghost
+      description: Transparent background, no border, no shadow
+
+roles: []
+
+slots:
+  - name: header
+    element: .card__header
+    tokens: [padding, border-bottom, font-weight, font-size]
+  - name: body
+    element: .card__body
+    tokens: [padding]
+  - name: footer
+    element: .card__footer
+    tokens: [padding, border-top]
+  - name: media
+    element: .card__media
+    tokens: [aspect-ratio, object-fit]
+
+states:
+  - default
+  - hover (interactive cards only)
+  - disabled
+
+variables:
+  shape:
+    - name: --card-radius-{size}
+      per_density: true
+      count: 10
+      description: Border radius per density
+    - name: --card-border-width
+      count: 1
+      description: Border width for outlined variant
+    - name: --card-shadow-raised
+      count: 1
+      description: Box shadow for raised variant
+    - name: --card-shadow-hover
+      count: 1
+      description: Elevated shadow on hover (interactive)
+
+  dimension:
+    - name: --card-padding-{size}
+      per_density: true
+      count: 10
+      description: Internal padding per density
+    - name: --card-header-padding-{size}
+      per_density: true
+      count: 10
+      description: Header slot padding
+    - name: --card-footer-padding-{size}
+      per_density: true
+      count: 10
+      description: Footer slot padding
+    - name: --card-gap-{size}
+      per_density: true
+      count: 10
+      description: Gap between card sections
+
+  surface:
+    - name: --card-bg
+      count: 1
+      description: Background color
+    - name: --card-border-color
+      count: 1
+      description: Border color (outlined variant)
+    - name: --card-header-border-color
+      count: 1
+      description: Header bottom border
+    - name: --card-footer-border-color
+      count: 1
+      description: Footer top border
+
+  typography:
+    - name: --card-header-font-size-{size}
+      per_density: true
+      count: 10
+      description: Header text size
+    - name: --card-header-font-weight
+      count: 1
+      description: Header font weight
+
+  slots:
+    - name: --card-media-ratio
+      count: 1
+      description: Default aspect ratio for media slot
+
+  motion:
+    - name: --card-transition-duration
+      count: 1
+      description: Hover transition duration
+    - name: --card-transition-easing
+      count: 1
+      description: Hover transition easing
+
+  a11y:
+    - name: --card-focus-ring-width
+      count: 1
+      description: Focus ring width for interactive cards
+    - name: --card-focus-ring-offset
+      count: 1
+      description: Focus ring offset
+    - name: --card-focus-ring-color
+      count: 1
+      description: Focus ring color
+
+variable_count: ~75

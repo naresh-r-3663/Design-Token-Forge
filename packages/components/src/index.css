@@ -30,7 +30,7 @@
 @import './kbd/index.css';
 
 /* Layout & Structure */
-/* @import './card/index.css'; */
+@import './card/index.css';
 /* @import './divider/index.css'; */
 /* @import './accordion/index.css'; */
 /* @import './tabs/index.css'; */

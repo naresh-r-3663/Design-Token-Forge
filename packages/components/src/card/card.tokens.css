@@ -1,0 +1,141 @@
+/* ════════════════════════════════════════════════════════════════
+   Design Token Forge — Card Token Defaults
+   Layer 0: System defaults for ~75 card variables.
+   All values reference global tokens — zero hardcoded visuals.
+   ────────────────────────────────────────────────────────────────
+   ANATOMY:
+     .card (container)
+       ├─ .card__header   (optional title area)
+       ├─ .card__media    (optional image/video)
+       ├─ .card__body     (main content)
+       └─ .card__footer   (optional actions area)
+
+   VARIANTS  (data-variant):  raised (default) | outlined | flat | ghost
+   ROLES:    none
+   ════════════════════════════════════════════════════════════════ */
+
+.card {
+
+  /* ────────────────────────────────────────────────────────────
+     📐 SHAPE  (14 vars)
+     ──────────────────────────────────────────────────────────── */
+
+  /* Radius per density */
+  --card-radius-micro:   var(--radius-sm);
+  --card-radius-tiny:    var(--radius-sm);
+  --card-radius-small:   var(--radius-md);
+  --card-radius-base:    var(--radius-md);
+  --card-radius-medium:  var(--radius-md);
+  --card-radius-large:   var(--radius-lg);
+  --card-radius-big:     var(--radius-lg);
+  --card-radius-huge:    var(--radius-xl);
+  --card-radius-mega:    var(--radius-xl);
+  --card-radius-ultra:   var(--radius-2xl);
+
+  /* Border */
+  --card-border-width:   1px;
+
+  /* Shadows */
+  --card-shadow-raised:  var(--shadow-sm);
+  --card-shadow-hover:   var(--shadow-md);
+
+  /* ────────────────────────────────────────────────────────────
+     📏 DIMENSION  (40 vars)
+     ──────────────────────────────────────────────────────────── */
+
+  /* Body padding per density */
+  --card-padding-micro:   var(--spacing-6);
+  --card-padding-tiny:    var(--spacing-8);
+  --card-padding-small:   var(--spacing-10);
+  --card-padding-base:    var(--spacing-16);
+  --card-padding-medium:  var(--spacing-18);
+  --card-padding-large:   var(--spacing-20);
+  --card-padding-big:     var(--spacing-24);
+  --card-padding-huge:    var(--spacing-28);
+  --card-padding-mega:    var(--spacing-32);
+  --card-padding-ultra:   var(--spacing-36);
+
+  /* Header padding per density */
+  --card-header-padding-micro:   var(--spacing-4);
+  --card-header-padding-tiny:    var(--spacing-6);
+  --card-header-padding-small:   var(--spacing-8);
+  --card-header-padding-base:    var(--spacing-12);
+  --card-header-padding-medium:  var(--spacing-14);
+  --card-header-padding-large:   var(--spacing-16);
+  --card-header-padding-big:     var(--spacing-18);
+  --card-header-padding-huge:    var(--spacing-20);
+  --card-header-padding-mega:    var(--spacing-24);
+  --card-header-padding-ultra:   var(--spacing-28);
+
+  /* Footer padding per density */
+  --card-footer-padding-micro:   var(--spacing-4);
+  --card-footer-padding-tiny:    var(--spacing-6);
+  --card-footer-padding-small:   var(--spacing-8);
+  --card-footer-padding-base:    var(--spacing-12);
+  --card-footer-padding-medium:  var(--spacing-14);
+  --card-footer-padding-large:   var(--spacing-16);
+  --card-footer-padding-big:     var(--spacing-18);
+  --card-footer-padding-huge:    var(--spacing-20);
+  --card-footer-padding-mega:    var(--spacing-24);
+  --card-footer-padding-ultra:   var(--spacing-28);
+
+  /* Gap between sections per density */
+  --card-gap-micro:   var(--spacing-4);
+  --card-gap-tiny:    var(--spacing-6);
+  --card-gap-small:   var(--spacing-8);
+  --card-gap-base:    var(--spacing-12);
+  --card-gap-medium:  var(--spacing-14);
+  --card-gap-large:   var(--spacing-16);
+  --card-gap-big:     var(--spacing-18);
+  --card-gap-huge:    var(--spacing-20);
+  --card-gap-mega:    var(--spacing-24);
+  --card-gap-ultra:   var(--spacing-28);
+
+  /* ────────────────────────────────────────────────────────────
+     🎨 SURFACE  (4 vars)
+     ──────────────────────────────────────────────────────────── */
+
+  --card-bg:                   var(--surface-base-cm-bg);
+  --card-border-color:         var(--surface-base-outline);
+  --card-header-border-color:  var(--surface-base-separator);
+  --card-footer-border-color:  var(--surface-base-separator);
+
+  /* ────────────────────────────────────────────────────────────
+     🔤 TYPOGRAPHY  (11 vars)
+     ──────────────────────────────────────────────────────────── */
+
+  /* Header font size per density */
+  --card-header-font-size-micro:   var(--font-size-xs);
+  --card-header-font-size-tiny:    var(--font-size-xs);
+  --card-header-font-size-small:   var(--font-size-sm);
+  --card-header-font-size-base:    var(--font-size-md);
+  --card-header-font-size-medium:  var(--font-size-md);
+  --card-header-font-size-large:   var(--font-size-lg);
+  --card-header-font-size-big:     var(--font-size-lg);
+  --card-header-font-size-huge:    var(--font-size-xl);
+  --card-header-font-size-mega:    var(--font-size-xl);
+  --card-header-font-size-ultra:   var(--font-size-2xl);
+
+  --card-header-font-weight:       var(--font-weight-semibold);
+
+  /* ────────────────────────────────────────────────────────────
+     🧩 SLOTS  (1 var)
+     ──────────────────────────────────────────────────────────── */
+
+  --card-media-ratio:  16 / 9;
+
+  /* ────────────────────────────────────────────────────────────
+     🎬 MOTION  (2 vars)
+     ──────────────────────────────────────────────────────────── */
+
+  --card-transition-duration: var(--duration-fast);
+  --card-transition-easing:   var(--easing-in-out);
+
+  /* ────────────────────────────────────────────────────────────
+     ♿ A11Y  (3 vars)
+     ──────────────────────────────────────────────────────────── */
+
+  --card-focus-ring-width:   2px;
+  --card-focus-ring-offset:  2px;
+  --card-focus-ring-color:   var(--focus-ring-color);
+}
