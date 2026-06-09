@@ -386,7 +386,20 @@
   var SIZES=['small','base','large'];
   var DAY_SIZES={small:'28px',base:'36px',large:'48px'};
   var curS='base';
-  var TODAY=new Date();
+  var IS_VISUAL_SNAPSHOT=false;
+
+  // Keep visual-regression screenshots stable while preserving real-time behavior for normal demo use.
+  function getDemoNow(){
+    try {
+      if(localStorage.getItem('dtf-gh-user')==='visual-snapshot'){
+        IS_VISUAL_SNAPSHOT=true;
+        return new Date(2026,4,26,12,0,0,0); // May 26, 2026 (local noon)
+      }
+    } catch(_e) {}
+    return new Date();
+  }
+
+  var TODAY=getDemoNow();
   var CUR_YEAR=TODAY.getFullYear();
   var CUR_MONTH=TODAY.getMonth();
   var CUR_DAY=TODAY.getDate();
@@ -402,6 +415,9 @@
     var rangeStart=opts.rangeStart||0;
     var rangeEnd=opts.rangeEnd||0;
     var disabledDays=opts.disabled||[];
+    var todayYear=opts.todayYear!==undefined?opts.todayYear:CUR_YEAR;
+    var todayMonth=opts.todayMonth!==undefined?opts.todayMonth:CUR_MONTH;
+    var todayDay=opts.todayDay!==undefined?opts.todayDay:CUR_DAY;
     var firstDow=dayOfWeek(year,month,1);
     var totalDays=daysInMonth(year,month);
     var prevMonthDays=daysInMonth(year,month===0?11:month-1);
@@ -416,7 +432,7 @@
       var cell={day:d};
       var dow=dayOfWeek(year,month,d);
       if(dow===0||dow===6) cell.weekend=true;
-      if(d===CUR_DAY&&month===CUR_MONTH&&year===CUR_YEAR) cell.today=true;
+      if(d===todayDay&&month===todayMonth&&year===todayYear) cell.today=true;
       if(d===selectedDay) cell.selected=true;
       if(rangeStart&&rangeEnd){
         if(d===rangeStart) cell.rangeStart=true;
@@ -440,6 +456,11 @@
     opts=opts||{};
     var year=opts.year!==undefined?opts.year:CUR_YEAR;
     var month=opts.month!==undefined?opts.month:CUR_MONTH;
+    if(IS_VISUAL_SNAPSHOT){
+      if(opts.todayYear===undefined) opts.todayYear=year;
+      if(opts.todayMonth===undefined) opts.todayMonth=month;
+      if(opts.todayDay===undefined) opts.todayDay=29;
+    }
     var root=document.createElement('div');
     root.className='datepicker';
     root.dataset.size=size;
@@ -561,7 +582,13 @@
 
   function renderHero(){
     var el=clr('heroPreview');
-    var cal=makeCalendar(curS,{selected:15});
+    var heroOpts={selected:15};
+    if(IS_VISUAL_SNAPSHOT){
+      heroOpts.todayYear=2026;
+      heroOpts.todayMonth=4;
+      heroOpts.todayDay=26;
+    }
+    var cal=makeCalendar(curS,heroOpts);
     cal.id='heroCal';
     el.appendChild(cal);
   }
