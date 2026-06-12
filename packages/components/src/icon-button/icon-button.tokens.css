@@ -68,7 +68,7 @@
   --icon-btn-size-big: var(--spacing-48);
   --icon-btn-size-huge: var(--spacing-56);
   --icon-btn-size-mega: var(--spacing-64);
-  --icon-btn-size-ultra: var(--spacing-80);
+  --icon-btn-size-ultra: var(--spacing-72);
 
   /* Icon size per density mode */
   --icon-btn-icon-size-micro: var(--spacing-12);
@@ -80,7 +80,7 @@
   --icon-btn-icon-size-big: var(--spacing-24);
   --icon-btn-icon-size-huge: var(--spacing-28);
   --icon-btn-icon-size-mega: var(--spacing-32);
-  --icon-btn-icon-size-ultra: var(--spacing-40);
+  --icon-btn-icon-size-ultra: var(--spacing-36);
 
   /* ────────────────────────────────────────────────────────────
      🎨 SURFACE  (72 vars = 6 variants × 12 properties)
