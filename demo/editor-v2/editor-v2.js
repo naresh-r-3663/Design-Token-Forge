@@ -2435,13 +2435,42 @@
       if (((t.custom    || {})[r] || '') !== ((b.custom    || {})[r] || '')) return 1;
       var tf = ((t.customFontFiles || {})[r]) || null;
       var bf = ((b.customFontFiles || {})[r]) || null;
-      if ((tf && tf.dataUrl || '') !== (bf && bf.dataUrl || '')) return 1;
-      if ((tf && tf.family  || '') !== (bf && bf.family  || '')) return 1;
+      var tfFamily = (tf && tf.family) || '';
+      var bfFamily = (bf && bf.family) || '';
+      if (tfFamily !== bfFamily) return 1;
+      /* Multi-weight: compare weight sets */
+      var tfWeights = tf && tf.files ? tf.files.map(function(fw){return fw.weight;}).sort().join(',') : (tf && tf.dataUrl ? 'legacy' : '');
+      var bfWeights = bf && bf.files ? bf.files.map(function(fw){return fw.weight;}).sort().join(',') : (bf && bf.dataUrl ? 'legacy' : '');
+      if (tfWeights !== bfWeights) return 1;
     }
     return 0;
   }
   function persistTypoState() {
-    try { localStorage.setItem(typoStorageKey(), JSON.stringify(State.typo)); } catch (_e) {}
+    /* Strip binary dataUrl bytes before persisting — font files can
+       be several MB each and easily blow past the 5 MB localStorage
+       quota, causing a silent failure that wipes all custom state.
+       We only persist metadata (family, weight list, format) so the
+       editor remembers WHICH font was chosen; the raw bytes live
+       in-memory only and must be re-uploaded on a fresh session. */
+    try {
+      var state = JSON.parse(JSON.stringify(State.typo));
+      if (state.customFontFiles) {
+        Object.keys(state.customFontFiles).forEach(function (r) {
+          var f = state.customFontFiles[r];
+          if (!f) return;
+          if (f.files) {
+            /* Multi-weight format: strip dataUrl from each weight entry */
+            f.files = f.files.map(function (fw) {
+              return { weight: fw.weight, format: fw.format, fileName: fw.fileName };
+            });
+          } else {
+            /* Legacy single-file format */
+            delete f.dataUrl;
+          }
+        });
+      }
+      localStorage.setItem(typoStorageKey(), JSON.stringify(state));
+    } catch (_e) {}
   }
   /* Curated subset of Google Fonts the Custom Fonts dialog
      suggests. Same list as the <datalist> in index.html; kept
@@ -2830,7 +2859,11 @@
   }
 
   function renderTt() {
-    loadTypoState();
+    /* Only (re)load from storage on first render — calling
+       loadTypoState() unconditionally would wipe any in-memory
+       uploaded font file bytes (which we deliberately don't
+       persist to localStorage to stay within quota). */
+    if (!State.typo) loadTypoState();
     var html = '<div class="ev2-typo-panel">';
 
     /* Single section — 5 preset cards + 1 Custom tile sharing the
