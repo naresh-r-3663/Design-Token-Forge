@@ -146,10 +146,28 @@
   }
 
   /* Fast path: this tab already verified the PAT during this session.
-     Trust that — the user just navigated between demo pages. */
+     Trust that — the user just navigated between demo pages.
+
+     CRITICAL: release() must wait for DOMContentLoaded before removing
+     the visibility:hidden rule. Without this, the body renders on the
+     FIRST frame with package-default tokens (wrong colors), and then
+     shared.js — loaded at the end of body — injects the project-
+     specific tokens a frame later → visible color flash on every page
+     reload.
+
+     By waiting for DOMContentLoaded, all end-of-body scripts (including
+     shared.js "Inject Saved Color Tokens" IIFE) have run and injected
+     the project tokens into the cascade before the body is revealed.
+     The hidden period is ~50-150ms on cached loads — imperceptible. */
   try {
     if (sessionStorage.getItem(SESSION_KEY) === '1' && localStorage.getItem(PAT_KEY)) {
-      release(localStorage.getItem(USER_KEY) || null);
+      var _fastUser = localStorage.getItem(USER_KEY) || null;
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { release(_fastUser); });
+      } else {
+        // Already past DOMContentLoaded (e.g. dynamically injected gate).
+        release(_fastUser);
+      }
       return;
     }
   } catch (_e) {}

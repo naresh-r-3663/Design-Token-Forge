@@ -3030,10 +3030,13 @@ async function generateComponentFromBlueprint(blueprint) {
   iconNote.fills = [];
   iconNote.strokes = [];
   iconNote.layoutMode = 'VERTICAL';
-  iconNote.primaryAxisSizingMode = 'AUTO';
-  iconNote.counterAxisSizingMode = 'FIXED';
   iconNote.itemSpacing = 8;
+  /* resize() must come BEFORE sizing-mode assignments — calling resize()
+     after AUTO implicitly resets primaryAxisSizingMode to FIXED, leaving
+     the frame permanently at 10 px and clipping all children. */
   iconNote.resize(iconCard.width, 10);
+  iconNote.primaryAxisSizingMode = 'AUTO';   /* hug height — set AFTER resize */
+  iconNote.counterAxisSizingMode = 'FIXED';  /* width stays fixed */
   var icNoteTitle = createLabel('Bring your own icons', 13, true, COLOR_HEADING);
   var icNoteBody = createLabel(
     'Drop any icon library into this file (Lucide, Phosphor, Material\u2026) or publish from a team library. Swap Icon/Placeholder for your icon \u2014 colors bind automatically when the DTF plugin opens.',
@@ -3051,6 +3054,9 @@ async function generateComponentFromBlueprint(blueprint) {
   try { icNoteTitle.layoutAlign = 'STRETCH'; icNoteTitle.textAutoResize = 'HEIGHT'; } catch (e) {}
   try { icNoteBody.layoutAlign = 'STRETCH'; icNoteBody.textAutoResize = 'HEIGHT'; } catch (e) {}
   try { icNoteRule.layoutAlign = 'STRETCH'; icNoteRule.textAutoResize = 'HEIGHT'; } catch (e) {}
+  /* Re-assert AUTO after children are appended so Figma measures real height
+     before we read iconNote.height for the section resize below. */
+  iconNote.primaryAxisSizingMode = 'AUTO';
   iconSec.section.appendChild(iconNote);
   iconNote.x = iconCard.x;
   iconNote.y = iconCard.y + iconCard.height + 24;

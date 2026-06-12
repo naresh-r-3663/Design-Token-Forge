@@ -88,7 +88,7 @@
         "cm-outline-pressed": "250",
         "cm-separator": "150",
         "subtle": "25",
-        "elevated": "50"
+        "strong": "50"
       },
       "base": {
         "bg": "25",
@@ -106,7 +106,7 @@
         "cm-outline-pressed": "250",
         "cm-separator": "175",
         "subtle": "50",
-        "elevated": "75"
+        "strong": "75"
       },
       "dim": {
         "bg": "50",
@@ -124,7 +124,7 @@
         "cm-outline-pressed": "300",
         "cm-separator": "175",
         "subtle": "75",
-        "elevated": "100"
+        "strong": "100"
       },
       "deep": {
         "bg": "75",
@@ -142,7 +142,7 @@
         "cm-outline-pressed": "300",
         "cm-separator": "200",
         "subtle": "100",
-        "elevated": "150"
+        "strong": "150"
       },
       "container": {
         "bg": "white",
@@ -160,7 +160,7 @@
         "cm-outline-pressed": "250",
         "cm-separator": "150",
         "subtle": "25",
-        "elevated": "50"
+        "strong": "50"
       },
       "over-container": {
         "bg": "white",
@@ -178,7 +178,7 @@
         "cm-outline-pressed": "250",
         "cm-separator": "175",
         "subtle": "25",
-        "elevated": "50"
+        "strong": "50"
       },
       "float": {
         "bg": "white",
@@ -196,7 +196,7 @@
         "cm-outline-pressed": "300",
         "cm-separator": "175",
         "subtle": "25",
-        "elevated": "50"
+        "strong": "50"
       },
       "inverse": {
         "bg": "900",
@@ -214,7 +214,7 @@
         "cm-outline-pressed": "500",
         "cm-separator": "700",
         "subtle": "850",
-        "elevated": "800"
+        "strong": "800"
       }
     },
     "dark": {
@@ -234,7 +234,7 @@
         "cm-outline-pressed": "500",
         "cm-separator": "700",
         "subtle": "800",
-        "elevated": "750"
+        "strong": "750"
       },
       "base": {
         "bg": "900",
@@ -252,7 +252,7 @@
         "cm-outline-pressed": "500",
         "cm-separator": "700",
         "subtle": "850",
-        "elevated": "800"
+        "strong": "800"
       },
       "dim": {
         "bg": "900",
@@ -270,7 +270,7 @@
         "cm-outline-pressed": "500",
         "cm-separator": "750",
         "subtle": "850",
-        "elevated": "800"
+        "strong": "800"
       },
       "deep": {
         "bg": "black",
@@ -288,7 +288,7 @@
         "cm-outline-pressed": "550",
         "cm-separator": "750",
         "subtle": "900",
-        "elevated": "850"
+        "strong": "850"
       },
       "container": {
         "bg": "850",
@@ -306,7 +306,7 @@
         "cm-outline-pressed": "500",
         "cm-separator": "700",
         "subtle": "800",
-        "elevated": "750"
+        "strong": "750"
       },
       "over-container": {
         "bg": "800",
@@ -324,7 +324,7 @@
         "cm-outline-pressed": "450",
         "cm-separator": "600",
         "subtle": "750",
-        "elevated": "700"
+        "strong": "700"
       },
       "float": {
         "bg": "750",
@@ -342,7 +342,7 @@
         "cm-outline-pressed": "400",
         "cm-separator": "550",
         "subtle": "700",
-        "elevated": "600"
+        "strong": "600"
       },
       "inverse": {
         "bg": "900",
@@ -360,7 +360,7 @@
         "cm-outline-pressed": "500",
         "cm-separator": "700",
         "subtle": "850",
-        "elevated": "800"
+        "strong": "800"
       }
     },
     "lightAccent": {
@@ -379,7 +379,7 @@
       "cm-outline-pressed": "250",
       "cm-separator": "175",
       "subtle": "50",
-      "elevated": "75"
+      "strong": "75"
     },
     "darkAccent": {
       "bg": "900",
@@ -397,7 +397,7 @@
       "cm-outline-pressed": "500",
       "cm-separator": "750",
       "subtle": "850",
-      "elevated": "800"
+      "strong": "800"
     }
   },
   "figma": {

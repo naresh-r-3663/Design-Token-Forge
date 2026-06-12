@@ -525,6 +525,122 @@ function buildT3(t1Collection) {
   return { name: 'T3 Status Context Tokens', modes, variables };
 }
 
+// ── Typography Scale ─────────────────────────────────────────
+//    One collection with a single "Value" mode.
+//    Each semantic ramp has four variables:
+//      type/{ramp}/size          → FONT_SIZE  alias
+//      type/{ramp}/family        → FONT_FAMILY alias (headline | body | code role)
+//      type/{ramp}/weight        → FONT_WEIGHT alias
+//      type/{ramp}/line-height   → LINE_HEIGHT alias
+//
+//    Ramps are ordered large-to-small to match how designers scan:
+//      display / heading-xl / heading-lg / heading / heading-sm /
+//      body-lg / body / body-sm / label / caption / micro / nano
+//
+//    Values are VARIABLE_ALIAS references into primitives-numbers
+//    so a single density change propagates here automatically.
+
+const TYPO_RAMPS = [
+  // { name, sizePx, familyRole, weight, lineHeight }
+  // sizePx   → the px integer used in the --font-size-{N} key
+  // familyRole → 'headline' | 'body' | 'code'
+  // weight   → key in TYPOGRAPHY_LADDER.weights
+  // lineHeight → key in TYPOGRAPHY_LADDER.lineHeights
+  { name: 'display',     sizePx: 40, familyRole: 'headline', weight: 'bold',     lineHeight: 'tight'   },
+  { name: 'heading-xl',  sizePx: 32, familyRole: 'headline', weight: 'bold',     lineHeight: 'tight'   },
+  { name: 'heading-lg',  sizePx: 28, familyRole: 'headline', weight: 'semibold', lineHeight: 'tight'   },
+  { name: 'heading',     sizePx: 24, familyRole: 'headline', weight: 'semibold', lineHeight: 'snug'    },
+  { name: 'heading-sm',  sizePx: 20, familyRole: 'headline', weight: 'semibold', lineHeight: 'snug'    },
+  { name: 'body-lg',     sizePx: 18, familyRole: 'body',     weight: 'regular',  lineHeight: 'relaxed' },
+  { name: 'body',        sizePx: 16, familyRole: 'body',     weight: 'regular',  lineHeight: 'normal'  },
+  { name: 'body-sm',     sizePx: 14, familyRole: 'body',     weight: 'regular',  lineHeight: 'normal'  },
+  { name: 'label',       sizePx: 13, familyRole: 'body',     weight: 'medium',   lineHeight: 'snug'    },
+  { name: 'caption',     sizePx: 12, familyRole: 'body',     weight: 'regular',  lineHeight: 'snug'    },
+  { name: 'micro',       sizePx: 11, familyRole: 'body',     weight: 'regular',  lineHeight: 'tight'   },
+  { name: 'nano',        sizePx: 10, familyRole: 'body',     weight: 'regular',  lineHeight: 'tight'   },
+  { name: 'code',        sizePx: 14, familyRole: 'code',     weight: 'regular',  lineHeight: 'normal'  },
+  { name: 'code-sm',     sizePx: 12, familyRole: 'code',     weight: 'regular',  lineHeight: 'normal'  },
+];
+
+const TYPO_COL_NAME = 'primitives-numbers';
+
+/**
+ * Build the Typography Scale collection.
+ * Each ramp emits 4 variables that alias into primitives-numbers.
+ * If a required primitive is missing the ramp property is skipped with a warning.
+ *
+ * @param {Object} extrasCol — the built primitives-numbers collection object
+ * @returns Figma collection object
+ */
+function buildTypography(extrasCol) {
+  const extrasVarSet = new Set(extrasCol.variables.map(v => v.name));
+  const variables = [];
+
+  for (const ramp of TYPO_RAMPS) {
+    const { name, sizePx, familyRole, weight, lineHeight } = ramp;
+
+    // ── size ──────────────────────────────────────────────────
+    const sizePath = `font/size-${sizePx}`;
+    if (extrasVarSet.has(sizePath)) {
+      variables.push({
+        name: `type/${name}/size`,
+        type: 'FLOAT',
+        scopes: ['FONT_SIZE'],
+        values: { Value: { type: 'VARIABLE_ALIAS', collection: TYPO_COL_NAME, name: sizePath } }
+      });
+    } else {
+      console.warn(`⚠  Typography ramp "${name}": primitive "${sizePath}" not found in primitives-numbers — size skipped`);
+    }
+
+    // ── family ────────────────────────────────────────────────
+    const familyPath = `font/family-${familyRole}`;
+    if (extrasVarSet.has(familyPath)) {
+      variables.push({
+        name: `type/${name}/family`,
+        type: 'STRING',
+        scopes: ['FONT_FAMILY'],
+        values: { Value: { type: 'VARIABLE_ALIAS', collection: TYPO_COL_NAME, name: familyPath } }
+      });
+    } else {
+      console.warn(`⚠  Typography ramp "${name}": primitive "${familyPath}" not found — family skipped`);
+    }
+
+    // ── weight ────────────────────────────────────────────────
+    const weightPath = `font/weight-${weight}`;
+    if (extrasVarSet.has(weightPath)) {
+      variables.push({
+        name: `type/${name}/weight`,
+        type: 'FLOAT',
+        scopes: ['FONT_WEIGHT'],
+        values: { Value: { type: 'VARIABLE_ALIAS', collection: TYPO_COL_NAME, name: weightPath } }
+      });
+    } else {
+      console.warn(`⚠  Typography ramp "${name}": primitive "${weightPath}" not found — weight skipped`);
+    }
+
+    // ── line-height ───────────────────────────────────────────
+    // line-height tokens use path format line/height/{name} in primPath()
+    const lhPath = `line/height/${lineHeight}`;
+    if (extrasVarSet.has(lhPath)) {
+      variables.push({
+        name: `type/${name}/line-height`,
+        type: 'FLOAT',
+        scopes: ['LINE_HEIGHT'],
+        values: { Value: { type: 'VARIABLE_ALIAS', collection: TYPO_COL_NAME, name: lhPath } }
+      });
+    } else {
+      console.warn(`⚠  Typography ramp "${name}": primitive "${lhPath}" not found — line-height skipped`);
+    }
+  }
+
+  return {
+    name: 'Typography Scale',
+    modes: ['Value'],
+    hiddenFromPublishing: false,
+    variables
+  };
+}
+
 // ── Comp Size: Component-level dimension tokens ───────────────
 //    Modes: micro, tiny, small, base, medium, large, big, huge, mega, ultra
 //    Values alias primitives-numbers (spacing/*, radius/*, font/size-*)
@@ -1079,10 +1195,13 @@ export function runExport(opts = {}) {
   // Extras: numbers (spacing, radius, motion, z-index, opacity)
   const extCol = buildExtras(primitiveTokens, extrasTokens);
 
+  // Typography Scale: semantic ramps (display → nano) aliasing primitives-numbers
+  const typoCol = buildTypography(extCol);
+
   // Comp size: component-level dimension tokens → aliases primitives-numbers
   const compSizeCol = buildCompSize(extCol);
 
-  const collections = [t0Col, t1Col, t2Col, t3Col, extCol, compSizeCol];
+  const collections = [t0Col, t1Col, t2Col, t3Col, extCol, typoCol, compSizeCol];
 
   let totalVars = 0;
   for (const c of collections) totalVars += c.variables.length;

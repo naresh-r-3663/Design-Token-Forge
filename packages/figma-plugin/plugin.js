@@ -50,7 +50,7 @@ function log(msg) {
 /* ── Scan for existing DTF collections ───────────────────── */
 
 var DTF_PREFIXES = ['T0 ', 'T1 ', 'T2 ', 'T3 ', 'DTF /'];
-var DTF_EXACT_NAMES = ['primitives-numbers', 'comp size'];
+var DTF_EXACT_NAMES = ['primitives-numbers', 'comp size', 'Typography Scale'];
 
 function isDTFCollection(name) {
   for (var p = 0; p < DTF_PREFIXES.length; p++) {

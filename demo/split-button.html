@@ -535,7 +535,7 @@
     var el=clr('densityScale');
     SIZES.forEach(function(s){
       var it=document.createElement('div');it.className='density-item';
-      var sb=makeSB(curStruct,curRole,s,cap(s),{iconStart:true,noSync:true});
+      var sb=makeSB(curStruct,curRole,s,cap(s),{iconStart:true,noSync:true,style:{'min-width':'0','min-height':'0'}});
       it.appendChild(sb);
       var m=document.createElement('div');m.className='density-meta';
       /* Read the TOKEN value (not rendered height — that's clamped by

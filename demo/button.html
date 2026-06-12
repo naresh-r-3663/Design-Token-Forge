@@ -433,7 +433,7 @@
     var el = clr('densityScale');
     SIZES.forEach(function(s) {
       var it=document.createElement('div'); it.className='density-item';
-      var btn=makeBtn(curStruct, curRole, s, cap(s), {iconStart:true, noSync:true});
+      var btn=makeBtn(curStruct, curRole, s, cap(s), {iconStart:true, noSync:true, style:{'min-width':'0','min-height':'0'}});
       it.appendChild(btn);
       var m=document.createElement('div'); m.className='density-meta';
       requestAnimationFrame(function(){

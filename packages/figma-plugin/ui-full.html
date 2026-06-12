@@ -916,6 +916,52 @@
   }
   .floating-panel-close:hover { color: var(--dtf-fg-strong); background: var(--dtf-surface-alt); }
 
+  /* ── Inline confirm modal (replaces window.prompt, which is
+     blocked in Figma's sandboxed plugin iframe) ──────── */
+  .confirm-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .confirm-overlay[hidden] { display: none !important; }
+  .confirm-box {
+    background: var(--dtf-surface);
+    border: 1px solid var(--dtf-border-strong);
+    border-radius: var(--dtf-radius-md);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+    padding: 16px;
+    width: 100%; max-width: 320px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .confirm-box-title {
+    font-size: var(--dtf-fs-12); font-weight: 700;
+    color: var(--dtf-warning-content);
+  }
+  .confirm-box-body {
+    font-size: var(--dtf-fs-11); line-height: 1.5;
+    color: var(--dtf-fg-strong);
+    white-space: pre-wrap;
+  }
+  .confirm-box input[type="text"] {
+    width: 100%; box-sizing: border-box;
+    padding: 6px 10px;
+    border: 1px solid var(--dtf-border-strong);
+    border-radius: var(--dtf-radius-md);
+    background: var(--dtf-surface);
+    font: 600 var(--dtf-fs-12)/1 var(--dtf-font-mono, monospace);
+    color: var(--dtf-fg-strong);
+    letter-spacing: 0.05em;
+  }
+  .confirm-box input[type="text"]:focus {
+    outline: none;
+    border-color: var(--dtf-warning-content);
+  }
+  .confirm-box-btns {
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+
   /* ── Server URL section (in menu, rare) ──────────── */
   .server-panel {
     display: none;
@@ -1050,6 +1096,19 @@
       <button class="btn btn-ghost" id="saveUrlBtn" style="padding:6px 12px;font-size:var(--dtf-fs-11)">Save</button>
       <button class="preset" id="presetLocal">Use local (localhost:9500)</button>
       <button class="preset" id="presetDefault" style="margin-left:auto">Reset to default</button>
+    </div>
+  </div>
+
+  <!-- ─── Inline confirm dialog (replaces window.prompt) ─ -->
+  <div class="confirm-overlay" id="confirmOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="confirm-box">
+      <div class="confirm-box-title" id="confirmTitle">Confirm</div>
+      <div class="confirm-box-body" id="confirmBody"></div>
+      <input type="text" id="confirmInput" autocomplete="off" spellcheck="false">
+      <div class="confirm-box-btns">
+        <button class="btn btn-ghost" type="button" id="confirmCancelBtn">Cancel</button>
+        <button class="btn btn-primary" type="button" id="confirmOkBtn" data-intent="rebind">Confirm</button>
+      </div>
     </div>
   </div>
 
@@ -1429,9 +1488,61 @@ var openGroups = new Set();      /* expanded group keys */
 /* Build stamp — bump on every UI-affecting change so you can confirm
    the Figma plugin sandbox isn't serving a cached old copy. Shown in
    the empty-state footer + logged once to the plugin console. */
-var BUILD_VERSION = '2026-05-22-p14';
+var BUILD_VERSION = '2026-06-12-p1';
 function log(msg){ console.log('[DTF] ' + msg); }
 log('plugin UI build ' + BUILD_VERSION);
+
+/* ── Inline confirm dialog (replaces window.prompt, which is
+   blocked in Figma's sandboxed plugin iframe).
+   showConfirmInput(lines, expected, onConfirm):
+     - lines    : string[] — message rows shown to the user
+     - expected : 'REBIND' | 'CLAIM' — what they must type
+     - onConfirm: called with no args if the typed text matches   */
+(function(){
+  var _overlay  = document.getElementById('confirmOverlay');
+  var _title    = document.getElementById('confirmTitle');
+  var _body     = document.getElementById('confirmBody');
+  var _input    = document.getElementById('confirmInput');
+  var _okBtn    = document.getElementById('confirmOkBtn');
+  var _cancelBtn= document.getElementById('confirmCancelBtn');
+  var _expected = '';
+  var _onConfirm = null;
+
+  function _close(){ _overlay.hidden = true; _input.value = ''; }
+
+  function _tryConfirm(){
+    if (_input.value.trim().toUpperCase() !== _expected){
+      _input.style.borderColor = 'var(--dtf-danger-content)';
+      _input.select();
+      return;
+    }
+    _close();
+    if (_onConfirm) _onConfirm();
+  }
+
+  _okBtn.addEventListener('click', _tryConfirm);
+  _cancelBtn.addEventListener('click', function(){ _close(); setStatus('Sync cancelled.', 'err'); });
+  _input.addEventListener('keydown', function(e){
+    if (e.key === 'Enter')  _tryConfirm();
+    if (e.key === 'Escape') { _close(); setStatus('Sync cancelled.', 'err'); }
+    /* Reset red border on any keystroke so the error clears as they type */
+    _input.style.borderColor = '';
+  });
+
+  window.showConfirmInput = function(lines, expected, onConfirm){
+    _expected  = expected;
+    _onConfirm = onConfirm;
+    _title.textContent = expected === 'REBIND' ? 'Confirm rebind' : 'Confirm claim';
+    /* Show the message lines, with the prompt (last line) styled differently */
+    var bodyLines = lines.slice(0, lines.length - 1);
+    _body.textContent = bodyLines.join('\n');
+    _input.placeholder = 'Type ' + expected + ' to confirm';
+    _input.value = '';
+    _input.style.borderColor = '';
+    _overlay.hidden = false;
+    setTimeout(function(){ _input.focus(); }, 50);
+  };
+}());
 
 function isStaticHost(){ return SERVER.indexOf('github.io') !== -1 || SERVER.indexOf('.pages.dev') !== -1; }
 
@@ -2238,7 +2349,13 @@ function renderChangeList(){
   } else if (total > 0 && hasExistingVars){
     syncBtn.textContent = 'Update ' + total + (total === 1 ? ' variable' : ' variables') + ' in Figma';
   } else if (total > 0){
-    syncBtn.textContent = 'Create ' + total + (total === 1 ? ' variable' : ' variables') + ' in Figma';
+    /* For a first-run fresh file, `total` is the changelog entry count (e.g. 1),
+       NOT the number of variables that will be created. Use the actual token count
+       from tokenData so the CTA reads "Create 675 variables in Figma" not "Create 1". */
+    var createCount = (tokenData && tokenData.stats && tokenData.stats.totalVariables > 0)
+      ? tokenData.stats.totalVariables
+      : total;
+    syncBtn.textContent = 'Create ' + createCount + (createCount === 1 ? ' variable' : ' variables') + ' in Figma';
   }
 
   /* Show search field once we cross 50 total */
@@ -3077,15 +3194,14 @@ syncBtn.addEventListener('click', function(){
       ];
     }
     var expected = isBoundMismatch ? 'REBIND' : 'CLAIM';
-    var typed = window.prompt(lines.join('\n'), '');
-    if (typed === null) return;
-    if (typed.trim().toUpperCase() !== expected){
-      setStatus('Sync cancelled \u2014 confirmation text didn\u2019t match.', 'err');
-      return;
-    }
-    /* One-shot pass — reset on the next render so any future
-       mismatch (different project switch) re-arms the gate. */
-    destructiveSyncConfirmed = true;
+    showConfirmInput(lines, expected, function(){
+      /* One-shot pass — reset on the next render so any future
+         mismatch (different project switch) re-arms the gate. */
+      destructiveSyncConfirmed = true;
+      /* Re-enter the sync flow now that the user has confirmed. */
+      syncBtn.click();
+    });
+    return;
   }
   if (!tokenData){
     setStatus('Fetching tokens…', 'work');

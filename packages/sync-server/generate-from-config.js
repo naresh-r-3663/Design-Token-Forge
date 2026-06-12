@@ -468,8 +468,13 @@ function generateSurfaceTokens(surfaceMap, palettes, surfacePaletteSrc) {
 
     for (const prop of SURF_PROP_ORDER) {
       const cssName = `surface-${name}-${prop}`;
-      light[cssName] = look[lMap[prop]] || '#000000';
-      dark[cssName]  = look[dMap[prop]] || '#000000';
+      // Backwards-compat: 'elevated' was the old key for 'strong' in saved surfaceMaps.
+      // Project configs written before the rename still use 'elevated'; fall back to it
+      // so those projects don't get #000000 for every surface-*-strong token.
+      const lStep = lMap[prop] ?? (prop === 'strong' ? lMap['elevated'] : undefined);
+      const dStep = dMap[prop] ?? (prop === 'strong' ? dMap['elevated'] : undefined);
+      light[cssName] = look[lStep] || '#000000';
+      dark[cssName]  = look[dStep] || '#000000';
       palSrc[cssName] = palKey;
     }
   }
