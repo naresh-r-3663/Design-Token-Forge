@@ -2828,16 +2828,14 @@ async function generateComponentFromBlueprint(blueprint) {
       log('Reusing existing chevron icon set: ' + chevronIconSet.id);
     } else {
       /* Path data for each direction. Apex centred at x=9 / y=9
-         (1px LEFT/UP nudge from geometric centre 10) so that swapping
-         Down ↔ Up keeps the apex in the same horizontal position —
-         critical for visual stability when split-button trigger flips
-         from closed to open state.
-         Down/Up share x=9 apex; Left/Right share y=9 apex. */
+         Each path spans 10px centred in the 20px frame:
+         Down/Up: x=5..15 (apex x=10), y=7.5..12.5 → left=5, right=5, top=7.5, bottom=7.5.
+         Left/Right: y=5..15 (apex y=10), x=7.5..12.5 → same symmetric margins. */
       var chevronPaths = {
-        Down:  'M 4 7.5 L 9 12.5 L 14 7.5',
-        Up:    'M 4 12.5 L 9 7.5 L 14 12.5',
-        Left:  'M 12.5 4 L 7.5 9 L 12.5 14',
-        Right: 'M 7.5 4 L 12.5 9 L 7.5 14'
+        Down:  'M 5 7.5 L 10 12.5 L 15 7.5',
+        Up:    'M 5 12.5 L 10 7.5 L 15 12.5',
+        Left:  'M 12.5 5 L 7.5 10 L 12.5 15',
+        Right: 'M 7.5 5 L 12.5 10 L 7.5 15'
       };
       chevronCreated = true;
       var chevronVariants = [];
