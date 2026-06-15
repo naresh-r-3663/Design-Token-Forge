@@ -181,8 +181,10 @@ function normalizeFigmaValue(name, value) {
     const m = value.match(/^(-?[\d.]+)em$/);
     if (m) return String(parseFloat(m[1]) * 100);
   }
-  if (name.startsWith('font-family-')) {
+  if (name === 'font-family' || name.startsWith('font-family-')) {
     // Take the first comma-separated entry, strip CSS quotes and whitespace.
+    // CSS var() references (e.g. font-family-sans = var(--font-family)) pass through
+    // unchanged — Figma will show the literal string, which is acceptable.
     const primary = value.split(',')[0].trim().replace(/^["']|["']$/g, '');
     if (primary && !primary.startsWith('var(')) return primary;
   }

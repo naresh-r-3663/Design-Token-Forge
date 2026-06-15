@@ -1712,6 +1712,25 @@ async function generateComponentFromBlueprint(blueprint) {
   }
   var typoModeId = typoCol.modes[0].modeId;
 
+  /* Read the project's configured font family from primitives-numbers/font/family-headline
+     (set by Update Variables from the project's typographyConfig). Falls back to 'Lato'
+     if Update Variables hasn't been run yet or the variable doesn't exist. */
+  var configuredFontFamily = 'Lato';
+  try {
+    var primNumsMap = await buildCollectionVarMap('primitives-numbers');
+    var fhVar = primNumsMap['font/family-headline'];
+    if (fhVar) {
+      var fhModeKeys = Object.keys(fhVar.valuesByMode);
+      if (fhModeKeys.length > 0) {
+        var fhVal = fhVar.valuesByMode[fhModeKeys[0]];
+        if (typeof fhVal === 'string' && fhVal && !fhVal.startsWith('var(')) {
+          configuredFontFamily = fhVal;
+        }
+      }
+    }
+  } catch (e) { /* keep default */ }
+  log('Typography: configured font family = ' + configuredFontFamily);
+
   /* Define typography tokens: font sizes and font weights */
   var TYPO_DEFS = [
     /* Font sizes (FLOAT) */
@@ -1731,8 +1750,8 @@ async function generateComponentFromBlueprint(blueprint) {
     { name: 'letter-spacing/tight',  type: 'FLOAT', value: -0.2 },
     { name: 'letter-spacing/normal', type: 'FLOAT', value: 0 },
     { name: 'letter-spacing/wide',   type: 'FLOAT', value: 0.5 },
-    /* Font family (STRING) */
-    { name: 'font-family/primary', type: 'STRING', value: 'Lato' },
+    /* Font family (STRING) — sourced from primitives-numbers/font/family-headline */
+    { name: 'font-family/primary', type: 'STRING', value: configuredFontFamily },
     /* Font style (STRING) — for binding to text nodes */
     { name: 'font-style/default', type: 'STRING', value: 'Regular' },
     { name: 'font-style/bold', type: 'STRING', value: 'Bold' }
