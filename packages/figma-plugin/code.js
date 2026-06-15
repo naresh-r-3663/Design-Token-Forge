@@ -722,6 +722,31 @@ async function syncAll(data) {
     stats.renamed += nameFixes;
   }
 
+  /* Pass 2.7: Remove duplicate empty collections — can form when two concurrent
+     syncAll calls both find a collection missing and both create one. Keep the
+     one with the most variables; delete any empty duplicates by name. */
+  try {
+    var allColsDup = await figma.variables.getLocalVariableCollectionsAsync();
+    var seenColNames = {};
+    for (var dci = 0; dci < allColsDup.length; dci++) {
+      var dc = allColsDup[dci];
+      if (!seenColNames[dc.name]) {
+        seenColNames[dc.name] = dc;
+      } else {
+        /* Duplicate name: delete whichever is empty; if both empty, delete the newer one */
+        var existing2 = seenColNames[dc.name];
+        var toDelete = (dc.variableIds.length === 0) ? dc :
+                       (existing2.variableIds.length === 0) ? existing2 : null;
+        if (toDelete) {
+          try { toDelete.remove(); log('Pass2.7: removed empty duplicate collection "' + toDelete.name + '" id=' + toDelete.id); }
+          catch (dce) { log('Pass2.7: could not remove duplicate: ' + dce.message); }
+          /* Keep the non-empty one */
+          if (toDelete === existing2) seenColNames[dc.name] = dc;
+        }
+      }
+    }
+  } catch (e27) { log('Pass2.7 error (non-fatal): ' + e27.message); }
+
   /* Pass 3: Remove orphan variables not in token data */
   stats.orphansRemoved = await removeOrphans(data, stats);
   if (stats.orphansRemoved > 0) {
@@ -843,7 +868,8 @@ async function syncAll(data) {
         } catch (rnErr) { log('Pass5 rename failed: ' + rnErr.message); }
       }
 
-      /* Sync each role */
+      /* Sync each role — set as VariableAlias pointing to primitives-numbers
+         so Typography/font-family/* are a single source of truth, not a copy. */
       var p5Roles = [
         { typoName: 'font-family/headline', primName: 'font/family-headline' },
         { typoName: 'font-family/body',     primName: 'font/family-body' },
@@ -853,26 +879,26 @@ async function syncAll(data) {
         var p5r = p5Roles[p5i];
         var p5pv = primNumsVars2[p5r.primName];
         if (!p5pv) continue;
-        var p5Keys = Object.keys(p5pv.valuesByMode);
-        if (p5Keys.length === 0) continue;
-        var p5val = p5pv.valuesByMode[p5Keys[0]];
-        if (typeof p5val !== 'string' || !p5val || p5val.startsWith('var(')) continue;
 
         var p5tv = typoVars5[p5r.typoName];
         if (p5tv) {
+          /* Check if already aliased to the correct target */
           var p5cur = p5tv.valuesByMode[typoModeId5];
-          if (p5cur !== p5val) {
-            try { p5tv.setValueForMode(typoModeId5, p5val); } catch (e) {}
-            log('Pass5: ' + p5r.typoName + ': "' + p5cur + '" → "' + p5val + '"');
+          var alreadyAliased = p5cur && p5cur.type === 'VARIABLE_ALIAS' && p5cur.id === p5pv.id;
+          if (!alreadyAliased) {
+            try {
+              p5tv.setValueForMode(typoModeId5, figma.variables.createVariableAlias(p5pv));
+              log('Pass5: ' + p5r.typoName + ' → alias to ' + p5r.primName);
+            } catch (e) { log('Pass5 alias failed: ' + e.message); }
           } else {
-            log('Pass5: ' + p5r.typoName + ' already "' + p5val + '"');
+            log('Pass5: ' + p5r.typoName + ' already aliased to ' + p5r.primName);
           }
         } else {
-          /* Variable doesn't exist yet — create it */
+          /* Variable doesn't exist yet — create it as an alias to primitives-numbers */
           try {
             var p5new = figma.variables.createVariable(p5r.typoName, typoSyncCol, 'STRING');
-            p5new.setValueForMode(typoModeId5, p5val);
-            log('Pass5: created ' + p5r.typoName + ' = "' + p5val + '"');
+            p5new.setValueForMode(typoModeId5, figma.variables.createVariableAlias(p5pv));
+            log('Pass5: created ' + p5r.typoName + ' aliased to ' + p5r.primName);
           } catch (p5ce) { log('Pass5 create ' + p5r.typoName + ' failed: ' + p5ce.message); }
         }
       }
