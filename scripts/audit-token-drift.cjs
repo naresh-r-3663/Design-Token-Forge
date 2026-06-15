@@ -59,9 +59,21 @@ function diff(a, b) {
   const aBuf = fs.readFileSync(a);
   const bBuf = fs.readFileSync(b);
   if (aBuf.equals(bBuf)) return { ok: true };
+  // build-static.js intentionally appends a typography block to the dist
+  // primitives.css (sourced from typographyConfig) that is NOT present in
+  // the editor-saved source. Strip that sentinel-delimited block from the
+  // dist before comparing so the append is not flagged as drift.
+  const TYPO_SENTINEL = '\n/* ── Typography primitives (appended by build-static;';
+  function stripTypoAppend(str) {
+    const idx = str.indexOf(TYPO_SENTINEL);
+    return idx >= 0 ? str.slice(0, idx) : str;
+  }
+  const aStr = stripTypoAppend(aBuf.toString('utf8'));
+  const bStr = stripTypoAppend(bBuf.toString('utf8'));
+  if (aStr === bStr) return { ok: true };
   // First differing line — helpful for CI logs without spamming.
-  const aLines = aBuf.toString('utf8').split('\n');
-  const bLines = bBuf.toString('utf8').split('\n');
+  const aLines = aStr.split('\n');
+  const bLines = bStr.split('\n');
   const n = Math.max(aLines.length, bLines.length);
   for (let i = 0; i < n; i++) {
     if (aLines[i] !== bLines[i]) {
