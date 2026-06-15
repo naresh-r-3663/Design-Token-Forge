@@ -728,6 +728,31 @@ async function syncAll(data) {
     log('Removed ' + stats.orphansRemoved + ' orphan variable(s)');
   }
 
+  /* Pass 3.5: Force-remove CSS-origin font vars from primitives-numbers.
+     These were exported before buildExtras() gained CSS_FONT_SKIP and now
+     persist as orphans in Figma. removeOrphans() SHOULD catch them, but as
+     an explicit safety net we delete them by name here so they can never
+     re-appear in the primitives-numbers variable panel.
+     Vars to purge: font/family  font/family-sans  font/family-mono */
+  try {
+    var CSS_FONT_PURGE = { 'font/family': true, 'font/family-sans': true, 'font/family-mono': true };
+    var primNumsCol5 = null;
+    var allCols35 = await figma.variables.getLocalVariableCollectionsAsync();
+    for (var ci35 = 0; ci35 < allCols35.length; ci35++) {
+      if (allCols35[ci35].name === 'primitives-numbers') { primNumsCol5 = allCols35[ci35]; break; }
+    }
+    if (primNumsCol5) {
+      var ids35 = primNumsCol5.variableIds.slice();
+      for (var vi35 = 0; vi35 < ids35.length; vi35++) {
+        var v35 = await figma.variables.getVariableByIdAsync(ids35[vi35]);
+        if (v35 && CSS_FONT_PURGE[v35.name]) {
+          try { v35.remove(); stats.orphansRemoved++; log('Pass3.5: removed CSS-origin var: ' + v35.name); }
+          catch (e35) { log('Pass3.5: could not remove ' + v35.name + ': ' + e35.message); }
+        }
+      }
+    }
+  } catch (e3) { log('Pass3.5 error (non-fatal): ' + e3.message); }
+
   /* Persist updated ID map (prune stale entries) */
   var validKeys = {};
   for (var vci = 0; vci < data.collections.length; vci++) {
@@ -3068,6 +3093,28 @@ async function generateComponentFromBlueprint(blueprint) {
        directly with the hero/Tier sections, parallel to the existing
        primitives section. */
     log('Reusing shared primitives showcase: ' + existingPrimitivesSection.id);
+
+    /* Repair: ensure the icon-usage-note has the correct spacing/padding
+       (fixes sections created before the gap fix was deployed). */
+    try {
+      var repairNote = existingPrimitivesSection.findOne(function(n) {
+        return n.name === 'icon-usage-note';
+      });
+      if (repairNote) {
+        if (repairNote.itemSpacing !== 10) repairNote.itemSpacing = 10;
+        if (repairNote.paddingTop !== 8)   repairNote.paddingTop  = 8;
+        if (repairNote.paddingBottom !== 8) repairNote.paddingBottom = 8;
+      }
+      /* Repair: ensure icPreview aligns its children to CENTER (cross-axis
+         centering so the iconPlaceholder and chevron set are vertically
+         aligned when they differ in height). */
+      var repairPreview = existingPrimitivesSection.findOne(function(n) {
+        return n.name === 'icon-preview';
+      });
+      if (repairPreview && repairPreview.counterAxisAlignItems !== 'CENTER') {
+        repairPreview.counterAxisAlignItems = 'CENTER';
+      }
+    } catch (repErr) { log('Primitives repair skipped: ' + repErr.message); }
   } else if (existingPrimitivesSection && chevronCreated && chevronIconSet) {
     /* Append the newly-created chevron set into the existing showcase
        preview, then resize the showcase + card to fit. The card is
@@ -3083,6 +3130,10 @@ async function generateComponentFromBlueprint(blueprint) {
       if (existingPreview) {
         existingPreview.appendChild(chevronIconSet);
         try { chevronIconSet.layoutSizingHorizontal = 'FIXED'; chevronIconSet.layoutSizingVertical = 'FIXED'; } catch (e) {}
+        /* Ensure center alignment (repairs old sections that used MIN). */
+        if (existingPreview.counterAxisAlignItems !== 'CENTER') {
+          existingPreview.counterAxisAlignItems = 'CENTER';
+        }
         /* Card is auto-layout HUG; it now reflects the new preview size.
            Grow the section frame to fit the card. */
         if (existingCard) {
@@ -3090,6 +3141,13 @@ async function generateComponentFromBlueprint(blueprint) {
           var newSecW = Math.max(existingPrimitivesSection.width, nIX + existingCard.width + nPad);
           var newSecH = Math.max(existingPrimitivesSection.height, nIY + existingCard.height + nPad);
           try { existingPrimitivesSection.resize(newSecW, newSecH); } catch (e) {}
+        }
+        /* Repair gap fix on iconNote if needed. */
+        var repNote2 = existingPrimitivesSection.findOne(function(n) { return n.name === 'icon-usage-note'; });
+        if (repNote2) {
+          if (repNote2.itemSpacing !== 10) repNote2.itemSpacing = 10;
+          if (repNote2.paddingTop !== 8)   repNote2.paddingTop  = 8;
+          if (repNote2.paddingBottom !== 8) repNote2.paddingBottom = 8;
         }
         log('Appended chevron set into existing primitives showcase.');
       }
