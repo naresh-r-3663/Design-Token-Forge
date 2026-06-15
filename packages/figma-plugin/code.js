@@ -2565,23 +2565,34 @@ async function generateComponentFromBlueprint(blueprint) {
   var CARD_W = SECTION_W - 80; /* card width inside sections */
   var cursorY = 100;
 
-  /* If other content already exists on the page (e.g. a previously
-     generated Button block when generating Split Button), shift this
-     run to the right so the new presentation lands beside the old one
-     instead of overlapping it. Cleanup above only removed sections
-     belonging to THIS blueprint, so anything still present is foreign. */
+  /* Determine PAGE_X for the BP column.
+     Strategy: if OUR OWN sections already exist on this page (SAFE_REBUILD
+     kept them), reuse the X they are currently at — rebuild in-place, no drift.
+     Only scan FOREIGN content (not stamped as ours) to shift past when this
+     BP has never been built on this page before. */
   var PAGE_MARGIN = 200;
-  var existingMaxX = null;
+  var ownSectionX = null; /* X of our existing sections, if any */
+  var foreignMaxX = null; /* right edge of non-BP-owned content */
   for (var pcx = 0; pcx < page.children.length; pcx++) {
     var pc = page.children[pcx];
-    if (pc.type === 'SECTION' || pc.type === 'FRAME' || pc.type === 'COMPONENT' || pc.type === 'COMPONENT_SET') {
+    if (pc.type !== 'SECTION' && pc.type !== 'FRAME' && pc.type !== 'COMPONENT' && pc.type !== 'COMPONENT_SET') continue;
+    var isMine = false;
+    try { isMine = (pc.getPluginData('dtf-owner') === BP.name); } catch(e) {}
+    if (isMine) {
+      /* Take leftmost X of our own sections as the anchor */
+      if (ownSectionX === null || (pc.x || 0) < ownSectionX) ownSectionX = (pc.x || 0);
+    } else {
       var rightEdge = (pc.x || 0) + (pc.width || 0);
-      if (existingMaxX === null || rightEdge > existingMaxX) existingMaxX = rightEdge;
+      if (foreignMaxX === null || rightEdge > foreignMaxX) foreignMaxX = rightEdge;
     }
   }
-  if (existingMaxX !== null && existingMaxX > PAGE_X) {
-    PAGE_X = existingMaxX + PAGE_MARGIN;
-    log('Existing content detected on page (max X = ' + existingMaxX + '). Shifting new layout to X = ' + PAGE_X);
+  if (ownSectionX !== null) {
+    /* Rebuild in place — use the position our sections already occupy */
+    PAGE_X = ownSectionX;
+    log('SAFE_REBUILD: reusing existing column X = ' + PAGE_X);
+  } else if (foreignMaxX !== null && foreignMaxX > PAGE_X) {
+    PAGE_X = foreignMaxX + PAGE_MARGIN;
+    log('Foreign content detected (max X = ' + foreignMaxX + '). Shifting new layout to X = ' + PAGE_X);
   }
 
   /* ── Reserve a left column for the shared Primitives section ──
@@ -2723,6 +2734,7 @@ async function generateComponentFromBlueprint(blueprint) {
          empty selection box. */
       try {
         chevronIconSet.layoutMode = 'HORIZONTAL';
+        chevronIconSet.counterAxisAlignItems = 'CENTER';
         chevronIconSet.itemSpacing = 16;
         chevronIconSet.paddingLeft = 16; chevronIconSet.paddingRight = 16;
         chevronIconSet.paddingTop = 16; chevronIconSet.paddingBottom = 16;
@@ -2794,6 +2806,7 @@ async function generateComponentFromBlueprint(blueprint) {
         /* Auto-layout the variant grid so it presents cleanly. */
         try {
           chevronIconSet.layoutMode = 'HORIZONTAL';
+          chevronIconSet.counterAxisAlignItems = 'CENTER';
           chevronIconSet.itemSpacing = 16;
           chevronIconSet.paddingLeft = 16; chevronIconSet.paddingRight = 16;
           chevronIconSet.paddingTop = 16; chevronIconSet.paddingBottom = 16;
@@ -3133,7 +3146,8 @@ async function generateComponentFromBlueprint(blueprint) {
   iconNote.fills = [];
   iconNote.strokes = [];
   iconNote.layoutMode = 'VERTICAL';
-  iconNote.itemSpacing = 8;
+  iconNote.itemSpacing = 10;
+  iconNote.paddingTop = 8; iconNote.paddingBottom = 8;
   /* resize() must come BEFORE sizing-mode assignments — calling resize()
      after AUTO implicitly resets primaryAxisSizingMode to FIXED, leaving
      the frame permanently at 10 px and clipping all children. */
