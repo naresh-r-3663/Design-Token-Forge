@@ -6,7 +6,7 @@
   "created": "2026-05-16",
   "schemaVersion": 2,
   "paletteKeys": {
-    "brand": "#D6BA05",
+    "brand": "#9900FF",
     "danger": "#DC2626",
     "warning": "#D97706",
     "info": "#0EA5E9",
@@ -76,10 +76,10 @@
     }
   },
   "latestVersion": {
-    "version": "v0.0.37",
-    "name": "Jun15 09:47",
-    "description": "Puvi font family added",
-    "savedAt": "2026-06-15T04:19:33.906Z",
+    "version": "v0.0.38",
+    "name": "Jun16 17:37",
+    "description": "",
+    "savedAt": "2026-06-16T12:07:09.208Z",
     "savedBy": "sridhar-ravi-2917"
   },
   "t1Picks": {
