@@ -304,7 +304,7 @@
 
 <script src="dtf-topbar.js?v=9"></script>
 <script src="nav.js?v=3"></script>
-<script src="shared.js?v=1103"></script>
+<script src="shared.js?v=1105"></script>
 <script>
 (function(){
   'use strict';
@@ -375,7 +375,7 @@
     var el=clr('densityScale');
     SIZES.forEach(function(s){
       var it=document.createElement('div');it.className='density-item';
-      var cb=makeCB(s,{checked:true,noSync:true,label:s});
+      var cb=makeCB(s,{checked:true,noSync:true,label:s,style:{'min-height':'0'}});
       it.appendChild(cb);
       var m=document.createElement('div');m.className='density-meta';
       requestAnimationFrame(function(){

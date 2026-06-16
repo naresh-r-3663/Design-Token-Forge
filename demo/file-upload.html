@@ -398,7 +398,7 @@
 
 <script src="dtf-topbar.js?v=9"></script>
 <script src="nav.js?v=3"></script>
-<script src="shared.js?v=1103"></script>
+<script src="shared.js?v=1105"></script>
 <script src="shared-page.js"></script>
 <script>
 (function(){
@@ -614,7 +614,10 @@
     SIZES.forEach(function(s) {
       var item = document.createElement('div');
       item.className = 'density-item';
-      item.appendChild(makeFU({ size:s, mode:'button', label:false, triggerText:cap(s) }));
+      var fu = makeFU({ size:s, mode:'button', label:false, triggerText:cap(s) });
+      var trig = fu.querySelector('.file-upload__trigger');
+      if (trig) trig.style.minHeight = '0';
+      item.appendChild(fu);
       var m = document.createElement('div');
       m.className = 'density-meta';
       m.textContent = s;
