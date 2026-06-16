@@ -73,17 +73,17 @@
   --textarea-padding-x-mega: var(--spacing-20);
   --textarea-padding-x-ultra: var(--spacing-20);
 
-  /* Vertical padding per density mode */
-  --textarea-padding-y-micro: var(--spacing-4);
-  --textarea-padding-y-tiny: var(--spacing-6);
-  --textarea-padding-y-small: var(--spacing-8);
-  --textarea-padding-y-base: var(--spacing-10);
-  --textarea-padding-y-medium: var(--spacing-12);
-  --textarea-padding-y-large: var(--spacing-14);
-  --textarea-padding-y-big: var(--spacing-16);
-  --textarea-padding-y-huge: var(--spacing-20);
-  --textarea-padding-y-mega: var(--spacing-24);
-  --textarea-padding-y-ultra: var(--spacing-28);
+  /* Vertical padding per density mode — input-padding-y + 2px throughout */
+  --textarea-padding-y-micro: var(--spacing-4);   /* input: 2px  + 2 */
+  --textarea-padding-y-tiny: var(--spacing-5);    /* input: 3px  + 2 */
+  --textarea-padding-y-small: var(--spacing-6);   /* input: 4px  + 2 */
+  --textarea-padding-y-base: var(--spacing-8);    /* input: 6px  + 2 */
+  --textarea-padding-y-medium: var(--spacing-10); /* input: 8px  + 2 */
+  --textarea-padding-y-large: var(--spacing-12);  /* input: 10px + 2 */
+  --textarea-padding-y-big: var(--spacing-14);    /* input: 12px + 2 */
+  --textarea-padding-y-huge: var(--spacing-16);   /* input: 14px + 2 */
+  --textarea-padding-y-mega: var(--spacing-18);   /* input: 16px + 2 */
+  --textarea-padding-y-ultra: var(--spacing-22);  /* input: 20px + 2 */
 
   /* Fixed height per density mode (used when data-height="fixed") */
   --textarea-height-micro: var(--spacing-24);

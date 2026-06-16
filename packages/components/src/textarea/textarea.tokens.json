@@ -465,8 +465,8 @@
       "size": "tiny",
       "state": null,
       "property": "padding-y",
-      "value": "var(--spacing-6)",
-      "aliasOf": "--spacing-6",
+      "value": "var(--spacing-5)",
+      "aliasOf": "--spacing-5,
       "literal": false
     },
     "--textarea-padding-y-small": {
@@ -477,8 +477,8 @@
       "size": "small",
       "state": null,
       "property": "padding-y",
-      "value": "var(--spacing-8)",
-      "aliasOf": "--spacing-8",
+      "value": "var(--spacing-6)",
+      "aliasOf": "--spacing-6,
       "literal": false
     },
     "--textarea-padding-y-base": {
@@ -489,8 +489,8 @@
       "size": "base",
       "state": null,
       "property": "padding-y",
-      "value": "var(--spacing-10)",
-      "aliasOf": "--spacing-10",
+      "value": "var(--spacing-8)",
+      "aliasOf": "--spacing-8,
       "literal": false
     },
     "--textarea-padding-y-medium": {
@@ -501,8 +501,8 @@
       "size": "medium",
       "state": null,
       "property": "padding-y",
-      "value": "var(--spacing-12)",
-      "aliasOf": "--spacing-12",
+      "value": "var(--spacing-10)",
+      "aliasOf": "--spacing-10,
       "literal": false
     },
     "--textarea-padding-y-large": {
@@ -513,8 +513,8 @@
       "size": "large",
       "state": null,
       "property": "padding-y",
-      "value": "var(--spacing-14)",
-      "aliasOf": "--spacing-14",
+      "value": "var(--spacing-12)",
+      "aliasOf": "--spacing-12,
       "literal": false
     },
     "--textarea-padding-y-big": {
@@ -525,8 +525,8 @@
       "size": "big",
       "state": null,
       "property": "padding-y",
-      "value": "var(--spacing-16)",
-      "aliasOf": "--spacing-16",
+      "value": "var(--spacing-14)",
+      "aliasOf": "--spacing-14,
       "literal": false
     },
     "--textarea-padding-y-huge": {
@@ -537,8 +537,8 @@
       "size": "huge",
       "state": null,
       "property": "padding-y",
-      "value": "var(--spacing-20)",
-      "aliasOf": "--spacing-20",
+      "value": "var(--spacing-16)",
+      "aliasOf": "--spacing-16,
       "literal": false
     },
     "--textarea-padding-y-mega": {
@@ -549,8 +549,8 @@
       "size": "mega",
       "state": null,
       "property": "padding-y",
-      "value": "var(--spacing-24)",
-      "aliasOf": "--spacing-24",
+      "value": "var(--spacing-18)",
+      "aliasOf": "--spacing-18,
       "literal": false
     },
     "--textarea-padding-y-ultra": {
@@ -561,8 +561,8 @@
       "size": "ultra",
       "state": null,
       "property": "padding-y",
-      "value": "var(--spacing-28)",
-      "aliasOf": "--spacing-28",
+      "value": "var(--spacing-22)",
+      "aliasOf": "--spacing-22,
       "literal": false
     },
     "--textarea-height-micro": {
