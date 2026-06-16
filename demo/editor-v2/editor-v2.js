@@ -1278,6 +1278,17 @@
     var cssBundle = rootLines.concat(darkLines).join('\n');
     win.postMessage({ type: 'ev2-overrides', css: cssBundle }, '*');
 
+    /* Broadcast live overrides to other open demo tabs via localStorage.
+       Any page running shared.js listens for this storage key change and
+       injects it as a high-priority <style> overlay — so the designer
+       sees live colour updates everywhere without publishing. The key is
+       project-scoped to prevent cross-project bleed. */
+    try {
+      var livePidKey = 'ev2-live-preview-' + (getActiveProjectId() || '_');
+      var prevLive = localStorage.getItem(livePidKey);
+      if (prevLive !== cssBundle) localStorage.setItem(livePidKey, cssBundle);
+    } catch (_e) {}
+
     /* Also apply the SAME override bundle to the editor's own document
        so the chrome (which derives from --surface-base-* → --prim-*)
        repaints when the user toggles exact↔normalized or tweaks a key
@@ -1533,6 +1544,12 @@
     // Also nuke the legacy global key so it can't resurface on the
     // next load and re-pollute another project.
     try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    // Clear the live-preview broadcast so other tabs stop showing
+    // unpublished overrides once the user discards or publishes.
+    try {
+      var lpKey = 'ev2-live-preview-' + (getActiveProjectId() || '_');
+      localStorage.removeItem(lpKey);
+    } catch (_e) {}
     State.lastSavedAt = null;
   }
 
@@ -6082,6 +6099,8 @@
         // the Phase-2 conflict banner would otherwise fire on reload
         // with draft.baseVersion === oldVer vs HEAD.version === nextVer.
         localStorage.removeItem('dtf-editor-v2-draft-v2--' + projId);
+        // Clear live-preview broadcast so other tabs revert to published values.
+        localStorage.removeItem('ev2-live-preview-' + projId);
       } catch (e) { /* non-fatal */ }
       // Fire Pages rebuild — best-effort like normal Publish.
       triggerPagesRebuild().catch(function () {});
