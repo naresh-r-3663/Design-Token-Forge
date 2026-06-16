@@ -737,6 +737,97 @@ try {
   } /* end _mount */
 })();
 
+/* ── Editor Live-Preview Broadcast ─────────────────────────────────
+   Runs BEFORE "Inject Saved Color Tokens" so the MutationObserver is
+   registered before #dtfSavedTokens is created.  MutationObserver
+   callbacks are microtasks that run before any browser paint, so by
+   the time the first frame renders the overlay is already last in
+   <head> and live CSS wins — no flash of published colors. ── */
+(function () {
+  if (document.documentElement.getAttribute('data-no-project-theme') === '1') return;
+
+  var STYLE_ID = 'ev2-live-preview-overlay';
+
+  function activePid() {
+    try { return localStorage.getItem('dtf-active-project') || ''; } catch (e) { return ''; }
+  }
+
+  function liveKey(pid) {
+    return 'ev2-live-preview-' + (pid || '_');
+  }
+
+  function applyLiveCSS(css) {
+    var el = document.getElementById(STYLE_ID);
+    if (css) {
+      if (!el) {
+        el = document.createElement('style');
+        el.id = STYLE_ID;
+      }
+      if (el.textContent !== css) el.textContent = css;
+      /* Always move to the END of <head> so this overlay wins over
+         any token <style> that an async fetch may have inserted after
+         us (e.g. the dtfSavedTokens element created by _injectCSS
+         when no cached tokens existed on page load). */
+      if (document.head.lastChild !== el) document.head.appendChild(el);
+    } else {
+      if (el) el.textContent = '';
+    }
+  }
+
+  /* Apply any in-flight live override on page load. */
+  var _lastSeen = null; /* null = first run */
+  var _lastPid  = '';
+
+  function poll() {
+    var pid = activePid();
+    var css = '';
+    try { css = localStorage.getItem(liveKey(pid)) || ''; } catch (e) {}
+
+    /* If the project changed mid-session, reset so we re-apply. */
+    if (pid !== _lastPid) { _lastSeen = null; _lastPid = pid; }
+
+    if (css !== _lastSeen) {
+      _lastSeen = css;
+      applyLiveCSS(css);
+    } else if (css) {
+      /* CSS unchanged but something may have injected a style after
+         our overlay — re-ensure it is last so it keeps winning. */
+      var el = document.getElementById(STYLE_ID);
+      if (el && document.head.lastChild !== el) document.head.appendChild(el);
+    }
+  }
+
+  /* Run once immediately (handles page-load with an open editor). */
+  poll();
+
+  /* Poll every 400 ms — fast enough to feel instant, cheap on CPU.
+     storage events aren't reliable on file:// so polling is the
+     cross-protocol fallback that always works. */
+  setInterval(poll, 400);
+
+  /* MutationObserver: whenever anything is appended to <head> while
+     live CSS is active, immediately push the overlay back to last so
+     async token injections (dtfSavedTokens, font links, etc.) can
+     never push our override off the top of the cascade.
+     Microtask timing guarantees this fires BEFORE any browser paint. */
+  if (window.MutationObserver) {
+    new MutationObserver(function () {
+      var el = document.getElementById(STYLE_ID);
+      if (!el || !el.textContent) return; /* no live css */
+      if (document.head.lastChild !== el) document.head.appendChild(el);
+    }).observe(document.head, { childList: true });
+  }
+
+  /* Also keep the storage event listener as a fast path when served
+     over HTTP (fires immediately without waiting for next poll tick). */
+  window.addEventListener('storage', function (e) {
+    var key = e.key || '';
+    if (key.indexOf('ev2-live-preview-') !== 0) return;
+    if (key !== liveKey(activePid())) return;
+    poll();
+  });
+})();
+
 /* ── Inject Saved Color Tokens (from Color System page) ── */
 (function(){
   /* Pages that opt out of project-specific theming (e.g. onboard)
@@ -827,98 +918,6 @@ try {
 })();
 
 /* ── Nav Dropdown — now handled by nav.js ── */
-
-/* ── Editor Live-Preview Broadcast ─────────────────────────────────
-   The Token Editor (editor-v2) writes its current CSS override bundle
-   to localStorage under `ev2-live-preview-<projectId>` on every
-   pushPreview() call.  Any demo page open in another tab picks it up
-   here and injects it as a high-priority <style> overlay — so the
-   designer sees live colour changes before publishing, across all tabs.
-   When the key is removed (discard / publish / restore), the overlay
-   is cleared and the page falls back to its published tokens. ── */
-(function () {
-  if (document.documentElement.getAttribute('data-no-project-theme') === '1') return;
-
-  var STYLE_ID = 'ev2-live-preview-overlay';
-
-  function activePid() {
-    try { return localStorage.getItem('dtf-active-project') || ''; } catch (e) { return ''; }
-  }
-
-  function liveKey(pid) {
-    return 'ev2-live-preview-' + (pid || '_');
-  }
-
-  function applyLiveCSS(css) {
-    var el = document.getElementById(STYLE_ID);
-    if (css) {
-      if (!el) {
-        el = document.createElement('style');
-        el.id = STYLE_ID;
-      }
-      if (el.textContent !== css) el.textContent = css;
-      /* Always move to the END of <head> so this overlay wins over
-         any token <style> that an async fetch may have inserted after
-         us (e.g. the dtfSavedTokens element created by _injectCSS
-         when no cached tokens existed on page load). */
-      if (document.head.lastChild !== el) document.head.appendChild(el);
-    } else {
-      if (el) el.textContent = '';
-    }
-  }
-
-  /* Apply any in-flight live override on page load. */
-  var _lastSeen = null; /* null = first run */
-  var _lastPid  = '';
-
-  function poll() {
-    var pid = activePid();
-    var css = '';
-    try { css = localStorage.getItem(liveKey(pid)) || ''; } catch (e) {}
-
-    /* If the project changed mid-session, reset so we re-apply. */
-    if (pid !== _lastPid) { _lastSeen = null; _lastPid = pid; }
-
-    if (css !== _lastSeen) {
-      _lastSeen = css;
-      applyLiveCSS(css);
-    } else if (css) {
-      /* CSS unchanged but something may have injected a style after
-         our overlay — re-ensure it is last so it keeps winning. */
-      var el = document.getElementById(STYLE_ID);
-      if (el && document.head.lastChild !== el) document.head.appendChild(el);
-    }
-  }
-
-  /* Run once immediately (handles page-load with an open editor). */
-  poll();
-
-  /* Poll every 400 ms — fast enough to feel instant, cheap on CPU.
-     storage events aren't reliable on file:// so polling is the
-     cross-protocol fallback that always works. */
-  setInterval(poll, 400);
-
-  /* MutationObserver: whenever anything is appended to <head> while
-     live CSS is active, immediately push the overlay back to last so
-     async token injections (dtfSavedTokens, font links, etc.) can
-     never push our override off the top of the cascade. */
-  if (window.MutationObserver) {
-    new MutationObserver(function () {
-      var el = document.getElementById(STYLE_ID);
-      if (!el || !el.textContent) return; /* no live css */
-      if (document.head.lastChild !== el) document.head.appendChild(el);
-    }).observe(document.head, { childList: true });
-  }
-
-  /* Also keep the storage event listener as a fast path when served
-     over HTTP (fires immediately without waiting for next poll tick). */
-  window.addEventListener('storage', function (e) {
-    var key = e.key || '';
-    if (key.indexOf('ev2-live-preview-') !== 0) return;
-    if (key !== liveKey(activePid())) return;
-    poll();
-  });
-})();
 
 /* ── Theme Toggle (persisted across pages via localStorage) ── */
 (function(){
