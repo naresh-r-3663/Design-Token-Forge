@@ -1154,7 +1154,7 @@ async function rebindIconPlaceholderPaints() {
 
     var btnSets = figma.root.findAll(function(n) {
       return n.type === 'COMPONENT_SET' &&
-             (/^Button\b/.test(n.name) || /^Split Button\b/.test(n.name));
+             (/^Button\b/.test(n.name) || /^Split Button\b/.test(n.name) || /^Menu Button\b/.test(n.name));
     });
     for (var bs = 0; bs < btnSets.length; bs++) {
       var set = btnSets[bs];
@@ -1792,6 +1792,14 @@ var MENU_BUTTON_BLUEPRINT = {
 
   /* Comp-size variable path for the Rounded=True pill variant. */
   radiusRoundedPath: 'menu-button/radius-rounded',
+
+  /* Tell the generator to use the shared chevron icon set for chevronSlot
+     instances (creates it if split-button hasn't run first). */
+  usesChevron: true,
+
+  /* Wider master column spacing to avoid label overlap
+     ('Icon + Text + Chevron' is longer than 'Icon + Text'). */
+  masterSpacing: 440,
 
   masterContentColor: 'default/content/default',
 
@@ -3067,14 +3075,13 @@ async function generateComponentFromBlueprint(blueprint) {
   var chevronIconSet = null;
   var chevronCreated = false;
   /* Always look for an existing chevron set across ALL BPs — it's a
-     shared primitive. Only the wrapper-kind BP (split-button) is
-     allowed to CREATE the set if missing; other BPs simply reuse it
-     when present (e.g. for documentation purposes in the shared
-     primitives showcase). */
+     shared primitive. Either wrapper-kind (split-button) or any BP
+     that sets usesChevron=true (menu-button) is allowed to CREATE
+     the set if it is missing. */
   chevronIconSet = page.findOne(function(n) {
     return n.type === 'COMPONENT_SET' && n.name === 'Icon/Chevron';
   });
-  if (BP.kind === 'wrapper-with-button-instance') {
+  if (BP.kind === 'wrapper-with-button-instance' || BP.usesChevron) {
     /* Detect a broken / zero-size / wrong-arity set from a prior run and
        force recreation. Without this, a stale empty set keeps getting
        reused and the showcase preview keeps showing nothing. */
@@ -3204,7 +3211,15 @@ async function generateComponentFromBlueprint(blueprint) {
     }
   }
   /* Resolve which icon to use as the trigger's default child.
-     Always the Down chevron variant (or fallback placeholder). */
+     Always the Down chevron variant (or fallback placeholder).
+     For blueprints that use a chevronSlot (e.g. menu-button) but are
+     NOT wrapper-with-button-instance, reuse the existing chevron set
+     (created by split-button earlier, or present from a prior build). */
+  if (!chevronIcon && (BP.usesChevron || BP.kind === 'wrapper-with-button-instance') && chevronIconSet) {
+    chevronIcon = chevronIconSet.children.find(function(c) {
+      return c.type === 'COMPONENT' && c.variantProperties && c.variantProperties.Direction === 'Down';
+    }) || chevronIconSet.children[0] || null;
+  }
   var triggerIconComp = chevronIcon || iconPlaceholder;
 
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -4114,21 +4129,22 @@ async function generateComponentFromBlueprint(blueprint) {
       }
     }
 
+    var masterSpacing = BP.masterSpacing || 320;
     masterFrame.appendChild(master);
     /* Position inside invisible frame (for Figma component panel) */
-    master.x = mi * 320;
+    master.x = mi * masterSpacing;
     master.y = 0;
 
     /* Simple label for this master — positioned directly above it */
     var masterLabel = createLabel(masterName, 13, true, COLOR_HEADING);
     masterSec.section.appendChild(masterLabel);
-    masterLabel.x = masterSec.innerX + mi * 320;
+    masterLabel.x = masterSec.innerX + mi * masterSpacing;
     masterLabel.y = masterSec.innerY + mHeaderBar.height + 24;
     tryBindFill(masterLabel, t2Vars['default/content/strong']);
 
     var masterSlotBadge = createBadge(masterCfg.slots.join(' + '), COLOR_CM_BG, COLOR_DIMMED);
     masterSec.section.appendChild(masterSlotBadge);
-    masterSlotBadge.x = masterSec.innerX + mi * 320 + masterLabel.width + 12;
+    masterSlotBadge.x = masterSec.innerX + mi * masterSpacing + masterLabel.width + 12;
     masterSlotBadge.y = masterSec.innerY + mHeaderBar.height + 22;
     tryBindFill(masterSlotBadge, t2Vars['default/component/bg']);
     if (masterSlotBadge.children.length > 0) tryBindFill(masterSlotBadge.children[0], t2Vars['default/content/subtle']);
@@ -4579,8 +4595,21 @@ async function generateComponentFromBlueprint(blueprint) {
             if (iconColorVar) {
               var iconChildren = instance.findAll(function(n) { return n.name === 'Vector'; });
               for (var ici = 0; ici < iconChildren.length; ici++) {
-                setPaintBoundToVariable(iconChildren[ici], 'fills', iconColorVar);
-                stats.bindings++;
+                var _icv = iconChildren[ici];
+                /* Bind BOTH fills and strokes — icon-placeholder vectors use fills,
+                   chevron vectors use strokes (stroke-drawn paths, no fill). Only
+                   the paint type actually present on the vector matters; binding
+                   the other is harmless and future-proofs icon swaps. */
+                var _icHasFills   = _icv.fills   && Array.isArray(_icv.fills)   && _icv.fills.length   > 0;
+                var _icHasStrokes = _icv.strokes && Array.isArray(_icv.strokes) && _icv.strokes.length > 0;
+                if (_icHasFills || !_icHasStrokes) {
+                  setPaintBoundToVariable(_icv, 'fills', iconColorVar);
+                  stats.bindings++;
+                }
+                if (_icHasStrokes) {
+                  setPaintBoundToVariable(_icv, 'strokes', iconColorVar);
+                  stats.bindings++;
+                }
               }
             }
           }
