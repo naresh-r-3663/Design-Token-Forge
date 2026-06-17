@@ -1849,10 +1849,6 @@ var MENU_BUTTON_BLUEPRINT = {
      instances (creates it if split-button hasn't run first). */
   usesChevron: true,
 
-  /* Column spacing between masters. 360px fits the longest label
-     ('Icon + Text + Chevron' + badge) without crowding 3 columns. */
-  masterSpacing: 360,
-
   masterContentColor: 'default/content/default',
 
   /* ── Families ───────────────────────────────────────────────
@@ -3013,11 +3009,6 @@ async function generateComponentFromBlueprint(blueprint) {
     if (_flf.states && _flf.states.length > _maxStatesForLayout) _maxStatesForLayout = _flf.states.length;
   }
   var SECTION_W = Math.max(1200, 100 + 40 + (_maxStatesForLayout - 1) * 155 + 120 + 80);
-  /* Also ensure section is wide enough for all master columns */
-  var _masterCount = Object.keys(BP.masters || {}).length;
-  var _masterSpacing = BP.masterSpacing || 320;
-  var _mastersTotalW = 80 + (_masterCount * _masterSpacing) + 300; /* innerX*2 + columns + last col width */
-  if (_mastersTotalW > SECTION_W) SECTION_W = _mastersTotalW;
   var CARD_W = SECTION_W - 80; /* card width inside sections */
   var cursorY = 100;
 
@@ -3790,6 +3781,7 @@ async function generateComponentFromBlueprint(blueprint) {
     log('Found ' + pageNodes.length + ' existing button masters: ' + Object.keys(buttonMasters).join(', '));
   }
 
+  var _masterCursorX = 0; /* running x-offset, advances by each master's actual width */
   for (var mi = 0; mi < masterNames.length; mi++) {
     var masterName = masterNames[mi];
     var masterCfg = BP.masters[masterName];
@@ -4241,25 +4233,27 @@ async function generateComponentFromBlueprint(blueprint) {
       }
     }
 
-    var masterSpacing = BP.masterSpacing || 320;
     masterFrame.appendChild(master);
     /* Position inside invisible frame (for Figma component panel) */
-    master.x = mi * masterSpacing;
+    master.x = _masterCursorX;
     master.y = 0;
 
     /* Simple label for this master — positioned directly above it */
     var masterLabel = createLabel(masterName, 13, true, COLOR_HEADING);
     masterSec.section.appendChild(masterLabel);
-    masterLabel.x = masterSec.innerX + mi * masterSpacing;
+    masterLabel.x = masterSec.innerX + _masterCursorX;
     masterLabel.y = masterSec.innerY + mHeaderBar.height + 24;
     tryBindFill(masterLabel, t2Vars['default/content/strong']);
 
     var masterSlotBadge = createBadge(masterCfg.slots.join(' + '), COLOR_CM_BG, COLOR_DIMMED);
     masterSec.section.appendChild(masterSlotBadge);
-    masterSlotBadge.x = masterSec.innerX + mi * masterSpacing + masterLabel.width + 12;
+    masterSlotBadge.x = masterSec.innerX + _masterCursorX + masterLabel.width + 12;
     masterSlotBadge.y = masterSec.innerY + mHeaderBar.height + 22;
     tryBindFill(masterSlotBadge, t2Vars['default/component/bg']);
     if (masterSlotBadge.children.length > 0) tryBindFill(masterSlotBadge.children[0], t2Vars['default/content/subtle']);
+
+    /* Advance cursor by this master's actual width + gap */
+    _masterCursorX += master.width + 48;
 
     masterComponents[masterName] = master;
     log('Created master: ' + masterName + ' (' + master.children.length + ' children)');
