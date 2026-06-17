@@ -976,15 +976,16 @@ function buildCompSize(extrasCollection) {
   if (fs.existsSync(mbtnFile)) {
     const mbtnTokens = parseComponentTokens(mbtnFile);
     const mbtnProps = [
-      { propCSS: 'height',       propFigma: 'height' },
-      { propCSS: 'padding-x',    propFigma: 'padding-x' },
-      { propCSS: 'padding-y',    propFigma: 'padding-y' },
-      { propCSS: 'chevron-pe',   propFigma: 'chevron-pe' },
-      { propCSS: 'gap',          propFigma: 'gap' },
-      { propCSS: 'font-size',    propFigma: 'font-size' },
-      { propCSS: 'icon-size',    propFigma: 'icon-size' },
-      { propCSS: 'chevron-size', propFigma: 'chevron-size' },
-      { propCSS: 'radius',       propFigma: 'radius' },
+      { propCSS: 'height',         propFigma: 'height' },
+      { propCSS: 'padding-x',      propFigma: 'padding-x' },
+      { propCSS: 'padding-x-icon', propFigma: 'padding-x-icon' },
+      { propCSS: 'padding-y',      propFigma: 'padding-y' },
+      { propCSS: 'chevron-pe',     propFigma: 'chevron-pe' },
+      { propCSS: 'gap',            propFigma: 'gap' },
+      { propCSS: 'font-size',      propFigma: 'font-size' },
+      { propCSS: 'icon-size',      propFigma: 'icon-size' },
+      { propCSS: 'chevron-size',   propFigma: 'chevron-size' },
+      { propCSS: 'radius',         propFigma: 'radius' },
     ];
     variables.push(...buildComponentGroup('menu-btn', 'menu-button', mbtnTokens, extrasVarSet, mbtnProps));
 
