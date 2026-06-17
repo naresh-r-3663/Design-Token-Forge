@@ -532,7 +532,7 @@
     var rp=ROLE_PREFIX[curRole]||'brand', isN=curRole==='neutral';
     var hasIcon=!!hb.querySelector('.btn__icon:first-child');
     var rows=[
-      ['--btn-height-'+s, BTN_TOKENS.height[s], cs.height],
+      ['--btn-height-'+s, BTN_TOKENS.height[s], cs.getPropertyValue('--_btn-height').trim()],
       ['--btn-padding-x-'+s, BTN_TOKENS.px[s], cs.paddingRight],
       [hasIcon?'--btn-padding-x-icon-'+s:'--btn-padding-x-'+s, hasIcon?BTN_TOKENS.pxIcon[s]:BTN_TOKENS.px[s], cs.paddingLeft],
       ['--btn-padding-y-'+s, BTN_TOKENS.py[s], cs.paddingTop],

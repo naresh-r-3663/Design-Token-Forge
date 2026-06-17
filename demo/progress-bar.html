@@ -489,7 +489,7 @@
     var cs = getComputedStyle(bar);
     var s = curSize;
     var tokens = [
-      ['--progress-height-'+s, PG_TOKENS.height[s], cs.height],
+      ['--progress-height-'+s, PG_TOKENS.height[s], cs.getPropertyValue('--_pg-h').trim()],
       ['--progress-gap-'+s, PG_TOKENS.gap[s], cs.gap],
       ['--progress-font-size-'+s, PG_TOKENS.fs[s], cs.fontSize],
       ['--progress-label-width-'+s, PG_TOKENS.labelW[s], cs.getPropertyValue('--_pg-label-w').trim()||'—'],

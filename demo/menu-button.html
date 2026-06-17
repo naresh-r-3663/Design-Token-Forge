@@ -587,7 +587,7 @@
     var cs=getComputedStyle(hb),s=curS,tg=STRUCT_TOKEN[curStruct]||'brand';
     var isN=curRole==='neutral';
     var rows=[
-      ['--menu-btn-height-'+s, MB_TOKENS.height[s], cs.height],
+      ['--menu-btn-height-'+s, MB_TOKENS.height[s], cs.getPropertyValue('--_mb-height').trim()],
       [curRounded?'--menu-btn-radius-rounded':'--menu-btn-radius-'+s, curRounded?'--radius-full':MB_TOKENS.radius[s], cs.borderRadius],
       ['--menu-btn-padding-x-'+s, MB_TOKENS.px[s], cs.paddingInlineStart],
       ['--menu-btn-font-size-'+s, MB_TOKENS.fs[s], cs.fontSize],

@@ -640,7 +640,7 @@
     var cs=getComputedStyle(hb),s=curS,tg=STRUCT_TOKEN[curStruct]||'brand';
     var isN=curRole==='neutral';
     var rows=[
-      ['--split-btn-height-'+s, SB_TOKENS.height[s], cs.height],
+      ['--split-btn-height-'+s, SB_TOKENS.height[s], cs.getPropertyValue('--_sb-height').trim()],
       [curRounded?'--split-btn-radius-rounded':'--split-btn-radius-'+s, curRounded?'--btn-radius-rounded':SB_TOKENS.radius[s], cs.borderRadius],
       ['--split-btn-action-padding-x-'+s, SB_TOKENS.actionPx[s], ''],
       ['--split-btn-trigger-padding-x-'+s, SB_TOKENS.triggerPx[s], ''],
