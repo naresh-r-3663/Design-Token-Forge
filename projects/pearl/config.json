@@ -6,11 +6,11 @@
   "created": "2026-05-16",
   "schemaVersion": 2,
   "paletteKeys": {
-    "brand": "#FD1277",
+    "brand": "#D20C68",
     "danger": "#D61D20",
-    "warning": "#A66208",
-    "info": "#0E7CB9",
-    "success": "#0B8D28",
+    "warning": "#A06604",
+    "info": "#1879BF",
+    "success": "#1E8D00",
     "greyscale": "#747474",
     "desaturated": "#71747C"
   },
@@ -76,10 +76,10 @@
     }
   },
   "latestVersion": {
-    "version": "v0.0.39",
-    "name": "Jun19 15:56",
+    "version": "v0.0.40",
+    "name": "Jun22 11:01",
     "description": "",
-    "savedAt": "2026-06-19T10:26:10.395Z",
+    "savedAt": "2026-06-22T05:31:38.856Z",
     "savedBy": "sridhar-ravi-2917"
   },
   "t1Picks": {
