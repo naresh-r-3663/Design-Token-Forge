@@ -1,0 +1,50 @@
+{
+  "name": "@design-token-forge/slyte",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Slyte (Zoho Lyte) wrapper components for the Design Token Forge CSS design system",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./dtf-button": "./src/dtf-button.js",
+    "./dtf-icon-button": "./src/dtf-icon-button.js",
+    "./dtf-split-button": "./src/dtf-split-button.js",
+    "./dtf-menu-button": "./src/dtf-menu-button.js",
+    "./dtf-toggle": "./src/dtf-toggle.js",
+    "./dtf-checkbox": "./src/dtf-checkbox.js",
+    "./dtf-radio": "./src/dtf-radio.js",
+    "./dtf-input": "./src/dtf-input.js",
+    "./dtf-textarea": "./src/dtf-textarea.js",
+    "./dtf-select": "./src/dtf-select.js",
+    "./dtf-slider": "./src/dtf-slider.js",
+    "./dtf-datepicker": "./src/dtf-datepicker.js",
+    "./dtf-file-upload": "./src/dtf-file-upload.js",
+    "./dtf-avatar": "./src/dtf-avatar.js",
+    "./dtf-badge": "./src/dtf-badge.js",
+    "./dtf-tooltip": "./src/dtf-tooltip.js",
+    "./dtf-alert": "./src/dtf-alert.js",
+    "./dtf-toast": "./src/dtf-toast.js",
+    "./dtf-progress-bar": "./src/dtf-progress-bar.js",
+    "./dtf-progress-ring": "./src/dtf-progress-ring.js",
+    "./dtf-spinner": "./src/dtf-spinner.js",
+    "./dtf-skeleton": "./src/dtf-skeleton.js",
+    "./dtf-kbd": "./src/dtf-kbd.js",
+    "./dtf-card": "./src/dtf-card.js",
+    "./dtf-divider": "./src/dtf-divider.js"
+  },
+  "files": ["src/"],
+  "sideEffects": false,
+  "keywords": ["design-tokens", "slyte", "lyte", "zoho", "design-system", "web-components"],
+  "peerDependencies": {
+    "@slyte/component": ">=1",
+    "@slyte/core": ">=1",
+    "@design-token-forge/tokens": "^0.1.0",
+    "@design-token-forge/components": "^0.1.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sridhar-ravi-2917/Design-Token-Forge"
+  }
+}

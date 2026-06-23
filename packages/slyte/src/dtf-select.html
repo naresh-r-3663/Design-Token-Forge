@@ -1,0 +1,11 @@
+<template tag-name="dtf-select">
+  <div class="select" data-size="{{size}}" data-variant="{{variant}}">
+    <% if (label) { %>
+    <label class="select__label">{{label}}</label>
+    <% } %>
+    <select class="select__control">
+      <lyte-yield yield-name="yield"></lyte-yield>
+    </select>
+    <span class="select__chevron" aria-hidden="true"></span>
+  </div>
+</template>

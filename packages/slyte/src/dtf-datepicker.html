@@ -1,0 +1,8 @@
+<template tag-name="dtf-datepicker">
+  <div class="datepicker" data-size="{{size}}" data-mode="{{mode}}">
+    <% if (label) { %>
+    <label class="datepicker__label">{{label}}</label>
+    <% } %>
+    <input class="datepicker__input" type="text" placeholder="{{placeholder}}" readonly oninput="{{action('onChange')}}" />
+  </div>
+</template>

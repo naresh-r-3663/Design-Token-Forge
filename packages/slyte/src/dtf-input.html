@@ -1,0 +1,13 @@
+<template tag-name="dtf-input">
+  <div class="input" data-size="{{size}}" data-variant="{{variant}}">
+    <% if (label) { %>
+    <label class="input__label">{{label}}</label>
+    <% } %>
+    <input
+      class="input__control"
+      type="{{type}}"
+      placeholder="{{placeholder}}"
+      value="{{value}}"
+    />
+  </div>
+</template>

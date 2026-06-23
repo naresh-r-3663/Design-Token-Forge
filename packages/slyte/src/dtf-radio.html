@@ -1,0 +1,15 @@
+<template tag-name="dtf-radio">
+  <label class="radio" data-role="{{colorRole}}" data-size="{{size}}">
+    <input
+      class="radio__input"
+      type="radio"
+      name="{{name}}"
+      value="{{value}}"
+      oninput="{{action('onChange')}}"
+    />
+    <span class="radio__mark" aria-hidden="true"></span>
+    <% if (label) { %>
+    <span class="radio__label">{{label}}</span>
+    <% } %>
+  </label>
+</template>

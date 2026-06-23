@@ -1,0 +1,12 @@
+<template tag-name="dtf-file-upload">
+  <div class="file-upload" data-size="{{size}}" data-mode="{{mode}}">
+    <lyte-yield yield-name="yield"></lyte-yield>
+    <input
+      class="file-upload__input"
+      type="file"
+      accept="{{accept}}"
+      style="display:none"
+      onchange="{{action('onFiles')}}"
+    />
+  </div>
+</template>

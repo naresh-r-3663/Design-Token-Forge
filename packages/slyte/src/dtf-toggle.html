@@ -1,0 +1,14 @@
+<template tag-name="dtf-toggle">
+  <label class="switch" data-role="{{colorRole}}" data-size="{{size}}">
+    <input
+      class="switch__input"
+      type="checkbox"
+      role="switch"
+      oninput="{{action('onChange')}}"
+    />
+    <span class="switch__track" aria-hidden="true"></span>
+    <% if (label) { %>
+    <span class="switch__label">{{label}}</span>
+    <% } %>
+  </label>
+</template>

@@ -1,0 +1,8 @@
+<template tag-name="dtf-textarea">
+  <div class="textarea" data-size="{{size}}" data-variant="{{variant}}">
+    <% if (label) { %>
+    <label class="textarea__label">{{label}}</label>
+    <% } %>
+    <textarea class="textarea__control" placeholder="{{placeholder}}">{{value}}</textarea>
+  </div>
+</template>

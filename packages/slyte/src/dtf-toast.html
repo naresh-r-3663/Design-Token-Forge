@@ -1,0 +1,18 @@
+<template tag-name="dtf-toast">
+  <div class="toast" data-role="{{colorRole}}" role="{{colorRole === 'danger' ? 'alert' : 'status'}}">
+    <% if (title) { %>
+    <header class="toast__header">{{title}}</header>
+    <% } %>
+    <div class="toast__body">
+      <lyte-yield yield-name="yield"></lyte-yield>
+    </div>
+    <div class="toast__actions">
+      <% if (actionLabel) { %>
+      <button class="toast__action" type="button" onclick="{{action('onAction')}}">{{actionLabel}}</button>
+      <% } %>
+      <% if (!persistent) { %>
+      <button class="toast__dismiss" type="button" aria-label="Dismiss" onclick="{{action('onDismiss')}}"></button>
+      <% } %>
+    </div>
+  </div>
+</template>

@@ -1,0 +1,16 @@
+<template tag-name="dtf-slider">
+  <div class="slider" data-role="{{colorRole}}" data-size="{{size}}">
+    <% if (label) { %>
+    <label class="slider__label">{{label}}</label>
+    <% } %>
+    <input
+      class="slider__input"
+      type="range"
+      min="{{min}}"
+      max="{{max}}"
+      step="{{step}}"
+      value="{{value}}"
+      oninput="{{action('onInput')}}"
+    />
+  </div>
+</template>

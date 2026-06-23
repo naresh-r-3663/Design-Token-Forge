@@ -146,6 +146,7 @@ Each phase has a **skill** that guides the AI through every step. You (the desig
 ### Tasks — Vue/Svelte (stretch)
 - [ ] **4.10** `packages/vue/` — Vue 3 wrappers
 - [ ] **4.11** `packages/svelte/` — Svelte wrappers
+- [x] **4.12** `packages/slyte/` — Slyte (Zoho Lyte) wrappers — 25 components generated from spec
 
 **Done when:** React team can `npm install @design-token-forge/react` and use typed components. Tailwind team can add DTF as a preset.
 

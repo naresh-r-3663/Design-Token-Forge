@@ -1,0 +1,10 @@
+<template tag-name="dtf-progress-bar">
+  <div class="progress-bar" data-role="{{colorRole}}" data-size="{{size}}" role="progressbar" aria-valuenow="{{value}}" aria-label="{{label}}">
+    <% if (!indeterminate) { %>
+    <div class="progress-bar__fill" style="width:{{value}}%"></div>
+    <% } %>
+    <% if (buffer) { %>
+    <div class="progress-bar__buffer" style="width:{{buffer}}%" aria-hidden="true"></div>
+    <% } %>
+  </div>
+</template>

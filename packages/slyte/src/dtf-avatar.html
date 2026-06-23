@@ -1,0 +1,12 @@
+<template tag-name="dtf-avatar">
+  <div class="avatar" data-size="{{size}}" data-status="{{status}}">
+    <% if (src) { %>
+    <img class="avatar__img" src="{{src}}" alt="{{alt}}" />
+    <% } else { %>
+    <span class="avatar__initials" aria-hidden="true">{{initials}}</span>
+    <% } %>
+    <% if (badgeCount) { %>
+    <span class="avatar__badge">{{badgeCount}}</span>
+    <% } %>
+  </div>
+</template>

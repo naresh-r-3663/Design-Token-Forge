@@ -1,0 +1,11 @@
+<template tag-name="dtf-split-button">
+  <div class="split-btn" data-variant="{{variant}}" data-role="{{colorRole}}" data-size="{{size}}">
+    <button class="split-btn__action" type="button" onclick="{{action('onAction')}}">
+      <lyte-yield yield-name="icon"></lyte-yield>
+      <lyte-yield yield-name="label"></lyte-yield>
+    </button>
+    <button class="split-btn__trigger" type="button" aria-label="{{menuLabel}}" aria-haspopup="menu" onclick="{{action('onMenu')}}">
+      <span class="split-btn__caret" aria-hidden="true"></span>
+    </button>
+  </div>
+</template>

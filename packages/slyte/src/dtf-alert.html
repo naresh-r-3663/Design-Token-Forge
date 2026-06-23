@@ -1,0 +1,13 @@
+<template tag-name="dtf-alert">
+  <div class="alert" data-role="{{colorRole}}" data-variant="{{variant}}" data-accent="{{accent}}" role="{{colorRole === 'danger' ? 'alert' : 'status'}}">
+    <% if (title) { %>
+    <header class="alert__header">{{title}}</header>
+    <% } %>
+    <div class="alert__body">
+      <lyte-yield yield-name="yield"></lyte-yield>
+    </div>
+    <% if (dismissible) { %>
+    <button class="alert__dismiss" type="button" aria-label="Dismiss" onclick="{{action('onDismiss')}}"></button>
+    <% } %>
+  </div>
+</template>

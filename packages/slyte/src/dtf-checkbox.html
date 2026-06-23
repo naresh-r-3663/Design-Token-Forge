@@ -1,0 +1,13 @@
+<template tag-name="dtf-checkbox">
+  <label class="checkbox" data-role="{{colorRole}}" data-size="{{size}}">
+    <input
+      class="checkbox__input"
+      type="checkbox"
+      oninput="{{action('onChange')}}"
+    />
+    <span class="checkbox__box" aria-hidden="true"></span>
+    <% if (label) { %>
+    <span class="checkbox__label">{{label}}</span>
+    <% } %>
+  </label>
+</template>
