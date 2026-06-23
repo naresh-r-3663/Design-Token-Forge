@@ -24,6 +24,10 @@
     "test:demo-qc:ci": "mkdir -p artifacts/demo-qc && PLAYWRIGHT_JSON_OUTPUT_DIR=artifacts/demo-qc PLAYWRIGHT_JSON_OUTPUT_NAME=results.json playwright test tests/visual/components.spec.js tests/visual/demo-logical.spec.js tests/visual/demo-consistency.spec.js --reporter=line,json",
     "test:demo-qc:report": "node scripts/summarize-demo-qc.cjs artifacts/demo-qc/results.json artifacts/demo-qc/summary.md",
     "build:react": "pnpm --filter @design-token-forge/react build",
+    "export:dtcg": "node scripts/export-dtcg.cjs",
+    "export:tailwind": "node scripts/export-tailwind.cjs",
+    "export:style-dictionary": "node scripts/export-style-dictionary.cjs",
+    "export:all": "node scripts/export-dtcg.cjs && node scripts/export-tailwind.cjs && node scripts/export-style-dictionary.cjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

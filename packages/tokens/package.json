@@ -10,11 +10,19 @@
     "./primitives": "./dist/primitives.css",
     "./semantic": "./dist/semantic.css",
     "./surfaces": "./dist/surfaces.css",
-    "./extras": "./dist/extras.css"
+    "./extras": "./dist/extras.css",
+    "./tailwind-preset": {
+      "import": "./dist/tailwind-preset.mjs",
+      "require": "./dist/tailwind-preset.cjs"
+    },
+    "./tokens.dtcg.json": "./dist/tokens.dtcg.json",
+    "./style-dictionary": "./dist/style-dictionary/tokens.json"
   },
   "files": [
     "dist"
   ],
+  "sideEffects": ["**/*.css"],
+  "keywords": ["design-tokens", "css-variables", "design-system", "w3c-dtcg", "tailwind", "style-dictionary"],
   "scripts": {
     "build": "node build.mjs",
     "prebuild": "rm -rf dist",

@@ -133,6 +133,8 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
+  "sideEffects": false,
+  "keywords": ["design-tokens", "react", "design-system", "css-variables", "components"],
   "license": "MIT",
   "repository": {
     "type": "git",

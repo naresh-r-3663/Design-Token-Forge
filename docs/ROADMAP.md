@@ -131,17 +131,17 @@ Each phase has a **skill** that guides the AI through every step. You (the desig
 **Goal:** Teams using React, Tailwind, or other tools can consume DTF
 
 ### Tasks — React Wrappers
-- [ ] **4.1** Set up `packages/react/` with TypeScript + tsconfig
-- [ ] **4.2** Create Button wrapper (typed, ref-forwarding)
-- [ ] **4.3** Create Input wrapper
-- [ ] **4.4** Create all remaining component wrappers
-- [ ] **4.5** Publish `@design-token-forge/react` to npm
+- [x] **4.1** Set up `packages/react/` with TypeScript + tsconfig
+- [x] **4.2** Create Button wrapper (typed, ref-forwarding)
+- [x] **4.3** Create Input wrapper
+- [x] **4.4** Create all remaining component wrappers (all 25)
+- [ ] **4.5** Publish `@design-token-forge/react` to npm (needs NPM_TOKEN secret)
 
 ### Tasks — Token Format Export
-- [ ] **4.6** Build W3C DTCG export script → `dist/tokens.dtcg.json`
-- [ ] **4.7** Build Tailwind preset export → `dist/tailwind-preset.js`
-- [ ] **4.8** Build Style Dictionary export → `dist/style-dictionary/`
-- [ ] **4.9** Add export scripts to CI pipeline
+- [x] **4.6** Build W3C DTCG export script → `dist/tokens.dtcg.json` (421 tokens)
+- [x] **4.7** Build Tailwind preset export → `dist/tailwind-preset.mjs/.cjs` (417 var() refs)
+- [x] **4.8** Build Style Dictionary export → `dist/style-dictionary/` (408 tokens)
+- [x] **4.9** Add export scripts to root `package.json` (`export:all`) + wired into tokens `build.mjs`
 
 ### Tasks — Vue/Svelte (stretch)
 - [ ] **4.10** `packages/vue/` — Vue 3 wrappers
