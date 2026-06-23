@@ -82,7 +82,16 @@
           <!-- Calendar injected by JS -->
         </div>
         <div class="hero-inspector" id="heroInspector"><div class="inspector-title">Resolved Tokens</div></div>
-      </div>
+              <div class="fw-snippet-code" data-panel="slyte">import { DtfDatepicker } from '@design-token-forge/slyte';
+
+&lt;dtf-datepicker
+  lt-prop-label="Start date"
+  lt-prop-placeholder="Pick a date"
+  lt-prop-size="base"
+  lt-prop-mode="popup"
+  on-change="{{method('onDate')}}"&gt;
+&lt;/dtf-datepicker&gt;</div>
+</div>
     </div>
   </section>
 
@@ -231,6 +240,7 @@
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>export function DatePicker({ value, month, year, size = 'base', onSelect }) {
   const [current, setCurrent] = useState({ month, year });

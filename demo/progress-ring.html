@@ -141,7 +141,14 @@
         <div class="hero-inspector" id="heroInspector">
           <div class="inspector-title">Resolved Tokens</div>
         </div>
-      </div>
+              <div class="fw-snippet-code" data-panel="slyte">import { DtfProgressRing } from '@design-token-forge/slyte';
+
+&lt;!-- Determinate --&gt;
+&lt;dtf-progress-ring lt-prop-value="72" lt-prop-color-role="brand" lt-prop-size="base"&gt;&lt;/dtf-progress-ring&gt;
+
+&lt;!-- Indeterminate --&gt;
+&lt;dtf-progress-ring lt-prop-indeterminate="true" lt-prop-color-role="brand"&gt;&lt;/dtf-progress-ring&gt;</div>
+</div>
     </div>
   </section>
 
@@ -249,6 +256,7 @@
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue"   type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html"  type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css"   type="button">CSS Tokens</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;div className="progress-ring" data-size={size} data-role={role}
      data-variant={variant !== 'filled' ? variant : undefined}

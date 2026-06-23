@@ -123,7 +123,17 @@
           </div>
         </div>
         <div class="hero-inspector" id="heroInspector"><div class="inspector-title">Resolved Tokens</div></div>
-      </div>
+              <div class="fw-snippet-code" data-panel="slyte">import { DtfSplitButton } from '@design-token-forge/slyte';
+
+&lt;dtf-split-button
+  lt-prop-variant="filled"
+  lt-prop-color-role="brand"
+  lt-prop-size="base"
+  on-action-click="{{method('onSave')}}"
+  on-menu-click="{{method('openMenu')}}"&gt;
+  &lt;template is="registerYield" yield-name="label"&gt;Save&lt;/template&gt;
+&lt;/dtf-split-button&gt;</div>
+</div>
     </div>
   </section>
 
@@ -377,6 +387,7 @@
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;div
   className="split-btn"

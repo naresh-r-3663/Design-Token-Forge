@@ -338,6 +338,7 @@
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css">CSS Tokens</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <pre class="fw-snippet-code" data-panel="react" data-active><code>&lt;Divider variant="dashed" size="medium" /&gt;
 
@@ -375,6 +376,18 @@
   --div-indent-start: 24px;
   --div-label-color: var(--color-brand-500);
 }</code></pre>
+        <pre class="fw-snippet-code" data-panel="slyte"><code>import { DtfDivider } from '@design-token-forge/slyte';
+
+&lt;!-- Simple horizontal --&gt;
+&lt;dtf-divider&gt;&lt;/dtf-divider&gt;
+
+&lt;!-- Labeled --&gt;
+&lt;dtf-divider lt-prop-variant="dashed"&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;or&lt;/template&gt;
+&lt;/dtf-divider&gt;
+
+&lt;!-- Vertical --&gt;
+&lt;dtf-divider lt-prop-orientation="vertical"&gt;&lt;/dtf-divider&gt;</code></pre>
       </div>
     </div>
   </section>

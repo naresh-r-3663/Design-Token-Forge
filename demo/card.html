@@ -504,6 +504,7 @@
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css">CSS Tokens</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <pre class="fw-snippet-code" data-panel="react" data-active><code>{/* Product card with overlay link */}
 &lt;Card variant="raised" size="base"&gt;
@@ -616,6 +617,14 @@
 .my-grid .card-grid {
   grid-template-columns: repeat(auto-fill, minmax(var(--card-grid-min), 1fr));
 }</code></pre>
+        <pre class="fw-snippet-code" data-panel="slyte"><code>import { DtfCard } from '@design-token-forge/slyte';
+
+&lt;dtf-card lt-prop-variant="elevated" lt-prop-size="base" lt-prop-rounded="true"&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;
+    &lt;h3&gt;Card title&lt;/h3&gt;
+    &lt;p&gt;Card body content goes here.&lt;/p&gt;
+  &lt;/template&gt;
+&lt;/dtf-card&gt;</code></pre>
       </div>
     </div>
   </section>

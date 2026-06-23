@@ -114,7 +114,22 @@
           </button>
         </div>
         <div class="hero-inspector" id="heroInspector"><div class="inspector-title">Resolved Tokens</div></div>
-      </div>
+              <div class="fw-snippet-code" data-panel="slyte">&lt;!-- Register once in your Lyte ComponentRegistry --&gt;
+import { DtfButton } from '@design-token-forge/slyte';
+
+&lt;!-- In any Slyte template --&gt;
+&lt;dtf-button
+  lt-prop-variant="filled"
+  lt-prop-color-role="brand"
+  lt-prop-size="base"&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;Submit&lt;/template&gt;
+&lt;/dtf-button&gt;
+
+&lt;!-- Outlined danger with disabled --&gt;
+&lt;dtf-button lt-prop-variant="outlined" lt-prop-color-role="danger" lt-prop-disabled="true"&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;Delete&lt;/template&gt;
+&lt;/dtf-button&gt;</div>
+</div>
     </div>
   </section>
 
@@ -282,6 +297,7 @@
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;button
   className="btn"

@@ -342,6 +342,7 @@
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css">CSS Tokens</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <pre class="fw-snippet-code" data-panel="react" data-active><code>&lt;Kbd size="base"&gt;Ctrl&lt;/Kbd&gt;
 &lt;KbdCombo size="base"&gt;
@@ -369,6 +370,16 @@
   --kbd-shadow: 0 2px 0 0 var(--surface-base-outline);
   --kbd-radius-base: var(--radius-md);
 }</code></pre>
+        <pre class="fw-snippet-code" data-panel="slyte"><code>import { DtfKbd } from '@design-token-forge/slyte';
+
+Press &lt;dtf-kbd lt-prop-size="base"&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;&#8984;&lt;/template&gt;
+&lt;/dtf-kbd&gt;
++
+&lt;dtf-kbd&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;K&lt;/template&gt;
+&lt;/dtf-kbd&gt;
+to open the command palette.</code></pre>
       </div>
     </div>
   </section>

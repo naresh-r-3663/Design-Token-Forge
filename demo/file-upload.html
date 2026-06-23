@@ -113,7 +113,17 @@
       <div class="hero">
         <div class="hero-preview" id="heroPreview" style="width:100%"></div>
         <div class="hero-inspector" id="heroInspector"></div>
-      </div>
+              <div class="fw-snippet-code" data-panel="slyte">import { DtfFileUpload } from '@design-token-forge/slyte';
+
+&lt;dtf-file-upload
+  lt-prop-size="base"
+  lt-prop-mode="button"
+  lt-prop-accept="image/*"
+  lt-prop-multiple="true"
+  on-files="{{method('onFiles')}}"&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;Upload image&lt;/template&gt;
+&lt;/dtf-file-upload&gt;</div>
+</div>
     </div>
   </section>
 
@@ -226,6 +236,7 @@
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;div
   className="file-upload"
