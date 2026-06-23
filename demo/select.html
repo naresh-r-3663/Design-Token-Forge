@@ -431,13 +431,13 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs" data-tabs="fw-sel">
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
-          <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
+          <button class="fw-snippet-tab" aria-selected="true" data-tab="slyte" type="button">Slyte</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
         </div>
-        <div class="fw-snippet-code" data-panel="react" data-active>&lt;div
+        <div class="fw-snippet-code" data-panel="react">&lt;div
   className="select-group"
   data-variant={variant}   {/* outlined | filled | underline */}
   data-size={size}
@@ -504,7 +504,11 @@
 
 /* A11y */
 --select-ring-width / -offset / -color
---select-min-tap-target        <div class="fw-snippet-code" data-panel="slyte">import { DtfSelect } from '@design-token-forge/slyte';
+--select-min-tap-target        
+</div>
+      </div>
+    </div>
+        <div class="fw-snippet-code" data-panel="slyte" data-active>import { DtfSelect } from '@design-token-forge/slyte';
 
 &lt;dtf-select lt-prop-label="Country" lt-prop-size="base"&gt;
   &lt;template is="registerYield" yield-name="yield"&gt;
@@ -513,9 +517,6 @@
     &lt;option value="uk"&gt;United Kingdom&lt;/option&gt;
   &lt;/template&gt;
 &lt;/dtf-select&gt;</div>
-</div>
-      </div>
-    </div>
   </section>
 
 </main>

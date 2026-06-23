@@ -228,13 +228,13 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs" data-tabs="fw-dp">
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
-          <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
+          <button class="fw-snippet-tab" aria-selected="true" data-tab="slyte" type="button">Slyte</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
         </div>
-        <div class="fw-snippet-code" data-panel="react" data-active>export function DatePicker({ value, month, year, size = 'base', onSelect }) {
+        <div class="fw-snippet-code" data-panel="react">export function DatePicker({ value, month, year, size = 'base', onSelect }) {
   const [current, setCurrent] = useState({ month, year });
   const days = useMemo(() =&gt; buildCalendar(current.month, current.year), [current]);
   const today = new Date();
@@ -369,7 +369,11 @@
 
 /* ── A11y ── */
 --datepicker-focus-outline-width / -color / -offset
---datepicker-min-tap-target        <div class="fw-snippet-code" data-panel="slyte">import { DtfDatepicker } from '@design-token-forge/slyte';
+--datepicker-min-tap-target        
+</div>
+      </div>
+    </div>
+        <div class="fw-snippet-code" data-panel="slyte" data-active>import { DtfDatepicker } from '@design-token-forge/slyte';
 
 &lt;dtf-datepicker
   lt-prop-label="Start date"
@@ -378,9 +382,6 @@
   lt-prop-mode="popup"
   on-change="{{method('onDate')}}"&gt;
 &lt;/dtf-datepicker&gt;</div>
-</div>
-      </div>
-    </div>
   </section>
 
 </main>

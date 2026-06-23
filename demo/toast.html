@@ -196,13 +196,13 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs">
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
-          <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
+          <button class="fw-snippet-tab" aria-selected="true" data-tab="slyte" type="button">Slyte</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
         </div>
-        <div class="fw-snippet-code" data-panel="react" data-active>&lt;div className="toast-container" data-position={position}&gt;
+        <div class="fw-snippet-code" data-panel="react">&lt;div className="toast-container" data-position={position}&gt;
   {toasts.map(t =&gt; (
     &lt;div
       key={t.id}
@@ -314,7 +314,11 @@
 --toast-disabled-opacity
 
 /* ── A11y ── */
---toast-focus-outline-width / -color        <div class="fw-snippet-code" data-panel="slyte">import { DtfToast } from '@design-token-forge/slyte';
+--toast-focus-outline-width / -color        
+</div>
+      </div>
+    </div>
+        <div class="fw-snippet-code" data-panel="slyte" data-active>import { DtfToast } from '@design-token-forge/slyte';
 
 &lt;dtf-toast
   lt-prop-color-role="brand"
@@ -324,9 +328,6 @@
   on-dismiss="{{method('onDismiss')}}"&gt;
   &lt;template is="registerYield" yield-name="yield"&gt;A new version is ready.&lt;/template&gt;
 &lt;/dtf-toast&gt;</div>
-</div>
-      </div>
-    </div>
   </section>
 
 </main>

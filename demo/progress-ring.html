@@ -246,13 +246,13 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs" data-tabs="fw-ring">
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
-          <button class="fw-snippet-tab" aria-selected="true"  data-tab="react" type="button">React</button>
+          <button class="fw-snippet-tab" aria-selected="true" data-tab="slyte" type="button">Slyte</button>
+          <button class="fw-snippet-tab" aria-selected="false"  data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue"   type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html"  type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css"   type="button">CSS Tokens</button>
         </div>
-        <div class="fw-snippet-code" data-panel="react" data-active>&lt;div className="progress-ring" data-size={size} data-role={role}
+        <div class="fw-snippet-code" data-panel="react">&lt;div className="progress-ring" data-size={size} data-role={role}
      data-variant={variant !== 'filled' ? variant : undefined}
      data-indeterminate={indeterminate || undefined}
      data-disabled={disabled || undefined}
@@ -331,16 +331,17 @@
 --ring-indeterminate-duration / -easing / -enter-duration
 
 /* ── A11y ── */
---ring-focus-outline-width / -color / -offset        <div class="fw-snippet-code" data-panel="slyte">import { DtfProgressRing } from '@design-token-forge/slyte';
+--ring-focus-outline-width / -color / -offset        
+</div>
+      </div>
+    </div>
+        <div class="fw-snippet-code" data-panel="slyte" data-active>import { DtfProgressRing } from '@design-token-forge/slyte';
 
 &lt;!-- Determinate --&gt;
 &lt;dtf-progress-ring lt-prop-value="72" lt-prop-color-role="brand" lt-prop-size="base"&gt;&lt;/dtf-progress-ring&gt;
 
 &lt;!-- Indeterminate --&gt;
 &lt;dtf-progress-ring lt-prop-indeterminate="true" lt-prop-color-role="brand"&gt;&lt;/dtf-progress-ring&gt;</div>
-</div>
-      </div>
-    </div>
   </section>
 
 </main>

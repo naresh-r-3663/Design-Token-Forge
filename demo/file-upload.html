@@ -223,13 +223,13 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs">
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
-          <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
+          <button class="fw-snippet-tab" aria-selected="true" data-tab="slyte" type="button">Slyte</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
         </div>
-        <div class="fw-snippet-code" data-panel="react" data-active>&lt;div
+        <div class="fw-snippet-code" data-panel="react">&lt;div
   className="file-upload"
   data-variant={variant}        {/* outline | filled */}
   data-mode={mode}              {/* dropzone | button */}
@@ -338,7 +338,11 @@
 
 /* ── A11y ── */
 --file-upload-focus-outline-width / -color / -offset
---file-upload-min-tap-target        <div class="fw-snippet-code" data-panel="slyte">import { DtfFileUpload } from '@design-token-forge/slyte';
+--file-upload-min-tap-target        
+</div>
+      </div>
+    </div>
+        <div class="fw-snippet-code" data-panel="slyte" data-active>import { DtfFileUpload } from '@design-token-forge/slyte';
 
 &lt;dtf-file-upload
   lt-prop-size="base"
@@ -348,9 +352,6 @@
   on-files="{{method('onFiles')}}"&gt;
   &lt;template is="registerYield" yield-name="yield"&gt;Upload image&lt;/template&gt;
 &lt;/dtf-file-upload&gt;</div>
-</div>
-      </div>
-    </div>
   </section>
 
   <!-- ─── 12. CONTEXT PLAYGROUND ──────────────────────── -->

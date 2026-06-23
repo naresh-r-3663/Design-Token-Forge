@@ -338,13 +338,13 @@
     <div class="section-body">
       <div class="fw-snippet">
         <div class="fw-snippet-tabs">
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
-          <button class="fw-snippet-tab" aria-selected="true" data-tab="react">React</button>
+          <button class="fw-snippet-tab" aria-selected="true" data-tab="slyte" type="button">Slyte</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="react">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css">CSS Tokens</button>
         </div>
-        <pre class="fw-snippet-code" data-panel="react" data-active><code>&lt;Skeleton variant="text" size="base" /&gt;
+        <pre class="fw-snippet-code" data-panel="react"><code>&lt;Skeleton variant="text" size="base" /&gt;
 &lt;Skeleton variant="circle" size="large" /&gt;
 &lt;SkeletonGroup&gt;
   &lt;Skeleton variant="text" /&gt;
@@ -370,13 +370,14 @@
   --skel-animation-duration: 2s;
   --skel-radius-text: var(--radius-md);
 }</code></pre>
-        <pre class="fw-snippet-code" data-panel="slyte"><code>import { DtfSkeleton } from '@design-token-forge/slyte';
+        <pre class="fw-snippet-code" data-panel="slyte" data-active><code>import { DtfSkeleton } from '@design-token-forge/slyte';
 
 &lt;!-- Text line --&gt;
 &lt;dtf-skeleton lt-prop-variant="text" lt-prop-width="200px" lt-prop-height="16px"&gt;&lt;/dtf-skeleton&gt;
 
 &lt;!-- Avatar circle --&gt;
 &lt;dtf-skeleton lt-prop-variant="circle" lt-prop-width="40px" lt-prop-height="40px"&gt;&lt;/dtf-skeleton&gt;</code></pre>
+        
               </div>
     </div>
   </section>

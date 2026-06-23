@@ -278,13 +278,13 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs" data-tabs="fw-ib">
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
-          <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
+          <button class="fw-snippet-tab" aria-selected="true" data-tab="slyte" type="button">Slyte</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
         </div>
-        <div class="fw-snippet-code" data-panel="react" data-active>&lt;button
+        <div class="fw-snippet-code" data-panel="react">&lt;button
   className="icon-btn"
   data-variant={variant}   {/* filled | outlined | soft | ghost */}
   data-role={role}          {/* brand | danger | warning | info | success | neutral */}
@@ -336,7 +336,11 @@
 
 /* A11y */
 --icon-btn-focus-outline-width / -offset / -color
---icon-btn-ring-width / -color        <div class="fw-snippet-code" data-panel="slyte">import { DtfIconButton } from '@design-token-forge/slyte';
+--icon-btn-ring-width / -color        
+</div>
+      </div>
+    </div>
+        <div class="fw-snippet-code" data-panel="slyte" data-active>import { DtfIconButton } from '@design-token-forge/slyte';
 
 &lt;dtf-icon-button
   lt-prop-color-role="brand"
@@ -348,9 +352,6 @@
     &lt;/svg&gt;
   &lt;/template&gt;
 &lt;/dtf-icon-button&gt;</div>
-</div>
-      </div>
-    </div>
   </section>
 
 </main>

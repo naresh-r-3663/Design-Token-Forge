@@ -565,13 +565,13 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs" data-tabs="fw-inp">
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
-          <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
+          <button class="fw-snippet-tab" aria-selected="true" data-tab="slyte" type="button">Slyte</button>
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
         </div>
-        <div class="fw-snippet-code" data-panel="react" data-active>&lt;div
+        <div class="fw-snippet-code" data-panel="react">&lt;div
   className="input-group"
   data-variant={variant}   {/* outline | filled | underline */}
   data-size={size}
@@ -643,7 +643,11 @@
 /* A11y */
 --input-focus-outline-width / -offset / -color
 --input-ring-width / -offset / -color
---input-min-tap-target        <div class="fw-snippet-code" data-panel="slyte">import { DtfInput } from '@design-token-forge/slyte';
+--input-min-tap-target        
+</div>
+      </div>
+    </div>
+        <div class="fw-snippet-code" data-panel="slyte" data-active>import { DtfInput } from '@design-token-forge/slyte';
 
 &lt;dtf-input
   lt-prop-label="Email"
@@ -655,9 +659,6 @@
 
 &lt;!-- Error state --&gt;
 &lt;dtf-input lt-prop-label="Username" lt-prop-error="true" lt-prop-placeholder="Enter username"&gt;&lt;/dtf-input&gt;</div>
-</div>
-      </div>
-    </div>
   </section>
 
 </main>
