@@ -112,14 +112,7 @@
         <div class="hero-inspector" id="inspector">
           <div class="inspector-title">Resolved Tokens</div>
         </div>
-              <div class="fw-snippet-code" data-panel="slyte">import { DtfTextarea } from '@design-token-forge/slyte';
-
-&lt;dtf-textarea
-  lt-prop-label="Description"
-  lt-prop-placeholder="Enter description..."
-  lt-prop-size="base"
-  lt-prop-variant="outlined"&gt;
-&lt;/dtf-textarea&gt;</div>
+              
 </div>
     </div>
   </section>
@@ -587,11 +580,11 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs" data-tabs="fw-ta">
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
           <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;div
   className="textarea-group"
@@ -656,7 +649,15 @@
 
 /* A11y */
 --textarea-ring-width / -offset / -color
---textarea-min-tap-target</div>
+--textarea-min-tap-target        <div class="fw-snippet-code" data-panel="slyte">import { DtfTextarea } from '@design-token-forge/slyte';
+
+&lt;dtf-textarea
+  lt-prop-label="Description"
+  lt-prop-placeholder="Enter description..."
+  lt-prop-size="base"
+  lt-prop-variant="outlined"&gt;
+&lt;/dtf-textarea&gt;</div>
+</div>
       </div>
     </div>
   </section>

@@ -110,6 +110,7 @@ pre.code-body .tag{color:var(--danger-content-default,#dc2626)}
     <span class="fw-badge">Solid</span>
     <span class="fw-badge">Web Components</span>
     <span class="fw-badge">Vanilla JS</span>
+    <span class="fw-badge">Slyte (Zoho)</span>
     <span class="fw-badge">Zero Runtime</span>
   </div>
 </header>
@@ -254,12 +255,100 @@ pre.code-body .tag{color:var(--danger-content-default,#dc2626)}
 
     <!-- Tabs -->
     <div class="fw-tabs" role="tablist" aria-label="Framework selector" id="fwTabs">
+      <button class="fw-tab" role="tab" aria-selected="false" data-fw="slyte"   id="tab-slyte"   aria-controls="panel-slyte"   type="button">Slyte</button>
       <button class="fw-tab" role="tab" aria-selected="true"  data-fw="react"   id="tab-react"   aria-controls="panel-react"   type="button">React</button>
       <button class="fw-tab" role="tab" aria-selected="false" data-fw="vue"     id="tab-vue"     aria-controls="panel-vue"     type="button">Vue</button>
       <button class="fw-tab" role="tab" aria-selected="false" data-fw="angular" id="tab-angular" aria-controls="panel-angular" type="button">Angular</button>
       <button class="fw-tab" role="tab" aria-selected="false" data-fw="svelte"  id="tab-svelte"  aria-controls="panel-svelte"  type="button">Svelte</button>
       <button class="fw-tab" role="tab" aria-selected="false" data-fw="solid"   id="tab-solid"   aria-controls="panel-solid"   type="button">Solid</button>
       <button class="fw-tab" role="tab" aria-selected="false" data-fw="wc"      id="tab-wc"      aria-controls="panel-wc"      type="button">Web Components</button>
+    </div>
+
+    <!-- ─── Slyte ─── -->
+    <div class="fw-panel" id="panel-slyte" role="tabpanel" aria-labelledby="tab-slyte">
+      <div class="fw-panel-stack">
+        <h3>Setup — ComponentRegistry</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">Lyte / Slyte</span><button class="code-copy" data-target="slyteCR" type="button">Copy</button></div>
+          <pre class="code-body" id="slyteCR"><span class="cm">// Register all DTF components once in your Lyte app</span>
+<span class="kw">import</span> {
+  DtfButton, DtfInput, DtfSelect, DtfToggle, DtfCheckbox,
+  DtfRadio, DtfTextarea, DtfSlider, DtfAvatar, DtfBadge,
+  DtfTooltip, DtfAlert, DtfToast, DtfProgressBar, DtfProgressRing,
+  DtfSpinner, DtfSkeleton, DtfCard, DtfDivider, DtfKbd,
+  DtfIconButton, DtfMenuButton, DtfSplitButton, DtfDatepicker, DtfFileUpload
+} <span class="kw">from</span> <span class="str">'@design-token-forge/slyte'</span>;
+
+<span class="kw">class</span> <span class="fn">AppRegistry</span> <span class="kw">extends</span> ComponentRegistry {
+  <span class="fn">components</span>() {
+    <span class="kw">return</span> [
+      DtfButton, DtfInput, DtfSelect, DtfToggle, DtfCheckbox,
+      DtfRadio, DtfTextarea, DtfSlider, DtfAvatar, DtfBadge,
+      DtfTooltip, DtfAlert, DtfToast, DtfProgressBar, DtfProgressRing,
+      DtfSpinner, DtfSkeleton, DtfCard, DtfDivider, DtfKbd,
+      DtfIconButton, DtfMenuButton, DtfSplitButton, DtfDatepicker, DtfFileUpload
+    ];
+  }
+}</pre>
+        </div>
+
+        <h3>dtf-button — Button</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">Slyte Template</span><button class="code-copy" data-target="slyteBtn" type="button">Copy</button></div>
+          <pre class="code-body" id="slyteBtn"><span class="cm">&lt;!-- String props via lt-prop-* --&gt;</span>
+&lt;<span class="tag">dtf-button</span>
+  <span class="kw">lt-prop-variant</span>=<span class="str">"filled"</span>
+  <span class="kw">lt-prop-color-role</span>=<span class="str">"brand"</span>
+  <span class="kw">lt-prop-size</span>=<span class="str">"base"</span>&gt;
+  &lt;<span class="tag">template</span> is=<span class="str">"registerYield"</span> yield-name=<span class="str">"yield"</span>&gt;Submit&lt;/<span class="tag">template</span>&gt;
+&lt;/<span class="tag">dtf-button</span>&gt;
+
+<span class="cm">&lt;!-- Outlined danger, disabled --&gt;</span>
+&lt;<span class="tag">dtf-button</span>
+  <span class="kw">lt-prop-variant</span>=<span class="str">"outlined"</span>
+  <span class="kw">lt-prop-color-role</span>=<span class="str">"danger"</span>
+  <span class="kw">lt-prop-disabled</span>=<span class="str">"true"</span>&gt;
+  &lt;<span class="tag">template</span> is=<span class="str">"registerYield"</span> yield-name=<span class="str">"yield"</span>&gt;Delete&lt;/<span class="tag">template</span>&gt;
+&lt;/<span class="tag">dtf-button</span>&gt;</pre>
+        </div>
+
+        <h3>dtf-input — Text Input</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">Slyte Template</span><button class="code-copy" data-target="slyteInp" type="button">Copy</button></div>
+          <pre class="code-body" id="slyteInp">&lt;<span class="tag">dtf-input</span>
+  <span class="kw">lt-prop-label</span>=<span class="str">"Email"</span>
+  <span class="kw">lt-prop-type</span>=<span class="str">"email"</span>
+  <span class="kw">lt-prop-placeholder</span>=<span class="str">"you@example.com"</span>
+  <span class="kw">lt-prop-size</span>=<span class="str">"base"</span>
+  <span class="kw">lt-prop-variant</span>=<span class="str">"outlined"</span>&gt;
+&lt;/<span class="tag">dtf-input</span>&gt;</pre>
+        </div>
+
+        <h3>dtf-toggle — Switch &amp; dtf-checkbox</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">Slyte Template</span><button class="code-copy" data-target="slyteTog" type="button">Copy</button></div>
+          <pre class="code-body" id="slyteTog">&lt;<span class="tag">dtf-toggle</span>
+  <span class="kw">lt-prop-label</span>=<span class="str">"Dark mode"</span>
+  <span class="kw">lt-prop-color-role</span>=<span class="str">"brand"</span>
+  <span class="kw">lt-prop-checked</span>=<span class="str">"true"</span>
+  <span class="kw">on-change</span>=<span class="str">"{{method('onToggle')}}"</span>&gt;
+&lt;/<span class="tag">dtf-toggle</span>&gt;
+
+&lt;<span class="tag">dtf-checkbox</span>
+  <span class="kw">lt-prop-label</span>=<span class="str">"Accept terms"</span>
+  <span class="kw">lt-prop-color-role</span>=<span class="str">"brand"</span>
+  <span class="kw">on-change</span>=<span class="str">"{{method('onCheck')}}"</span>&gt;
+&lt;/<span class="tag">dtf-checkbox</span>&gt;</pre>
+        </div>
+
+        <div class="sub-note">
+          <strong>Props map to <code>lt-prop-*</code> attributes.</strong>
+          String props (variant, color-role, size) bind directly to <code>data-*</code> on the rendered element.
+          Boolean props (disabled, loading, checked) use <code>toggleAttribute</code> internally.
+          Slot content uses <code>&lt;template is="registerYield" yield-name="yield"&gt;</code>.
+          Events use <code>on-change="{{method('handler')}}"</code> or listen via <code>on()</code>.
+        </div>
+      </div>
     </div>
 
     <!-- ─── React ─── -->

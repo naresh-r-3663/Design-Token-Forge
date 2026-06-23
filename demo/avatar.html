@@ -106,13 +106,7 @@
       <div class="hero">
         <div class="hero-preview" id="heroPreview" style="gap:24px"></div>
         <div class="hero-inspector" id="heroInspector"></div>
-              <div class="fw-snippet-code" data-panel="slyte">import { DtfAvatar } from '@design-token-forge/slyte';
-
-&lt;!-- Image --&gt;
-&lt;dtf-avatar lt-prop-src="/avatar.jpg" lt-prop-alt="Jane Doe" lt-prop-size="base" lt-prop-status="online"&gt;&lt;/dtf-avatar&gt;
-
-&lt;!-- Initials fallback --&gt;
-&lt;dtf-avatar lt-prop-initials="JD" lt-prop-size="base"&gt;&lt;/dtf-avatar&gt;</div>
+              
 </div>
     </div>
   </section>
@@ -224,11 +218,11 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs">
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
           <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;div
   className="avatar"
@@ -314,7 +308,14 @@
 --avatar-disabled-opacity
 
 /* ── A11y ── */
---avatar-focus-outline-width / -color</div>
+--avatar-focus-outline-width / -color        <div class="fw-snippet-code" data-panel="slyte">import { DtfAvatar } from '@design-token-forge/slyte';
+
+&lt;!-- Image --&gt;
+&lt;dtf-avatar lt-prop-src="/avatar.jpg" lt-prop-alt="Jane Doe" lt-prop-size="base" lt-prop-status="online"&gt;&lt;/dtf-avatar&gt;
+
+&lt;!-- Initials fallback --&gt;
+&lt;dtf-avatar lt-prop-initials="JD" lt-prop-size="base"&gt;&lt;/dtf-avatar&gt;</div>
+</div>
       </div>
     </div>
   </section>

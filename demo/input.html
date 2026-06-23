@@ -106,22 +106,7 @@
         <div class="hero-inspector" id="inspector">
           <div class="inspector-title">Resolved Tokens</div>
         </div>
-              <div class="fw-snippet-code" data-panel="slyte">import { DtfInput } from '@design-token-forge/slyte';
-
-&lt;dtf-input
-  lt-prop-label="Email"
-  lt-prop-type="email"
-  lt-prop-placeholder="you@example.com"
-  lt-prop-size="base"
-  lt-prop-variant="outlined"&gt;
-&lt;/dtf-input&gt;
-
-&lt;!-- Error state --&gt;
-&lt;dtf-input
-  lt-prop-label="Username"
-  lt-prop-error="true"
-  lt-prop-placeholder="Enter username"&gt;
-&lt;/dtf-input&gt;</div>
+              
 </div>
     </div>
   </section>
@@ -580,11 +565,11 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs" data-tabs="fw-inp">
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
           <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;div
   className="input-group"
@@ -658,7 +643,19 @@
 /* A11y */
 --input-focus-outline-width / -offset / -color
 --input-ring-width / -offset / -color
---input-min-tap-target</div>
+--input-min-tap-target        <div class="fw-snippet-code" data-panel="slyte">import { DtfInput } from '@design-token-forge/slyte';
+
+&lt;dtf-input
+  lt-prop-label="Email"
+  lt-prop-type="email"
+  lt-prop-placeholder="you@example.com"
+  lt-prop-size="base"
+  lt-prop-variant="outlined"&gt;
+&lt;/dtf-input&gt;
+
+&lt;!-- Error state --&gt;
+&lt;dtf-input lt-prop-label="Username" lt-prop-error="true" lt-prop-placeholder="Enter username"&gt;&lt;/dtf-input&gt;</div>
+</div>
       </div>
     </div>
   </section>

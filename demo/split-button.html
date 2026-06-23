@@ -123,16 +123,7 @@
           </div>
         </div>
         <div class="hero-inspector" id="heroInspector"><div class="inspector-title">Resolved Tokens</div></div>
-              <div class="fw-snippet-code" data-panel="slyte">import { DtfSplitButton } from '@design-token-forge/slyte';
-
-&lt;dtf-split-button
-  lt-prop-variant="filled"
-  lt-prop-color-role="brand"
-  lt-prop-size="base"
-  on-action-click="{{method('onSave')}}"
-  on-menu-click="{{method('openMenu')}}"&gt;
-  &lt;template is="registerYield" yield-name="label"&gt;Save&lt;/template&gt;
-&lt;/dtf-split-button&gt;</div>
+              
 </div>
     </div>
   </section>
@@ -383,11 +374,11 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs" data-tabs="fw-sb">
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
           <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;div
   className="split-btn"
@@ -459,7 +450,18 @@
 
 /* A11y */
 --split-btn-focus-outline-width / -offset / -color
---split-btn-min-tap-target</div>
+--split-btn-min-tap-target        <div class="fw-snippet-code" data-panel="slyte">import { DtfSplitButton } from '@design-token-forge/slyte';
+
+&lt;dtf-split-button
+  lt-prop-variant="filled"
+  lt-prop-color-role="brand"
+  lt-prop-size="base"
+  lt-prop-menu-label="More options"
+  on-action-click="{{method('onSave')}}"
+  on-menu-click="{{method('openMenu')}}"&gt;
+  &lt;template is="registerYield" yield-name="label"&gt;Save&lt;/template&gt;
+&lt;/dtf-split-button&gt;</div>
+</div>
       </div>
     </div>
   </section>

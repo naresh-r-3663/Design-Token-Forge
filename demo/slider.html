@@ -92,16 +92,7 @@
           <!-- Slider injected by JS -->
         </div>
         <div class="hero-inspector" id="heroInspector"><div class="inspector-title">Resolved Tokens</div></div>
-              <div class="fw-snippet-code" data-panel="slyte">import { DtfSlider } from '@design-token-forge/slyte';
-
-&lt;dtf-slider
-  lt-prop-label="Volume"
-  lt-prop-color-role="brand"
-  lt-prop-min="0"
-  lt-prop-max="100"
-  lt-prop-value="40"
-  on-change="{{method('onVolume')}}"&gt;
-&lt;/dtf-slider&gt;</div>
+              
 </div>
     </div>
   </section>
@@ -251,11 +242,11 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs" data-tabs="fw-sl">
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
           <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>export function Slider({ value, min = 0, max = 100, size = 'base', disabled, onChange }) {
   const pct = ((value - min) / (max - min)) * 100;
@@ -359,7 +350,17 @@ const pct = computed(() =&gt; ((props.modelValue - props.min) / (props.max - pro
 
 /* ── A11y ── */
 --slider-focus-outline-width / -color / -offset
---slider-min-tap-target</div>
+--slider-min-tap-target        <div class="fw-snippet-code" data-panel="slyte">import { DtfSlider } from '@design-token-forge/slyte';
+
+&lt;dtf-slider
+  lt-prop-label="Volume"
+  lt-prop-color-role="brand"
+  lt-prop-min="0"
+  lt-prop-max="100"
+  lt-prop-value="40"
+  on-change="{{method('onVolume')}}"&gt;
+&lt;/dtf-slider&gt;</div>
+</div>
       </div>
     </div>
   </section>

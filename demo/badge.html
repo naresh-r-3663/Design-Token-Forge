@@ -107,15 +107,7 @@
       <div class="hero">
         <div class="hero-preview" id="heroPreview" style="gap:12px;flex-wrap:wrap"></div>
         <div class="hero-inspector" id="heroInspector"></div>
-              <div class="fw-snippet-code" data-panel="slyte">import { DtfBadge } from '@design-token-forge/slyte';
-
-&lt;dtf-badge lt-prop-color-role="brand" lt-prop-variant="filled" lt-prop-size="base"&gt;
-  &lt;template is="registerYield" yield-name="yield"&gt;New&lt;/template&gt;
-&lt;/dtf-badge&gt;
-
-&lt;dtf-badge lt-prop-color-role="danger" lt-prop-variant="soft"&gt;
-  &lt;template is="registerYield" yield-name="yield"&gt;3&lt;/template&gt;
-&lt;/dtf-badge&gt;</div>
+              
 </div>
     </div>
   </section>
@@ -220,11 +212,11 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs">
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
           <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;span
   className={`badge${dot ? ' badge--dot' : ''}`}
@@ -307,7 +299,16 @@
 --badge-disabled-opacity
 
 /* ── A11y ── */
---badge-focus-outline-width / -color</div>
+--badge-focus-outline-width / -color        <div class="fw-snippet-code" data-panel="slyte">import { DtfBadge } from '@design-token-forge/slyte';
+
+&lt;dtf-badge lt-prop-color-role="brand" lt-prop-variant="filled" lt-prop-size="base"&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;New&lt;/template&gt;
+&lt;/dtf-badge&gt;
+
+&lt;dtf-badge lt-prop-color-role="danger" lt-prop-variant="soft"&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;3&lt;/template&gt;
+&lt;/dtf-badge&gt;</div>
+</div>
       </div>
     </div>
   </section>

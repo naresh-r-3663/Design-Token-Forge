@@ -98,13 +98,7 @@
       <div class="hero">
         <div class="hero-preview" id="heroPreview" style="padding:56px 24px;justify-content:center"></div>
         <div class="hero-inspector" id="heroInspector"></div>
-              <div class="fw-snippet-code" data-panel="slyte">import { DtfTooltip } from '@design-token-forge/slyte';
-
-&lt;dtf-tooltip lt-prop-content="Save document" lt-prop-placement="top"&gt;
-  &lt;template is="registerYield" yield-name="trigger"&gt;
-    &lt;button class="btn" data-variant="ghost" data-role="brand"&gt;Save&lt;/button&gt;
-  &lt;/template&gt;
-&lt;/dtf-tooltip&gt;</div>
+              
 </div>
     </div>
   </section>
@@ -202,11 +196,11 @@
           <a class="fw-snippet-link" href="frameworks.html">Full guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></a>
         </div>
         <div class="fw-snippet-tabs">
+          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
           <button class="fw-snippet-tab" aria-selected="true" data-tab="react" type="button">React</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="vue" type="button">Vue</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="html" type="button">HTML</button>
           <button class="fw-snippet-tab" aria-selected="false" data-tab="css" type="button">CSS Tokens</button>
-          <button class="fw-snippet-tab" aria-selected="false" data-tab="slyte" type="button">Slyte</button>
         </div>
         <div class="fw-snippet-code" data-panel="react" data-active>&lt;div
   className="tooltip"
@@ -282,7 +276,14 @@
 --tooltip-disabled-opacity
 
 /* ── A11y ── */
---tooltip-z-index / -pointer-events</div>
+--tooltip-z-index / -pointer-events        <div class="fw-snippet-code" data-panel="slyte">import { DtfTooltip } from '@design-token-forge/slyte';
+
+&lt;dtf-tooltip lt-prop-content="Save document" lt-prop-placement="top"&gt;
+  &lt;template is="registerYield" yield-name="trigger"&gt;
+    &lt;button class="btn" data-variant="ghost" data-role="brand"&gt;Save&lt;/button&gt;
+  &lt;/template&gt;
+&lt;/dtf-tooltip&gt;</div>
+</div>
       </div>
     </div>
   </section>
