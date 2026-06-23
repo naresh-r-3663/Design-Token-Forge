@@ -476,6 +476,62 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
+   TRACK LABELS — optional ON/OFF text inside the track rail
+   Activate with data-track-labels on .switch:
+     <button class="switch" data-track-labels aria-checked="false">
+       <span class="switch__track">
+         <span class="switch__track-label switch__track-label--on">ON</span>
+         <span class="switch__track-label switch__track-label--off">OFF</span>
+         <span class="switch__thumb"></span>
+       </span>
+     </button>
+
+   OFF label sits in the right zone (the free space when thumb is left).
+   ON  label sits in the left zone  (the free space when thumb is right).
+   They fade-swap on state change via opacity transition.
+   ════════════════════════════════════════════════════════════════ */
+
+.switch[data-track-labels] .switch__track-label {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  white-space: nowrap;
+  line-height: 1;
+  font-family: var(--switch-label-font-family);
+  /* ~38% of track height: 9px at base (24px), scales with density */
+  font-size: calc(var(--_sw-track-h) * 0.38);
+  font-weight: var(--switch-track-label-font-weight);
+  letter-spacing: var(--switch-track-label-letter-spacing);
+  transition: opacity var(--switch-transition-duration) var(--switch-transition-easing);
+}
+
+/* OFF label — right zone (left edge = inset + thumb-size, right edge = track end) */
+.switch[data-track-labels] .switch__track-label--off {
+  left: calc(var(--_sw-inset) + var(--_sw-thumb-size));
+  right: 1px;
+  color: var(--switch-track-label-color-off);
+  opacity: 1;
+}
+
+/* ON label — left zone (left edge = track start, right edge = thumb left) */
+.switch[data-track-labels] .switch__track-label--on {
+  left: 1px;
+  right: calc(var(--_sw-inset) + var(--_sw-thumb-size));
+  color: var(--switch-track-label-color-on);
+  opacity: 0;
+}
+
+/* Swap on checked — OFF fades out, ON fades in */
+.switch[data-track-labels][aria-checked="true"] .switch__track-label--off { opacity: 0; }
+.switch[data-track-labels][aria-checked="true"] .switch__track-label--on  { opacity: 1; }
+
+/* ════════════════════════════════════════════════════════════════
    FORCED COLORS (Windows High Contrast)
    ════════════════════════════════════════════════════════════════ */
 

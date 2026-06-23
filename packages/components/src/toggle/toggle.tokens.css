@@ -190,8 +190,16 @@
   --switch-thumb-scale-pressed: 1.1;
   --switch-thumb-border-width: 0px;
 
+  /* Track labels — text inside track, activated with [data-track-labels].
+     OFF label: rendered on the right zone (grey track); needs dark text for contrast.
+     ON  label: rendered on the left zone (colored track); on-component white text. */
+  --switch-track-label-color-off: var(--surface-base-ct-default);
+  --switch-track-label-color-on: var(--brand-on-component);
+  --switch-track-label-font-weight: var(--font-weight-bold);
+  --switch-track-label-letter-spacing: 0.03em;
+
   /* ────────────────────────────────────────────────────────────
-     ⚡ MOTION  (9 vars)      ─ 120 cumulative
+     ⚡ MOTION  (9 vars)      ─ 124 cumulative
      ──────────────────────────────────────────────────────────── */
   --switch-transition-property: background-color, border-color, box-shadow, opacity;
   --switch-transition-duration: var(--duration-normal);

@@ -1365,7 +1365,12 @@ var TOGGLE_BLUEPRINT = {
      a circle regardless of whether the track is square or pill. */
   masters: {
     'Switch': {
-      thumbXVar: 'toggle/thumb-inset'
+      thumbXVar: 'toggle/thumb-inset',
+      /* trackLabels: true — adds LabelOn/LabelOff text nodes inside the track
+         (mirrors the CSS [data-track-labels] feature).
+         LabelOff shows "OFF" in the right zone when the thumb is on the left.
+         LabelOn  shows "ON"  in the left  zone when the thumb is on the right. */
+      trackLabels: true
     }
   },
 
@@ -4301,6 +4306,63 @@ async function generateComponentFromBlueprint(blueprint) {
       if (ttThumbXVar) { await tryBindVar(ttThumb, 'x', ttThumbXVar); stats.bindings++; }
       if (ttThumbYVar) { await tryBindVar(ttThumb, 'y', ttThumbYVar); stats.bindings++; }
 
+      /* ── Track text labels — optional ON/OFF text inside the track ──
+         Enabled with masterCfg.trackLabels: true.
+         Mirrors the CSS [data-track-labels] feature.
+
+         Zone layout (base 40×24, inset=2, thumbSize=20):
+           OFF label (right zone): x=23, width=16, centered
+           ON  label (left  zone): x=1,  width=16, centered
+
+         OFF label color: T2 default/content/default (dark on grey — accessible)
+         ON  label color: T3 oncomponent-content/default (white on colored fill)
+
+         Both nodes are added AFTER the thumb so they render on top of it
+         at the track edges where the thumb doesn't overlap them.           */
+      if (masterCfg.trackLabels) {
+        var ttLblInset  = 2;  /* default base inset */
+        var ttLblThumbW = 20; /* default base thumb width */
+        var ttLblFS     = Math.floor(ttH * 0.38); /* ~9px at 24px base — matches CSS calc */
+        var ttLblZoneW  = Math.max(ttW - ttLblInset - ttLblThumbW - 1, 8);
+
+        /* OFF label — right zone (x = inset + thumbSize + 1) */
+        var ttLblOffTxt = figma.createText();
+        ttLblOffTxt.name = 'LabelOff';
+        ttLblOffTxt.fontName = fontNameBold;
+        ttLblOffTxt.characters = 'OFF';
+        ttLblOffTxt.fontSize = Math.max(ttLblFS, 6);
+        ttLblOffTxt.textAutoResize = 'NONE';
+        ttLblOffTxt.textAlignHorizontal = 'CENTER';
+        ttLblOffTxt.textAlignVertical = 'CENTER';
+        ttLblOffTxt.fills = [{ type: 'SOLID', color: COLOR_BODY }];
+        ttLblOffTxt.resize(ttLblZoneW, ttH);
+        ttLblOffTxt.x = ttLblInset + ttLblThumbW + 1;
+        ttLblOffTxt.y = 0;
+        ttMaster.appendChild(ttLblOffTxt);
+        tryBindFill(ttLblOffTxt, t2Vars['default/content/default']);
+        stats.bindings++;
+
+        /* ON label — left zone (x=1, same width, hidden by default) */
+        var ttLblOnTxt = figma.createText();
+        ttLblOnTxt.name = 'LabelOn';
+        ttLblOnTxt.fontName = fontNameBold;
+        ttLblOnTxt.characters = 'ON';
+        ttLblOnTxt.fontSize = Math.max(ttLblFS, 6);
+        ttLblOnTxt.textAutoResize = 'NONE';
+        ttLblOnTxt.textAlignHorizontal = 'CENTER';
+        ttLblOnTxt.textAlignVertical = 'CENTER';
+        ttLblOnTxt.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
+        ttLblOnTxt.resize(ttLblZoneW, ttH);
+        ttLblOnTxt.x = 1;
+        ttLblOnTxt.y = 0;
+        ttLblOnTxt.opacity = 0; /* hidden in master default (Off) state */
+        ttMaster.appendChild(ttLblOnTxt);
+        tryBindFill(ttLblOnTxt, t3Vars['oncomponent-content/default']);
+        stats.bindings++;
+
+        log('Track labels added to master: ' + masterName);
+      }
+
       /* Place into master frame section */
       masterFrame.appendChild(ttMaster);
       ttMaster.x = _masterCursorX;
@@ -5172,6 +5234,21 @@ async function generateComponentFromBlueprint(blueprint) {
                 }
               }
             }
+          }
+
+          /* Track label visibility — only when master has trackLabels: true.
+             Detect On vs Off state from the state name prefix.
+             LabelOn:  opacity=1 for On-* states,  opacity=0 for Off-* states.
+             LabelOff: opacity=0 for On-* states,  opacity=1 for Off-* states.
+             The fills are bound in the master (T2 for off, T3 for on) and
+             automatically resolve to the correct color via the T3 mode applied
+             to varComp — no per-state rebinding needed here. */
+          if (masterCfg && masterCfg.trackLabels) {
+            var isOnState = stateName.indexOf('On') === 0;
+            var ttLblOnNode  = instance.findOne(function(n) { return n.name === 'LabelOn'; });
+            var ttLblOffNode = instance.findOne(function(n) { return n.name === 'LabelOff'; });
+            try { if (ttLblOnNode)  ttLblOnNode.opacity  = isOnState ? 1 : 0; } catch (e) {}
+            try { if (ttLblOffNode) ttLblOffNode.opacity = isOnState ? 0 : 1; } catch (e) {}
           }
           } /* end legacy/wrapper branch */
 
