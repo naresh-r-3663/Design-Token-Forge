@@ -376,18 +376,15 @@
   --div-indent-start: 24px;
   --div-label-color: var(--color-brand-500);
 }</code></pre>
-        <pre class="fw-snippet-code" data-panel="slyte" data-active><code>import { DtfDivider } from '@design-token-forge/slyte';
+        <pre class="fw-snippet-code" data-panel="slyte" data-active><code>import { DtfComponent } from '@design-token-forge/slyte';
 
-&lt;!-- Simple horizontal --&gt;
-&lt;dtf-divider&gt;&lt;/dtf-divider&gt;
-
-&lt;!-- Labeled --&gt;
-&lt;dtf-divider lt-prop-variant="dashed"&gt;
-  &lt;template is="registerYield" yield-name="yield"&gt;or&lt;/template&gt;
-&lt;/dtf-divider&gt;
-
-&lt;!-- Vertical --&gt;
-&lt;dtf-divider lt-prop-orientation="vertical"&gt;&lt;/dtf-divider&gt;</code></pre>
+&lt;dtf-component
+  lt-prop-variant="filled"
+  lt-prop-color-role="brand"
+  lt-prop-size="base"&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;Content&lt;/template&gt;
+&lt;/dtf-component&gt;</code></pre>
+        
         
               </div>
     </div>

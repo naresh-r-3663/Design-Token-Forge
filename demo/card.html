@@ -617,14 +617,15 @@
 .my-grid .card-grid {
   grid-template-columns: repeat(auto-fill, minmax(var(--card-grid-min), 1fr));
 }</code></pre>
-        <pre class="fw-snippet-code" data-panel="slyte" data-active><code>import { DtfCard } from '@design-token-forge/slyte';
+        <pre class="fw-snippet-code" data-panel="slyte" data-active><code>import { DtfComponent } from '@design-token-forge/slyte';
 
-&lt;dtf-card lt-prop-variant="elevated" lt-prop-size="base" lt-prop-rounded="true"&gt;
-  &lt;template is="registerYield" yield-name="yield"&gt;
-    &lt;h3&gt;Card title&lt;/h3&gt;
-    &lt;p&gt;Card body content goes here.&lt;/p&gt;
-  &lt;/template&gt;
-&lt;/dtf-card&gt;</code></pre>
+&lt;dtf-component
+  lt-prop-variant="filled"
+  lt-prop-color-role="brand"
+  lt-prop-size="base"&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;Content&lt;/template&gt;
+&lt;/dtf-component&gt;</code></pre>
+        
         
               </div>
     </div>

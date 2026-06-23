@@ -457,9 +457,15 @@
   --spin-duration: 600ms;
   --spin-brand-color: var(--brand-content-default);
 }</code></pre>
-        <pre class="fw-snippet-code" data-panel="slyte" data-active><code>import { DtfSpinner } from '@design-token-forge/slyte';
+        <pre class="fw-snippet-code" data-panel="slyte" data-active><code>import { DtfComponent } from '@design-token-forge/slyte';
 
-&lt;dtf-spinner lt-prop-color-role="brand" lt-prop-size="base" lt-prop-label="Saving..."&gt;&lt;/dtf-spinner&gt;</code></pre>
+&lt;dtf-component
+  lt-prop-variant="filled"
+  lt-prop-color-role="brand"
+  lt-prop-size="base"&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;Content&lt;/template&gt;
+&lt;/dtf-component&gt;</code></pre>
+        
         
               </div>
     </div>

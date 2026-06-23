@@ -370,13 +370,15 @@
   --skel-animation-duration: 2s;
   --skel-radius-text: var(--radius-md);
 }</code></pre>
-        <pre class="fw-snippet-code" data-panel="slyte" data-active><code>import { DtfSkeleton } from '@design-token-forge/slyte';
+        <pre class="fw-snippet-code" data-panel="slyte" data-active><code>import { DtfComponent } from '@design-token-forge/slyte';
 
-&lt;!-- Text line --&gt;
-&lt;dtf-skeleton lt-prop-variant="text" lt-prop-width="200px" lt-prop-height="16px"&gt;&lt;/dtf-skeleton&gt;
-
-&lt;!-- Avatar circle --&gt;
-&lt;dtf-skeleton lt-prop-variant="circle" lt-prop-width="40px" lt-prop-height="40px"&gt;&lt;/dtf-skeleton&gt;</code></pre>
+&lt;dtf-component
+  lt-prop-variant="filled"
+  lt-prop-color-role="brand"
+  lt-prop-size="base"&gt;
+  &lt;template is="registerYield" yield-name="yield"&gt;Content&lt;/template&gt;
+&lt;/dtf-component&gt;</code></pre>
+        
         
               </div>
     </div>
