@@ -4899,14 +4899,17 @@ async function generateComponentFromBlueprint(blueprint) {
               }
             } else { varComp.strokes = []; }
 
-            /* LabelOn — LEFT child */
+            /* LabelOn — LEFT child.
+               In layout (AUTO) when ON state so Thumb appears on the right.
+               Out of layout (ABSOLUTE + hidden) in OFF state so Thumb sits at the left edge. */
             var _lbOn = figma.createText();
             _lbOn.name = 'LabelOn';
             _lbOn.fontName = fontNameBold;
             _lbOn.characters = 'ON';
             _lbOn.fontSize = _lblFS;
             _lbOn.textAutoResize = 'WIDTH_AND_HEIGHT';
-            _lbOn.opacity = _lblIsOn ? 1 : 0;
+            _lbOn.layoutPositioning = _lblIsOn ? 'AUTO' : 'ABSOLUTE';
+            _lbOn.visible = _lblIsOn;
             var _lbOnFv = _lblIsOn
               ? (t3Vars['oncomponent-content/default'] || t2Vars['default/content/inverse'])
               : t2Vars['default/content/default'];
@@ -4942,14 +4945,17 @@ async function generateComponentFromBlueprint(blueprint) {
             }
             varComp.appendChild(_lbThumb);
 
-            /* LabelOff — RIGHT child */
+            /* LabelOff — RIGHT child.
+               In layout (AUTO) when OFF state so Thumb appears on the left.
+               Out of layout (ABSOLUTE + hidden) in ON state so Thumb sits at the right edge. */
             var _lbOff = figma.createText();
             _lbOff.name = 'LabelOff';
             _lbOff.fontName = fontNameBold;
             _lbOff.characters = 'OFF';
             _lbOff.fontSize = _lblFS;
             _lbOff.textAutoResize = 'WIDTH_AND_HEIGHT';
-            _lbOff.opacity = _lblIsOn ? 0 : 1;
+            _lbOff.layoutPositioning = _lblIsOn ? 'ABSOLUTE' : 'AUTO';
+            _lbOff.visible = !_lblIsOn;
             var _lbOffFv = t2Vars['default/content/default'];
             if (_lbOffFv) { tryBindFill(_lbOff, _lbOffFv); stats.bindings++; }
             else { _lbOff.fills = [{ type: 'SOLID', color: COLOR_BODY }]; }
