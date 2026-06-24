@@ -1417,12 +1417,12 @@ var TOGGLE_BLUEPRINT = {
                'On',  'On-Hover',  'On-Focus',  'On-Disabled'],
       stateOverrides: {
         'Default': {
-          'Off':          { fill: 'default/surfaces/strong' },
-          'Off-Hover':    { fill: 'default/component/outline-hover' },
-          'Off-Focus':    { fill: 'default/surfaces/strong',
+          'Off':          { fill: 'default/component/bg-default' },
+          'Off-Hover':    { fill: 'default/component/bg-hover' },
+          'Off-Focus':    { fill: 'default/component/bg-default',
                             stroke: { t3: 'component/outline-default' }, strokeWeight: 2,
                             t3Mode: 'brand' },
-          'Off-Disabled': { fill: 'default/surfaces/strong', componentOpacity: 0.5 },
+          'Off-Disabled': { fill: 'default/component/bg-default', componentOpacity: 0.5 },
           'On':           { t3Mode: 'success', fill: { t3: 'component/bg-default' }, thumbXOverride: 'toggle/thumb-x-on' },
           'On-Hover':     { t3Mode: 'success', fill: { t3: 'component/bg-hover' },  thumbXOverride: 'toggle/thumb-x-on' },
           'On-Focus':     { t3Mode: 'success', fill: { t3: 'component/bg-default' },
@@ -1467,12 +1467,12 @@ var TOGGLE_BLUEPRINT = {
                'On',  'On-Hover',  'On-Focus',  'On-Disabled'],
       stateOverrides: {
         'Default': {
-          'Off':          { fill: 'default/surfaces/strong' },
-          'Off-Hover':    { fill: 'default/component/outline-hover' },
-          'Off-Focus':    { fill: 'default/surfaces/strong',
+          'Off':          { fill: 'default/component/bg-default' },
+          'Off-Hover':    { fill: 'default/component/bg-hover' },
+          'Off-Focus':    { fill: 'default/component/bg-default',
                             stroke: { t3: 'component/outline-default' }, strokeWeight: 2,
                             t3Mode: 'brand' },
-          'Off-Disabled': { fill: 'default/surfaces/strong', componentOpacity: 0.5 },
+          'Off-Disabled': { fill: 'default/component/bg-default', componentOpacity: 0.5 },
           'On':           { fill: { t3: 'component/bg-default' }, thumbXOverride: 'toggle/thumb-x-on' },
           'On-Hover':     { fill: { t3: 'component/bg-hover' },  thumbXOverride: 'toggle/thumb-x-on' },
           'On-Focus':     { t3Mode: 'brand', fill: { t3: 'component/bg-default' },
@@ -4272,6 +4272,12 @@ async function generateComponentFromBlueprint(blueprint) {
 
       /* Append thumb and bind OFF-state position */
       ttMaster.appendChild(ttThumb);
+      /* Set literal OFF-position so the thumb renders correctly even when
+         variable binding for x/y does not apply in this plugin context.
+         Defaults match REQUIRED_COMPSIZE_VARS: thumb-inset=2 → x=2 (off),
+         (track-h 24 − thumb-size 20) / 2 = 2 → y=2 (centred). */
+      ttThumb.x = 2;
+      ttThumb.y = 2;
       var ttThumbXVar = masterCfg.thumbXVar && compSizeVars[masterCfg.thumbXVar];
       var ttThumbYVar = BP.sizeBindings.thumbY && compSizeVars[BP.sizeBindings.thumbY];
       if (ttThumbXVar) { await tryBindVar(ttThumb, 'x', ttThumbXVar); stats.bindings++; }
@@ -5278,6 +5284,8 @@ async function generateComponentFromBlueprint(blueprint) {
             if (ttOnXVar) {
               var ttThumbNode = instance.findOne(function(n) { return n.name === 'Thumb'; });
               if (ttThumbNode) {
+                /* Literal ON-position: track-w(40) − thumb-size(20) − thumb-inset(2) = 18. */
+                try { ttThumbNode.x = 18; } catch (_tXe) {}
                 try {
                   await tryBindVar(ttThumbNode, 'x', ttOnXVar);
                   stats.bindings++;
