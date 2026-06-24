@@ -4695,6 +4695,7 @@ async function generateComponentFromBlueprint(blueprint) {
 
   for (var mci = 0; mci < masterNames.length; mci++) {
     var mName = masterNames[mci];
+    var masterCfg = BP.masters[mName]; /* re-read per master — builder loop used a separate iterator */
     var masterComp = masterComponents[mName];
 
     /* Iterate FAMILIES (Neutral, Brand, …) — each produces its own component set. */
