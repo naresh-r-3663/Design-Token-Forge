@@ -5335,21 +5335,27 @@ async function generateComponentFromBlueprint(blueprint) {
             }
           }
 
-          /* thumbXOverride — rebind thumb X to the ON-position variable.
-             Works for both standard and labeled (sliding-thumb) masters. */
+          /* thumbXOverride — move thumb to ON-position by literal override.
+             setBoundVariable('x') on instance children is NOT supported by
+             Figma (the master's binding silently wins). Use a literal position
+             override instead — this creates a persistent instance override. */
           if (overrides.thumbXOverride) {
-            var ttOnXVar = compSizeVars[overrides.thumbXOverride];
-            if (ttOnXVar) {
-              var ttThumbNode = instance.findOne(function(n) { return n.name === 'Thumb'; });
-              if (ttThumbNode) {
-                /* Literal ON-position: track-w(40) − thumb-size(20) − thumb-inset(2) = 18. */
-                try { ttThumbNode.x = 18; } catch (_tXe) {}
+            var ttThumbNode = instance.findOne(function(n) { return n.name === 'Thumb'; });
+            if (ttThumbNode) {
+              /* Read ON-x from the comp-size variable value if available,
+                 fall back to hard-calculated default: track-w(44)−thumb-size(20)−inset(2)=22. */
+              var ttOnXVar = compSizeVars[overrides.thumbXOverride];
+              var ttOnXVal = 18; /* track-w(40)−thumb-size(20)−inset(2) base */
+              if (ttOnXVar) {
                 try {
-                  await tryBindVar(ttThumbNode, 'x', ttOnXVar);
-                  stats.bindings++;
-                } catch (ttXErr) {
-                  log('thumbXOverride bind failed (' + familyName + '/' + stateName + '): ' + ttXErr.message);
-                }
+                  var ttOnXModes = Object.values(ttOnXVar.valuesByMode || {});
+                  if (ttOnXModes.length > 0 && typeof ttOnXModes[0] === 'number') {
+                    ttOnXVal = ttOnXModes[0];
+                  }
+                } catch (_tve) {}
+              }
+              try { ttThumbNode.x = ttOnXVal; } catch (_tXe) {
+                log('thumbXOverride literal set failed (' + familyName + '/' + stateName + '): ' + _tXe.message);
               }
             }
           }
