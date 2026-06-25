@@ -6,11 +6,11 @@
   "created": "2026-05-16",
   "schemaVersion": 2,
   "paletteKeys": {
-    "brand": "#D20C68",
+    "brand": "#D2016E",
     "danger": "#D61D20",
-    "warning": "#A06604",
-    "info": "#1879BF",
-    "success": "#1E8D00",
+    "warning": "#9A6A08",
+    "info": "#2177C7",
+    "success": "#3C8A03",
     "greyscale": "#747474",
     "desaturated": "#71747C"
   },
@@ -76,10 +76,10 @@
     }
   },
   "latestVersion": {
-    "version": "v0.0.41",
-    "name": "Jun22 11:04",
+    "version": "v0.0.42",
+    "name": "Jun25 10:41",
     "description": "",
-    "savedAt": "2026-06-22T05:34:27.639Z",
+    "savedAt": "2026-06-25T05:11:22.279Z",
     "savedBy": "sridhar-ravi-2917"
   },
   "t1Picks": {
@@ -150,7 +150,7 @@
         "onContainerStep": "200"
       },
       "success": {
-        "fill": "500",
+        "fill": "550",
         "content": "200",
         "container": "850",
         "borderStep": "400",
