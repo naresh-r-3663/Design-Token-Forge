@@ -37,8 +37,8 @@
   --surface-base-ct-subtle: #5E5E5E;
   --surface-base-ct-faint: #848484;
   --surface-base-cm-bg: #FFFFFF;
-  --surface-base-cm-bg-hover: #F9F9F9;
-  --surface-base-cm-bg-pressed: #F1F1F1;
+  --surface-base-cm-bg-hover: #E8E8E8;
+  --surface-base-cm-bg-pressed: #DDDDDD;
   --surface-base-cm-outline: #CFCFCF;
   --surface-base-cm-outline-hover: #B3B3B3;
   --surface-base-cm-outline-pressed: #A6A6A6;
@@ -54,9 +54,9 @@
   --surface-dim-ct-strong: #000000;
   --surface-dim-ct-subtle: #5E5E5E;
   --surface-dim-ct-faint: #848484;
-  --surface-dim-cm-bg: #F9F9F9;
-  --surface-dim-cm-bg-hover: #F1F1F1;
-  --surface-dim-cm-bg-pressed: #E8E8E8;
+  --surface-dim-cm-bg: #FFFFFF;
+  --surface-dim-cm-bg-hover: #DDDDDD;
+  --surface-dim-cm-bg-pressed: #CFCFCF;
   --surface-dim-cm-outline: #C1C1C1;
   --surface-dim-cm-outline-hover: #B3B3B3;
   --surface-dim-cm-outline-pressed: #989898;
@@ -73,8 +73,8 @@
   --surface-deep-ct-subtle: #5E5E5E;
   --surface-deep-ct-faint: #7C7C7C;
   --surface-deep-cm-bg: #F1F1F1;
-  --surface-deep-cm-bg-hover: #E8E8E8;
-  --surface-deep-cm-bg-pressed: #DDDDDD;
+  --surface-deep-cm-bg-hover: #CFCFCF;
+  --surface-deep-cm-bg-pressed: #C1C1C1;
   --surface-deep-cm-outline: #B3B3B3;
   --surface-deep-cm-outline-hover: #A6A6A6;
   --surface-deep-cm-outline-pressed: #989898;

@@ -65,9 +65,9 @@ const LIGHT_SURFACE_MAP = {
     'ct-strong':          'black',     // 00
     'ct-subtle':          '600',       // 5E
     'ct-faint':           '400',       // 86
-    'cm-bg':              '25',        // F6
-    'cm-bg-hover':        '50',        // F1
-    'cm-bg-pressed':      '75',        // E8
+    'cm-bg':              '25',        // F9 — gentle lift above bright
+    'cm-bg-hover':        '50',        // F1 — bg+2 steps
+    'cm-bg-pressed':      '75',        // E8 — bg+3 steps
     'cm-outline':         '150',       // D1
     'cm-outline-hover':   '200',       // BB
     'cm-outline-pressed': '250',       // AB
@@ -84,9 +84,9 @@ const LIGHT_SURFACE_MAP = {
     'ct-strong':          'black',
     'ct-subtle':          '600',
     'ct-faint':           '400',
-    'cm-bg':              'white',
-    'cm-bg-hover':        '25',
-    'cm-bg-pressed':      '50',
+    'cm-bg':              'white',    // FF — lifted above base
+    'cm-bg-hover':        '75',        // E8 — bg+2 steps
+    'cm-bg-pressed':      '100',       // DD — bg+3 steps
     'cm-outline':         '150',
     'cm-outline-hover':   '200',
     'cm-outline-pressed': '250',
@@ -103,9 +103,9 @@ const LIGHT_SURFACE_MAP = {
     'ct-strong':          'black',
     'ct-subtle':          '600',
     'ct-faint':           '400',
-    'cm-bg':              '25',
-    'cm-bg-hover':        '50',
-    'cm-bg-pressed':      '75',
+    'cm-bg':              'white',    // FF — lifted above dim
+    'cm-bg-hover':        '100',       // DD — bg+2 steps
+    'cm-bg-pressed':      '150',       // CF — bg+3 steps
     'cm-outline':         '175',
     'cm-outline-hover':   '200',
     'cm-outline-pressed': '300',
@@ -122,9 +122,9 @@ const LIGHT_SURFACE_MAP = {
     'ct-strong':          'black',
     'ct-subtle':          '600',
     'ct-faint':           '450',
-    'cm-bg':              '50',
-    'cm-bg-hover':        '75',
-    'cm-bg-pressed':      '100',
+    'cm-bg':              '50',       // F1 — gentle lift above deep
+    'cm-bg-hover':        '150',       // CF — bg+2 steps
+    'cm-bg-pressed':      '175',       // C1 — bg+3 steps
     'cm-outline':         '200',
     'cm-outline-hover':   '250',
     'cm-outline-pressed': '300',
@@ -141,9 +141,9 @@ const LIGHT_SURFACE_MAP = {
     'ct-strong':          'black',
     'ct-subtle':          '600',
     'ct-faint':           '400',
-    'cm-bg':              '25',
-    'cm-bg-hover':        '50',
-    'cm-bg-pressed':      '75',
+    'cm-bg':              '25',       // F9 — gentle lift above card
+    'cm-bg-hover':        '50',        // F1 — bg+2 steps
+    'cm-bg-pressed':      '75',        // E8 — bg+3 steps
     'cm-outline':         '150',
     'cm-outline-hover':   '200',
     'cm-outline-pressed': '250',
@@ -160,9 +160,9 @@ const LIGHT_SURFACE_MAP = {
     'ct-strong':          'black',
     'ct-subtle':          '600',
     'ct-faint':           '400',
-    'cm-bg':              '50',
-    'cm-bg-hover':        '75',
-    'cm-bg-pressed':      '100',
+    'cm-bg':              '50',       // F1 — deeper default for overlay
+    'cm-bg-hover':        '75',        // E8 — bg+3 steps (modal starts deeper)
+    'cm-bg-pressed':      '100',       // DD — bg+4 steps
     'cm-outline':         '175',
     'cm-outline-hover':   '200',
     'cm-outline-pressed': '250',
@@ -179,9 +179,9 @@ const LIGHT_SURFACE_MAP = {
     'ct-strong':          'black',
     'ct-subtle':          '550',
     'ct-faint':           '400',
-    'cm-bg':              '50',
-    'cm-bg-hover':        '75',
-    'cm-bg-pressed':      '100',
+    'cm-bg':              '50',       // F1 — deeper default for float
+    'cm-bg-hover':        '75',        // E8 — bg+3 steps
+    'cm-bg-pressed':      '100',       // DD — bg+4 steps
     'cm-outline':         '175',
     'cm-outline-hover':   '250',
     'cm-outline-pressed': '300',
