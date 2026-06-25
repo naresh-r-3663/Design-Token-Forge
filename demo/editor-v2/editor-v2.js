@@ -259,8 +259,8 @@
     { id:'ct-subtle',          family:'content',   parent:'ct-default', defaultDelta: -6, level:1 },
     { id:'ct-faint',           family:'content',   parent:'ct-default', defaultDelta: -8, level:1 },
     { id:'cm-bg',              family:'component', parent:'bg',         defaultDelta: -1, level:0 },
-    { id:'cm-bg-hover',        family:'component', parent:'cm-bg',      defaultDelta:  1, level:1 },
-    { id:'cm-bg-pressed',      family:'component', parent:'cm-bg',      defaultDelta:  2, level:1 },
+    { id:'cm-bg-hover',        family:'component', parent:'bg',         defaultDelta:  2, level:1 },
+    { id:'cm-bg-pressed',      family:'component', parent:'bg',         defaultDelta:  3, level:1 },
     { id:'cm-outline',         family:'component', parent:'cm-bg',      defaultDelta:  4, level:1 },
     { id:'cm-outline-hover',   family:'component', parent:'cm-outline', defaultDelta:  1, level:2 },
     { id:'cm-outline-pressed', family:'component', parent:'cm-outline', defaultDelta:  1, level:2 },
@@ -293,8 +293,8 @@
      Tonal multiplier is applied at resolve time so light/dark mirror
      automatically. */
   var INVERSE_CM_BG_DELTAS = {
-    'cm-bg-hover':    0,   // sits flush with cm-bg
-    'cm-bg-pressed': -1    // 1 step toward palette center
+    'cm-bg-hover':   -2,   // light-mode only: 2 steps lighter than bg (bg+2 toward white)
+    'cm-bg-pressed': -3    // light-mode only: 3 steps lighter than bg
   };
 
   function makeEmptyT2() {
@@ -333,7 +333,7 @@
     // no motion required to read as resting), pressed = 1 step
     // toward center (subtle press indicator). cm-outline subtree
     // is still handled by POLARITY_SENSITIVE below.
-    if (surfaceId === 'inverse' && INVERSE_CM_BG_DELTAS.hasOwnProperty(propId)) {
+    if (surfaceId === 'inverse' && INVERSE_CM_BG_DELTAS.hasOwnProperty(propId) && mode === 'light') {
       return stepRel(parentStep, INVERSE_CM_BG_DELTAS[propId] * tonalDir(mode));
     }
     // Polarity: most props (subtle/strong/outline/separator/ct-*/
