@@ -1402,13 +1402,13 @@ var TOGGLE_BLUEPRINT = {
       states: ['Off', 'Off-Hover', 'Off-Focus', 'Off-Disabled',
                'On',  'On-Hover',  'On-Focus',  'On-Disabled'],
       stateOverrides: {
-        /* ── NEUTRAL — grey off → success green on ─────────────────── */
+        /* ── NEUTRAL — neutral grey off → success green on ─────────── */
         'Neutral': {
-          'Off':          { fill: 'default/content/subtle' },
-          'Off-Hover':    { fill: 'default/content/subtle' },
-          'Off-Focus':    { t3Mode: 'brand', fill: 'default/content/subtle',
+          'Off':          { t3Mode: 'neutral', fill: { t3: 'component/bg-default' } },
+          'Off-Hover':    { t3Mode: 'neutral', fill: { t3: 'component/bg-hover' } },
+          'Off-Focus':    { t3Mode: 'neutral', fill: { t3: 'component/bg-default' },
                             stroke: { t3: 'component/outline-default' }, strokeWeight: 2 },
-          'Off-Disabled': { fill: 'default/content/subtle', componentOpacity: 0.5 },
+          'Off-Disabled': { t3Mode: 'neutral', fill: { t3: 'component/bg-default' }, componentOpacity: 0.5 },
           'On':           { t3Mode: 'success', fill: { t3: 'component/bg-default' }, thumbXOverride: 'toggle/thumb-x-on' },
           'On-Hover':     { t3Mode: 'success', fill: { t3: 'component/bg-hover' },  thumbXOverride: 'toggle/thumb-x-on' },
           'On-Focus':     { t3Mode: 'success', fill: { t3: 'component/bg-default' },
@@ -1416,13 +1416,13 @@ var TOGGLE_BLUEPRINT = {
           'On-Disabled':  { t3Mode: 'success', fill: { t3: 'component/bg-default' },
                             componentOpacity: 0.5, thumbXOverride: 'toggle/thumb-x-on' }
         },
-        /* ── BRAND — grey off → brand blue on ─────────────────────── */
+        /* ── BRAND — neutral grey off → brand blue on ──────────────── */
         'Brand': {
-          'Off':          { fill: 'default/content/subtle' },
-          'Off-Hover':    { fill: 'default/content/subtle' },
-          'Off-Focus':    { t3Mode: 'brand', fill: 'default/content/subtle',
+          'Off':          { t3Mode: 'neutral', fill: { t3: 'component/bg-default' } },
+          'Off-Hover':    { t3Mode: 'neutral', fill: { t3: 'component/bg-hover' } },
+          'Off-Focus':    { t3Mode: 'neutral', fill: { t3: 'component/bg-default' },
                             stroke: { t3: 'component/outline-default' }, strokeWeight: 2 },
-          'Off-Disabled': { fill: 'default/content/subtle', componentOpacity: 0.5 },
+          'Off-Disabled': { t3Mode: 'neutral', fill: { t3: 'component/bg-default' }, componentOpacity: 0.5 },
           'On':           { t3Mode: 'brand',   fill: { t3: 'component/bg-default' }, thumbXOverride: 'toggle/thumb-x-on' },
           'On-Hover':     { t3Mode: 'brand',   fill: { t3: 'component/bg-hover' },  thumbXOverride: 'toggle/thumb-x-on' },
           'On-Focus':     { t3Mode: 'brand',   fill: { t3: 'component/bg-default' },
@@ -4760,10 +4760,10 @@ async function generateComponentFromBlueprint(blueprint) {
           if (!overrides) continue;
 
           /* Build the full variant name from all active axes. */
-          var _labeledSuffix = BP.labeledAxis ? (', Labeled=' + (isLabeledIter ? 'True' : 'False')) : '';
+          var _labeledSuffix = BP.labeledAxis ? (', Label=' + (isLabeledIter ? 'On' : 'Off')) : '';
           var _variantName = BP.skipRounded
             ? 'Type=' + typeName + ', State=' + stateName + _labeledSuffix
-            : 'Type=' + typeName + ', State=' + stateName + ', Rounded=' + (isRounded ? 'True' : 'False') + _labeledSuffix;
+            : 'Type=' + typeName + ', State=' + stateName + ', Square=' + (isRounded ? 'Off' : 'On') + _labeledSuffix;
 
           /* SAFE_REBUILD: reuse the existing COMPONENT node so placed instances
              keep their mainComponent reference (same node ID). Clear its
@@ -4888,11 +4888,18 @@ async function generateComponentFromBlueprint(blueprint) {
             _lbOn.fontSize = _lblFS;
             _lbOn.textAutoResize = 'WIDTH_AND_HEIGHT';
             _lbOn.visible = _lblIsOn;
+            /* Label text is always white-on-coloured — track fill is either a
+               T3 component/bg (neutral grey, success, brand) or an outlined
+               T2 bg-hover which is very light (Outlined OFF).  
+               ON state: oncomponent-content/default via T3 (white).
+               OFF state: content/inverse (white) for Neutral/Brand; content/default for Outlined.
+               Outlined OFF has no fill (stroke only), so content/default is correct there. */
+            var _trackHasFill = !!(overrides.fill);
             var _lbOnFv = _lblIsOn
               ? (t3Vars['oncomponent-content/default'] || t2Vars['default/content/inverse'])
-              : t2Vars['default/content/default'];
+              : (_trackHasFill ? (t3Vars['oncomponent-content/default'] || t2Vars['default/content/inverse']) : t2Vars['default/content/default']);
             if (_lbOnFv) { tryBindFill(_lbOn, _lbOnFv); stats.bindings++; }
-            else { _lbOn.fills = [{ type: 'SOLID', color: _lblIsOn ? { r:1,g:1,b:1 } : COLOR_BODY }]; }
+            else { _lbOn.fills = [{ type: 'SOLID', color: { r:1,g:1,b:1 } }]; }
             varComp.appendChild(_lbOn);
             try { _lbOn.layoutPositioning = _lblIsOn ? 'AUTO' : 'ABSOLUTE'; } catch (e) {}
 
@@ -4934,9 +4941,12 @@ async function generateComponentFromBlueprint(blueprint) {
             _lbOff.fontSize = _lblFS;
             _lbOff.textAutoResize = 'WIDTH_AND_HEIGHT';
             _lbOff.visible = !_lblIsOn;
-            var _lbOffFv = t2Vars['default/content/default'];
+            /* Same logic as LabelOn: white on coloured fill, body colour on no-fill (Outlined OFF). */
+            var _lbOffFv = _trackHasFill
+              ? (t3Vars['oncomponent-content/default'] || t2Vars['default/content/inverse'])
+              : t2Vars['default/content/default'];
             if (_lbOffFv) { tryBindFill(_lbOff, _lbOffFv); stats.bindings++; }
-            else { _lbOff.fills = [{ type: 'SOLID', color: COLOR_BODY }]; }
+            else { _lbOff.fills = [{ type: 'SOLID', color: _trackHasFill ? { r:1,g:1,b:1 } : COLOR_BODY }]; }
             varComp.appendChild(_lbOff);
             try { _lbOff.layoutPositioning = _lblIsOn ? 'ABSOLUTE' : 'AUTO'; } catch (e) {}
 
