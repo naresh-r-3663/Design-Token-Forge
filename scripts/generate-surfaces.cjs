@@ -470,23 +470,6 @@ function generate() {
     out += '\n';
   }
 
-  // Back-compat aliases live INSIDE the :root block so static parsers
-  // (e.g. sync-server parseCSSTokens) read them in the light context.
-  const ALIAS_MAP = { container: 'card', 'over-container': 'modal' };
-  const PROP_ORDER = [
-    'bg','subtle','strong','outline','separator',
-    'ct-default','ct-strong','ct-subtle','ct-faint',
-    'cm-bg','cm-bg-hover','cm-bg-pressed',
-    'cm-outline','cm-outline-hover','cm-outline-pressed',
-    'cm-separator'
-  ];
-  out += `\n  /* ── Back-compat aliases: container→card, over-container→modal ── */\n`;
-  for (const [oldName, newName] of Object.entries(ALIAS_MAP)) {
-    for (const prop of PROP_ORDER) {
-      out += `  --surface-${oldName}-${prop}: var(--surface-${newName}-${prop});\n`;
-    }
-    out += `\n`;
-  }
   out += `}\n\n`;
 
   // Dark theme
@@ -501,14 +484,6 @@ function generate() {
     out += '\n';
   }
 
-  // Back-compat aliases also in dark block so dark var() resolves correctly.
-  out += `\n  /* ── Back-compat aliases: container→card, over-container→modal ── */\n`;
-  for (const [oldName, newName] of Object.entries(ALIAS_MAP)) {
-    for (const prop of PROP_ORDER) {
-      out += `  --surface-${oldName}-${prop}: var(--surface-${newName}-${prop});\n`;
-    }
-    out += `\n`;
-  }
   out += `}\n`;
 
   return out;

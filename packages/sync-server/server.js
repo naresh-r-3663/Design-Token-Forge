@@ -131,9 +131,7 @@ const startedAt    = new Date().toISOString();
 // counterparts (none currently, but keep the order stable).
 const SURFACE_NAMES = [
   'bright', 'base', 'dim', 'deep', 'accent',
-  'card', 'modal', 'float', 'inverse',
-  // Back-compat aliases (deprecated — read for legacy CSS, write under new names).
-  'container', 'over-container'
+  'card', 'modal', 'float', 'inverse'
 ];
 
 const SEMANTIC_ROLES = [
