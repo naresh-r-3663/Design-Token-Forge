@@ -1423,11 +1423,11 @@ var TOGGLE_BLUEPRINT = {
       stateOverrides: {
         /* ── NEUTRAL — grey off → success green on ─────────────────── */
         'Neutral': {
-          'Off':          { t3Mode: 'neutral', fill: { t3: 'component/bg-default' } },
-          'Off-Hover':    { t3Mode: 'neutral', fill: { t3: 'component/bg-hover' } },
-          'Off-Focus':    { t3Mode: 'neutral', fill: { t3: 'component/bg-default' },
+          'Off':          { fill: 'default/component/bg-pressed' },
+          'Off-Hover':    { fill: 'default/component/bg-pressed' },
+          'Off-Focus':    { fill: 'default/component/bg-pressed',
                             stroke: 'default/component/outline-default', strokeWeight: 2 },
-          'Off-Disabled': { t3Mode: 'neutral', fill: { t3: 'component/bg-default' }, componentOpacity: 0.5 },
+          'Off-Disabled': { fill: 'default/component/bg-pressed', componentOpacity: 0.5 },
           'On':           { t3Mode: 'success', fill: { t3: 'component/bg-default' }, thumbXOverride: 'toggle/thumb-x-on' },
           'On-Hover':     { t3Mode: 'success', fill: { t3: 'component/bg-hover' },  thumbXOverride: 'toggle/thumb-x-on' },
           'On-Focus':     { t3Mode: 'success', fill: { t3: 'component/bg-default' },
@@ -1437,11 +1437,11 @@ var TOGGLE_BLUEPRINT = {
         },
         /* ── BRAND — grey off → brand blue on ──────────────────────── */
         'Brand': {
-          'Off':          { t3Mode: 'neutral', fill: { t3: 'component/bg-default' } },
-          'Off-Hover':    { t3Mode: 'neutral', fill: { t3: 'component/bg-hover' } },
-          'Off-Focus':    { t3Mode: 'neutral', fill: { t3: 'component/bg-default' },
+          'Off':          { fill: 'default/component/bg-pressed' },
+          'Off-Hover':    { fill: 'default/component/bg-pressed' },
+          'Off-Focus':    { fill: 'default/component/bg-pressed',
                             stroke: 'default/component/outline-default', strokeWeight: 2 },
-          'Off-Disabled': { t3Mode: 'neutral', fill: { t3: 'component/bg-default' }, componentOpacity: 0.5 },
+          'Off-Disabled': { fill: 'default/component/bg-pressed', componentOpacity: 0.5 },
           'On':           { t3Mode: 'brand',   fill: { t3: 'component/bg-default' }, thumbXOverride: 'toggle/thumb-x-on' },
           'On-Hover':     { t3Mode: 'brand',   fill: { t3: 'component/bg-hover' },  thumbXOverride: 'toggle/thumb-x-on' },
           'On-Focus':     { t3Mode: 'brand',   fill: { t3: 'component/bg-default' },
@@ -2982,30 +2982,16 @@ async function generateComponentFromBlueprint(blueprint) {
   log('Presentation: T3 modes = ' + Object.keys(t3Modes).join(', '));
 
   /* ── T3 alias repair ─────────────────────────────────────────────────────
-     Bootstrap builds (now removed) may have written literal hex values into
-     T3 brand/neutral modes, severing the T1 alias chain (same repair that
-     "Update Variables" performs, scoped to just the vars the toggle uses).
-     Also ensures the 'neutral' mode exists so track-thumb OFF states can
-     set t3Mode:'neutral' correctly.                                          */
+     Bootstrap builds may have written literal hex values into T3 brand/success
+     modes, severing the T1 alias chain. Re-wire as VARIABLE_ALIAS → T1.
+     Does NOT touch neutral mode — not used; user deleted it.               */
   (function() {
     if (!t3Col) return;
-    /* Create neutral mode if absent (free to create; does not alter other modes) */
-    var hasNeutral = t3Col.modes.some(function(m) { return m.name === 'neutral'; });
-    if (!hasNeutral) {
-      try {
-        t3Col.addMode('neutral');
-        for (var _nm = 0; _nm < t3Col.modes.length; _nm++) {
-          t3Modes[t3Col.modes[_nm].name] = t3Col.modes[_nm].modeId;
-        }
-        log('T3: neutral mode created');
-      } catch(e) { log('T3: could not add neutral mode: ' + e.message); }
-    }
-    /* Repair aliases: component/bg-* and component/outline-* for brand + neutral */
     var _repairProps = [
       'component/bg-default', 'component/bg-hover', 'component/bg-pressed',
       'component/outline-default', 'component/outline-hover'
     ];
-    var _repairRoles = ['brand', 'neutral', 'success'];
+    var _repairRoles = ['brand', 'success'];
     for (var _ri = 0; _ri < _repairRoles.length; _ri++) {
       var _role  = _repairRoles[_ri];
       var _modeId = t3Modes[_role];
@@ -3014,8 +3000,6 @@ async function generateComponentFromBlueprint(blueprint) {
         var _t3path = _repairProps[_pi];
         var _t3v    = t3Vars[_t3path];
         if (!_t3v) continue;
-        /* Map T3 path → T1 semantic path:
-           component/bg-default  → semantic/{role}/component-bg-default  */
         var _t1name = 'semantic/' + _role + '/' + _t3path.replace('/', '-');
         var _t1v = _t1VarsForRepair ? _t1VarsForRepair[_t1name] : null;
         if (!_t1v) continue;
