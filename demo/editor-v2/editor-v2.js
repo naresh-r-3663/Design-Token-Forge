@@ -351,7 +351,15 @@
     // Only apply the polarity flip in light mode. cm-bg/cm-bg-hover/
     // cm-bg-pressed encode ELEVATION — direction-agnostic, no flip.
     var polarity = (surfaceId === 'inverse' && isPolaritySensitive(propId) && mode === 'light') ? -1 : 1;
-    return stepRel(parentStep, prop.defaultDelta * tonalDir(mode) * polarity);
+    var resolved = stepRel(parentStep, prop.defaultDelta * tonalDir(mode) * polarity);
+    // cm-bg wall-clamp recovery: delta=-1 (lighter) on a bg that IS already at
+    // the wall (white in light / black in dark) clamps back to bg, making
+    // cm-bg === bg and displaying "0 FROM BG". Instead, step one notch in the
+    // DARKER direction so the component bg is always distinct from its surface.
+    if (propId === 'cm-bg' && resolved === parentStep) {
+      resolved = stepRel(parentStep, 1 * tonalDir(mode));
+    }
+    return resolved;
   }
   function resolveT2Step(surfaceId, propId, mode) {
     var ov = State.t2 && State.t2[mode] && State.t2[mode][surfaceId] && State.t2[mode][surfaceId][propId];
