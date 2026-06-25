@@ -2755,6 +2755,16 @@ async function generateComponentFromBlueprint(blueprint) {
     BP.name + ' \u2014 Tier 1 / Masters',
     BP.name + ' \u2014 Tier 2 / Variants'
   ];
+  /* Also catch sections built under legacy BP names (e.g. "Toggle —
+     Overview" when BP.name is now "Switch"). These have no dtf-owner
+     plugin data (pre-stampOwner builds) so plugin-data checks miss them;
+     adding legacy names here lets the _namedAsBP fallback catch them. */
+  var _legacyNames = BP.legacyOwners || [];
+  for (var _lni = 0; _lni < _legacyNames.length; _lni++) {
+    _bpSectionNames.push(_legacyNames[_lni] + ' \u2014 Overview');
+    _bpSectionNames.push(_legacyNames[_lni] + ' \u2014 Tier 1 / Masters');
+    _bpSectionNames.push(_legacyNames[_lni] + ' \u2014 Tier 2 / Variants');
+  }
   var _priorColumnX = null;
   for (var _priorScan = 0; _priorScan < page.children.length; _priorScan++) {
     var _ps = page.children[_priorScan];
