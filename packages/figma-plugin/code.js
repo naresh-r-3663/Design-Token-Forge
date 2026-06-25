@@ -1351,22 +1351,37 @@ function _recordBoundVarId(id, name){
 var TOGGLE_BLUEPRINT = {
   name: 'Switch',
   kind: 'track-thumb',
-  skipRounded: false,       /* Rounded=True/False variant axis enabled */
-  labeledAxis:  true,       /* Labeled=True/False variant axis enabled  */
-  singleFamily: true,       /* display name = master name only (no " / FamilyName") */
-  radiusRoundedPath: 'toggle/radius', /* pill (9999) — bound on Rounded=True variants */
+  skipRounded: true,        /* shape is per-master (not a variant axis) */
+  labeledAxis:  false,      /* labeling is per-master (not a variant axis) */
+  singleFamily: true,       /* display name = master name only */
+  radiusRoundedPath: 'toggle/radius', /* pill (9999) — used when masterCfg.isRounded */
   legacyOwners: ['Toggle'], /* old BP.name — ensures old Toggle/... sets are cleaned up */
   ledgerKey: 'toggle',      /* registry key the UI reads; must not change with BP.name */
-  description: 'Binary on/off switch. Type: Neutral/Brand/Outlined. Rounded (pill) and Labeled (ON/OFF text) are boolean variant properties — one component set, all variants in the right panel.',
+  description: 'Binary on/off switch. Type: Neutral/Brand/Outlined. Four separate sets: Square, Pill, Square+Labeled, Pill+Labeled.',
 
-  /* ONE master — square by default. Rounded=True rebinds track+thumb to toggle/radius.
-     Labeled=True builds the HUG track directly (no master instance). */
+  /* FOUR masters → four clean component sets, each a 3-type × 8-state grid.
+     isRounded:true  → pill track+thumb (toggle/radius = 9999).
+     isLabeled:true  → HUG track with ON/OFF text label inside. */
   masters: {
     'Switch': {
-      thumbXVar: 'toggle/thumb-inset'
-      /* No rootRadiusPath: track corners use sizeBindings default (toggle/radius-square).
-         No thumbRadiusPath: thumb corners also use sizeBindings default (toggle/radius-square).
-         Rounded=True variant axis rebinds both track and thumb to toggle/radius at build time. */
+      thumbXVar: 'toggle/thumb-inset',
+      isRounded: false,
+      isLabeled: false
+    },
+    'Switch / Pill': {
+      thumbXVar: 'toggle/thumb-inset',
+      isRounded: true,
+      isLabeled: false
+    },
+    'Switch / Labeled': {
+      thumbXVar: 'toggle/thumb-inset',
+      isRounded: false,
+      isLabeled: true
+    },
+    'Switch / Pill / Labeled': {
+      thumbXVar: 'toggle/thumb-inset',
+      isRounded: true,
+      isLabeled: true
     }
   },
 
@@ -4751,7 +4766,10 @@ async function generateComponentFromBlueprint(blueprint) {
       for (var li2 = 0; li2 < labeledValues.length; li2++) {
         var isLabeledIter = labeledValues[li2];
       for (var ri2 = 0; ri2 < roundedValues.length; ri2++) {
-        var isRounded = roundedValues[ri2];
+        /* Per-master shape override: if the master declares isRounded:true
+           (e.g. 'Switch / Pill'), use pill radius regardless of the loop value.
+           This lets skipRounded:true + per-master isRounded coexist cleanly. */
+        var isRounded = (masterCfg.isRounded === true) ? true : roundedValues[ri2];
       for (var ti = 0; ti < famTypes.length; ti++) {
         var typeName = famTypes[ti];
         for (var sti = 0; sti < famStates.length; sti++) {
