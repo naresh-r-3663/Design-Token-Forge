@@ -1349,45 +1349,28 @@ function _recordBoundVarId(id, name){
    ══════════════════════════════════════════════════════════════ */
 
 var TOGGLE_BLUEPRINT = {
-  name: 'Toggle',
+  name: 'Switch',
   kind: 'track-thumb',
-  skipRounded: true,  /* shape is per-master; no Rounded variant axis */
-  description: 'Binary on/off switch. Two shapes: Switch (pill) and Switch Square. Filled/Outlined/Danger families. Auto-layout HUG track — width expands to show ON/OFF text labels alongside the centered thumb.',
+  skipRounded: false,       /* Rounded=True/False variant axis enabled */
+  labeledAxis:  true,       /* Labeled=True/False variant axis enabled  */
+  singleFamily: true,       /* display name = master name only (no " / FamilyName") */
+  radiusRoundedPath: 'toggle/radius', /* pill (9999) — bound on Rounded=True variants */
+  description: 'Binary on/off switch. Type: Neutral/Brand/Outlined. Rounded (pill) and Labeled (ON/OFF text) are boolean variant properties — one component set, all variants in the right panel.',
 
+  /* ONE master — square by default. Rounded=True rebinds track+thumb to toggle/radius.
+     Labeled=True builds the HUG track directly (no master instance). */
   masters: {
-    /* Pill track — rootRadiusPath overrides all 4 sizeBindings.root corners
-       to toggle/radius (9999) at master-build time. Thumb stays circular. */
     'Switch': {
-      thumbXVar:      'toggle/thumb-inset',
-      rootRadiusPath: 'toggle/radius'
-    },
-    /* Pill track with ON/OFF text labels (HUG width). isLabeled = true means no
-       physical master component is created; labeled variants are built directly. */
-    'Switch Labeled': {
-      thumbXVar:      'toggle/thumb-inset',
-      rootRadiusPath: 'toggle/radius',
-      isLabeled:      true
-    },
-    /* Square track — corners from sizeBindings.root (toggle/radius-square 6px).
-       thumbRadiusPath overrides thumb corners to match the square track shape. */
-    'Switch Square': {
-      thumbXVar:       'toggle/thumb-inset',
-      thumbRadiusPath: 'toggle/radius-square'
-    },
-    /* Square track with ON/OFF text labels (HUG width). */
-    'Switch Square Labeled': {
-      thumbXVar:       'toggle/thumb-inset',
-      thumbRadiusPath: 'toggle/radius-square',
-      isLabeled:       true
+      thumbXVar: 'toggle/thumb-inset'
+      /* No rootRadiusPath: track corners use sizeBindings default (toggle/radius-square).
+         No thumbRadiusPath: thumb corners also use sizeBindings default (toggle/radius-square).
+         Rounded=True variant axis rebinds both track and thumb to toggle/radius at build time. */
     }
   },
 
   /* comp-size variable paths.
-     root.corners → toggle/radius-square (6px default); pill 'Switch' master
-     overrides via rootRadiusPath → toggle/radius (9999) at master-build time.
-     thumb.corners → toggle/radius (9999 circle) by default; 'Switch Square' overrides
-     via thumbRadiusPath → toggle/radius-square (6px) for a matching square thumb.
-     thumbY → toggle/thumb-inset (2px; centred at sizes micro–small; slight drift at medium+). */
+     Both track and thumb default to toggle/radius-square (6px) — the Rounded=False shape.
+     Rounded=True rebinds all corners to toggle/radius (9999) via radiusRoundedPath. */
   sizeBindings: {
     root: {
       width:             'toggle/track-w',
@@ -1400,26 +1383,25 @@ var TOGGLE_BLUEPRINT = {
     thumb: {
       width:             'toggle/thumb-size',
       height:            'toggle/thumb-size',
-      topLeftRadius:     'toggle/radius',
-      topRightRadius:    'toggle/radius',
-      bottomLeftRadius:  'toggle/radius',
-      bottomRightRadius: 'toggle/radius'
+      topLeftRadius:     'toggle/radius-square',
+      topRightRadius:    'toggle/radius-square',
+      bottomLeftRadius:  'toggle/radius-square',
+      bottomRightRadius: 'toggle/radius-square'
     },
     thumbY: 'toggle/thumb-inset'
   },
 
   families: {
-
-    /* ── NEUTRAL (default) — neutral grey off → success green on ── */
-    'Neutral': {
-      types:  ['Default'],
+    /* ONE family — Neutral/Brand/Outlined are types (rows in the component set).
+       OFF track: neutral-component-bg-default=#6B7680 (4.64:1 vs white) ✅ WCAG 1.4.11.
+       ON track: success green (Neutral/Outlined) or brand blue (Brand). */
+    'Toggle': {
+      types:  ['Neutral', 'Brand', 'Outlined'],
       states: ['Off', 'Off-Hover', 'Off-Focus', 'Off-Disabled',
                'On',  'On-Hover',  'On-Focus',  'On-Disabled'],
       stateOverrides: {
-        'Default': {
-          /* neutral t3Mode gives neutral-component-bg-default=#6B7680 (4.64:1 vs white)
-             All surface-adaptive T2 component/bg tokens resolve to white or near-white
-             (1.00–1.23:1) — they are designed for button borders, not filled tracks. */
+        /* ── NEUTRAL — grey off → success green on ─────────────────── */
+        'Neutral': {
           'Off':          { t3Mode: 'neutral', fill: { t3: 'component/bg-default' } },
           'Off-Hover':    { t3Mode: 'neutral', fill: { t3: 'component/bg-hover' } },
           'Off-Focus':    { t3Mode: 'neutral', fill: { t3: 'component/bg-default' },
@@ -1431,17 +1413,23 @@ var TOGGLE_BLUEPRINT = {
                             stroke: { t3: 'component/outline-default' }, strokeWeight: 2, thumbXOverride: 'toggle/thumb-x-on' },
           'On-Disabled':  { t3Mode: 'success', fill: { t3: 'component/bg-default' },
                             componentOpacity: 0.5, thumbXOverride: 'toggle/thumb-x-on' }
-        }
-      }
-    },
-
-    /* ── OUTLINED — transparent + border off → success green on ──── */
-    'Outlined': {
-      types:  ['Default'],
-      states: ['Off', 'Off-Hover', 'Off-Focus', 'Off-Disabled',
-               'On',  'On-Hover',  'On-Focus',  'On-Disabled'],
-      stateOverrides: {
-        'Default': {
+        },
+        /* ── BRAND — grey off → brand blue on ─────────────────────── */
+        'Brand': {
+          'Off':          { t3Mode: 'neutral', fill: { t3: 'component/bg-default' } },
+          'Off-Hover':    { t3Mode: 'neutral', fill: { t3: 'component/bg-hover' } },
+          'Off-Focus':    { t3Mode: 'neutral', fill: { t3: 'component/bg-default' },
+                            stroke: { t3: 'component/outline-default' }, strokeWeight: 2 },
+          'Off-Disabled': { t3Mode: 'neutral', fill: { t3: 'component/bg-default' }, componentOpacity: 0.5 },
+          'On':           { t3Mode: 'brand',   fill: { t3: 'component/bg-default' }, thumbXOverride: 'toggle/thumb-x-on' },
+          'On-Hover':     { t3Mode: 'brand',   fill: { t3: 'component/bg-hover' },  thumbXOverride: 'toggle/thumb-x-on' },
+          'On-Focus':     { t3Mode: 'brand',   fill: { t3: 'component/bg-default' },
+                            stroke: { t3: 'component/outline-default' }, strokeWeight: 2, thumbXOverride: 'toggle/thumb-x-on' },
+          'On-Disabled':  { t3Mode: 'brand',   fill: { t3: 'component/bg-default' },
+                            componentOpacity: 0.5, thumbXOverride: 'toggle/thumb-x-on' }
+        },
+        /* ── OUTLINED — transparent + border off → success green on ── */
+        'Outlined': {
           'Off':          { stroke: 'default/component/outline-default', strokeWeight: 2 },
           'Off-Hover':    { fill: 'default/component/bg-hover',
                             stroke: 'default/component/outline-hover', strokeWeight: 2 },
@@ -1455,27 +1443,6 @@ var TOGGLE_BLUEPRINT = {
                             stroke: { t3: 'component/outline-default' }, strokeWeight: 2, thumbXOverride: 'toggle/thumb-x-on' },
           'On-Disabled':  { t3Mode: 'success', fill: { t3: 'component/bg-default' },
                             componentOpacity: 0.5, thumbXOverride: 'toggle/thumb-x-on' }
-        }
-      }
-    },
-
-    /* ── BRAND (secondary) — neutral grey off → brand blue on ─── */
-    'Brand': {
-      types:  ['Default'],
-      states: ['Off', 'Off-Hover', 'Off-Focus', 'Off-Disabled',
-               'On',  'On-Hover',  'On-Focus',  'On-Disabled'],
-      stateOverrides: {
-        'Default': {
-          'Off':          { t3Mode: 'neutral', fill: { t3: 'component/bg-default' } },
-          'Off-Hover':    { t3Mode: 'neutral', fill: { t3: 'component/bg-hover' } },
-          'Off-Focus':    { t3Mode: 'neutral', fill: { t3: 'component/bg-default' },
-                            stroke: { t3: 'component/outline-default' }, strokeWeight: 2 },
-          'Off-Disabled': { t3Mode: 'neutral', fill: { t3: 'component/bg-default' }, componentOpacity: 0.5 },
-          'On':           { t3Mode: 'brand', fill: { t3: 'component/bg-default' }, thumbXOverride: 'toggle/thumb-x-on' },
-          'On-Hover':     { t3Mode: 'brand', fill: { t3: 'component/bg-hover' },  thumbXOverride: 'toggle/thumb-x-on' },
-          'On-Focus':     { t3Mode: 'brand', fill: { t3: 'component/bg-default' },
-                            stroke: { t3: 'component/outline-default' }, strokeWeight: 2, thumbXOverride: 'toggle/thumb-x-on' },
-          'On-Disabled':  { t3Mode: 'brand', fill: { t3: 'component/bg-default' }, componentOpacity: 0.5, thumbXOverride: 'toggle/thumb-x-on' }
         }
       }
     }
@@ -4724,7 +4691,9 @@ async function generateComponentFromBlueprint(blueprint) {
         famOverrides = family.stateOverrides;
       }
 
-      var setDisplayName = BP.name + ' / ' + familyName + ' / ' + mName;
+      var setDisplayName = BP.singleFamily
+        ? mName
+        : (BP.name + ' / ' + familyName + ' / ' + mName);
 
       var components = []; /* { component, type, state, rounded } */
 
@@ -4755,9 +4724,13 @@ async function generateComponentFromBlueprint(blueprint) {
                           || compSizeVars['button/radius-rounded']
                           || compSizeVars['button/default/radius-rounded'];
       /* skipRounded: true → the component is always pill-shaped; skip the
-         Rounded=True axis entirely so the variant set stays clean. */
+         Rounded=True axis entirely so the variant set stays clean.
+         labeledAxis: true → add Labeled=True/False boolean variant property. */
       var roundedValues = BP.skipRounded ? [false] : [false, true];
+      var labeledValues = BP.labeledAxis ? [false, true] : [false];
 
+      for (var li2 = 0; li2 < labeledValues.length; li2++) {
+        var isLabeledIter = labeledValues[li2];
       for (var ri2 = 0; ri2 < roundedValues.length; ri2++) {
         var isRounded = roundedValues[ri2];
       for (var ti = 0; ti < famTypes.length; ti++) {
@@ -4767,15 +4740,11 @@ async function generateComponentFromBlueprint(blueprint) {
           var overrides = famOverrides[typeName] && famOverrides[typeName][stateName];
           if (!overrides) continue;
 
-          /* skipRounded → omit Rounded property from variant name so the
-             ComponentSet doesn't expose a superfluous axis to designers. */
-          /* Labeled masters produce single-type sets — drop the redundant
-             Type axis so the component panel only shows the State picker. */
-          var _variantName = masterCfg.isLabeled
-            ? 'State=' + stateName
-            : BP.skipRounded
-              ? 'Type=' + typeName + ', State=' + stateName
-              : 'Type=' + typeName + ', State=' + stateName + ', Rounded=' + (isRounded ? 'True' : 'False');
+          /* Build the full variant name from all active axes. */
+          var _labeledSuffix = BP.labeledAxis ? (', Labeled=' + (isLabeledIter ? 'True' : 'False')) : '';
+          var _variantName = BP.skipRounded
+            ? 'Type=' + typeName + ', State=' + stateName + _labeledSuffix
+            : 'Type=' + typeName + ', State=' + stateName + ', Rounded=' + (isRounded ? 'True' : 'False') + _labeledSuffix;
 
           /* SAFE_REBUILD: reuse the existing COMPONENT node so placed instances
              keep their mainComponent reference (same node ID). Clear its
@@ -4832,7 +4801,7 @@ async function generateComponentFromBlueprint(blueprint) {
              ON  states: LabelOn opacity=1, LabelOff opacity=0.
              No thumbXOverride — position is implicit from visible child ordering.
              Width HUGs text + thumb (wider than fixed-width Default toggle).    */
-          if (BP.kind === 'track-thumb' && masterCfg.isLabeled) {
+          if (BP.kind === 'track-thumb' && (masterCfg.isLabeled || isLabeledIter)) {
             var _lblIsOn  = (stateName.indexOf('On') === 0);
             /* Thumb-side inset = (track-h - thumb-size)/2 = (24-20)/2 = 2px.
                Matches the Default toggle OFF position so the thumb circle sits
@@ -4862,9 +4831,9 @@ async function generateComponentFromBlueprint(blueprint) {
             var _lblHVar = compSizeVars['toggle/track-h'];
             if (_lblHVar) { await tryBindVar(varComp, 'height', _lblHVar); stats.bindings++; }
 
-            /* Bind track corner radii — pill (9999) or square (6px) per master */
-            var _lblTrackRadVar = masterCfg.rootRadiusPath
-              ? compSizeVars[masterCfg.rootRadiusPath]
+            /* Bind track corner radii — pill (9999) when Rounded=True, square (6px) otherwise */
+            var _lblTrackRadVar = isRounded
+              ? compSizeVars[BP.radiusRoundedPath || 'toggle/radius']
               : compSizeVars['toggle/radius-square'];
             if (_lblTrackRadVar) {
               var _lbRadKeys = ['topLeftRadius','topRightRadius','bottomLeftRadius','bottomRightRadius'];
@@ -4927,7 +4896,7 @@ async function generateComponentFromBlueprint(blueprint) {
               stats.bindings += 2;
             }
             /* Thumb radius — circle for Switch, square for Switch Square */
-            var _lbThRadVar = compSizeVars[masterCfg.thumbRadiusPath || 'toggle/radius'];
+            var _lbThRadVar = compSizeVars[isRounded ? (BP.radiusRoundedPath || 'toggle/radius') : 'toggle/radius-square'];
             if (_lbThRadVar) {
               var _lbtrKeys = ['topLeftRadius','topRightRadius','bottomLeftRadius','bottomRightRadius'];
               for (var _lbt = 0; _lbt < _lbtrKeys.length; _lbt++) {
@@ -4977,8 +4946,9 @@ async function generateComponentFromBlueprint(blueprint) {
              to the radiusRoundedPath variable (pill shape).
              For track-thumb (toggle): rebind only the INSTANCE root (the track);
              the Thumb child is bound to toggle/radius (9999) in the master
-             and must NOT be rebound here — the thumb is always a circle.
-             For buttons: behavior unchanged (rebinds instance root corners). */
+             For track-thumb (toggle): also rebinds the Thumb child so track+thumb
+             both become pill/circle on Rounded=True.
+             For buttons: behavior unchanged (rebinds instance root corners only). */
           if (isRounded && radiusRoundedVar) {
             try {
               await tryBindVar(instance, 'topLeftRadius',     radiusRoundedVar);
@@ -4988,6 +4958,16 @@ async function generateComponentFromBlueprint(blueprint) {
               stats.bindings += 4;
             } catch (rre) {
               log('Rounded radius bind failed (' + familyName + '/' + typeName + '/' + stateName + '): ' + rre.message);
+            }
+            /* track-thumb: also make the Thumb child circular */
+            if (BP.kind === 'track-thumb') {
+              var _rtThumb = instance.findOne(function(n){ return n.name === 'Thumb'; });
+              if (_rtThumb) {
+                var _rtRadKeys = ['topLeftRadius','topRightRadius','bottomLeftRadius','bottomRightRadius'];
+                for (var _rtk = 0; _rtk < _rtRadKeys.length; _rtk++) {
+                  try { if (await tryBindVar(_rtThumb, _rtRadKeys[_rtk], radiusRoundedVar)) stats.bindings++; } catch (e) {}
+                }
+              }
             }
           }
 
@@ -5316,6 +5296,7 @@ async function generateComponentFromBlueprint(blueprint) {
         }
       }
       } /* end rounded loop */
+      } /* end labeled loop */
 
       /* ── Combine into ComponentSet ── */
       figma.ui.postMessage({ type: 'gen-progress', text: 'Combining ' + setDisplayName + '…' });
