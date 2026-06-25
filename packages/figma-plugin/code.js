@@ -1423,11 +1423,11 @@ var TOGGLE_BLUEPRINT = {
       stateOverrides: {
         /* ── NEUTRAL — grey off → success green on ─────────────────── */
         'Neutral': {
-          'Off':          { fill: 'default/content/subtle' },
-          'Off-Hover':    { fill: 'default/content/faint' },
-          'Off-Focus':    { fill: 'default/content/subtle',
-                            stroke: 'default/component/outline', strokeWeight: 2 },
-          'Off-Disabled': { fill: 'default/content/subtle', componentOpacity: 0.5 },
+          'Off':          { solidFill: { r: 0.420, g: 0.463, b: 0.502 } },
+          'Off-Hover':    { solidFill: { r: 0.478, g: 0.522, b: 0.565 } },
+          'Off-Focus':    { solidFill: { r: 0.420, g: 0.463, b: 0.502 },
+                            stroke: 'default/component/outline-default', strokeWeight: 2 },
+          'Off-Disabled': { solidFill: { r: 0.420, g: 0.463, b: 0.502 }, componentOpacity: 0.5 },
           'On':           { t3Mode: 'success', fill: { t3: 'component/bg-default' }, thumbXOverride: 'toggle/thumb-x-on' },
           'On-Hover':     { t3Mode: 'success', fill: { t3: 'component/bg-hover' },  thumbXOverride: 'toggle/thumb-x-on' },
           'On-Focus':     { t3Mode: 'success', fill: { t3: 'component/bg-default' },
@@ -1437,11 +1437,11 @@ var TOGGLE_BLUEPRINT = {
         },
         /* ── BRAND — grey off → brand blue on ──────────────────────── */
         'Brand': {
-          'Off':          { fill: 'default/content/subtle' },
-          'Off-Hover':    { fill: 'default/content/faint' },
-          'Off-Focus':    { fill: 'default/content/subtle',
-                            stroke: 'default/component/outline', strokeWeight: 2 },
-          'Off-Disabled': { fill: 'default/content/subtle', componentOpacity: 0.5 },
+          'Off':          { solidFill: { r: 0.420, g: 0.463, b: 0.502 } },
+          'Off-Hover':    { solidFill: { r: 0.478, g: 0.522, b: 0.565 } },
+          'Off-Focus':    { solidFill: { r: 0.420, g: 0.463, b: 0.502 },
+                            stroke: 'default/component/outline-default', strokeWeight: 2 },
+          'Off-Disabled': { solidFill: { r: 0.420, g: 0.463, b: 0.502 }, componentOpacity: 0.5 },
           'On':           { t3Mode: 'brand',   fill: { t3: 'component/bg-default' }, thumbXOverride: 'toggle/thumb-x-on' },
           'On-Hover':     { t3Mode: 'brand',   fill: { t3: 'component/bg-hover' },  thumbXOverride: 'toggle/thumb-x-on' },
           'On-Focus':     { t3Mode: 'brand',   fill: { t3: 'component/bg-default' },
@@ -1451,12 +1451,12 @@ var TOGGLE_BLUEPRINT = {
         },
         /* ── OUTLINED — transparent + border off → success green on ── */
         'Outlined': {
-          'Off':          { stroke: 'default/component/outline', strokeWeight: 2 },
-          'Off-Hover':    { fill: 'default/component/bg-hover',
-                            stroke: 'default/component/outline-hover', strokeWeight: 2 },
+          'Off':          { stroke: 'default/component/outline-default', strokeWeight: 2 },
+          'Off-Hover':    { fill: 'default/component/bg-default',
+                            stroke: 'default/component/outline-default', strokeWeight: 2 },
           'Off-Focus':    { stroke: { t3: 'component/outline-default' }, strokeWeight: 2,
                             t3Mode: 'brand' },
-          'Off-Disabled': { stroke: 'default/component/outline', strokeWeight: 2,
+          'Off-Disabled': { stroke: 'default/component/outline-default', strokeWeight: 2,
                             componentOpacity: 0.5 },
           'On':           { t3Mode: 'success', fill: { t3: 'component/bg-default' }, thumbXOverride: 'toggle/thumb-x-on' },
           'On-Hover':     { t3Mode: 'success', fill: { t3: 'component/bg-hover' },  thumbXOverride: 'toggle/thumb-x-on' },
@@ -5236,11 +5236,19 @@ async function generateComponentFromBlueprint(blueprint) {
           }
 
           /* Fill override */
-          if (overrides.fill) {
+          if (overrides.solidFill) {
+            /* Literal solid color — no variable lookup, always works */
+            instance.fills = [{ type: 'SOLID', color: overrides.solidFill, opacity: 1 }];
+          } else if (overrides.fill) {
             var fillVar = resolveColorSpec(overrides.fill, t2Vars, t3Vars);
             if (fillVar) {
               setPaintBoundToVariable(instance, 'fills', fillVar);
               stats.bindings++;
+            } else {
+              /* Variable not found — apply literal fallback if provided */
+              if (overrides.fillFallback) {
+                instance.fills = [{ type: 'SOLID', color: overrides.fillFallback, opacity: 1 }];
+              }
             }
           } else {
             instance.fills = [];
