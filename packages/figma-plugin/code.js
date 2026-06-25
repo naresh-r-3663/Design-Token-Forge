@@ -1356,6 +1356,7 @@ var TOGGLE_BLUEPRINT = {
   singleFamily: true,       /* display name = master name only (no " / FamilyName") */
   radiusRoundedPath: 'toggle/radius', /* pill (9999) — bound on Rounded=True variants */
   legacyOwners: ['Toggle'], /* old BP.name — ensures old Toggle/... sets are cleaned up */
+  ledgerKey: 'toggle',      /* registry key the UI reads; must not change with BP.name */
   description: 'Binary on/off switch. Type: Neutral/Brand/Outlined. Rounded (pill) and Labeled (ON/OFF text) are boolean variant properties — one component set, all variants in the right panel.',
 
   /* ONE master — square by default. Rounded=True rebinds track+thumb to toggle/radius.
@@ -5804,7 +5805,7 @@ async function generateComponentFromBlueprint(blueprint) {
      versions['split-button']; bare blueprint.name.toLowerCase() would
      write 'split button' (with space) and the row would forever show
      NEW even after a successful build. */
-  var ledgerKey = String(blueprint.name || '').toLowerCase().replace(/\s+/g, '-');
+  var ledgerKey = String(blueprint.ledgerKey || blueprint.name || '').toLowerCase().replace(/\s+/g, '-');
   var _priorEntry = existingVersions[ledgerKey] || {};
 
   existingVersions[ledgerKey] = {
