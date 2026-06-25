@@ -2979,20 +2979,22 @@ async function generateComponentFromBlueprint(blueprint) {
   log('Presentation: T2 modes = ' + Object.keys(t2Modes).join(', '));
   log('Presentation: T3 modes = ' + Object.keys(t3Modes).join(', '));
 
-  /* ── Bootstrap T3 neutral mode if absent ──────────────────────────────────
-     When Update Variables hasn't been run yet the T3 collection may only have
-     brand/success/warning/danger/info — NOT neutral.
-     Without neutral, toggles in OFF state default to brand mode (blue).
-     Auto-create neutral here so the blueprint works without a separate step.
-     Strategy: try T1 VARIABLE_ALIAS (semantic/neutral/*); fall back to literal
-     hex so the mode is always usable even before T1 neutrals are created.
-     If Update Variables is run later it will overwrite these values in-place
-     with the proper T1 alias chain (the mode ID is preserved). */
-  if (t3Col && !t3Modes['neutral']) {
+  /* ── Bootstrap / repair T3 neutral mode ───────────────────────────────────
+     Runs on EVERY blueprint build. Creates the mode if absent; always
+     re-writes the values so stale/wrong values from a previous partial run
+     are overwritten with correct ones.
+     Strategy: T1 VARIABLE_ALIAS (semantic/neutral/*) preferred;
+               literal hex fallback if T1 neutrals don't exist yet. */
+  if (t3Col) {
     try {
-      var _nmId = t3Col.addMode('neutral');
-      t3Modes['neutral'] = _nmId;
-      log('T3 neutral mode bootstrapped id=' + _nmId);
+      var _nmId = t3Modes['neutral'];
+      if (!_nmId) {
+        _nmId = t3Col.addMode('neutral');
+        t3Modes['neutral'] = _nmId;
+        log('T3 neutral mode created id=' + _nmId);
+      } else {
+        log('T3 neutral mode exists id=' + _nmId + ' — refreshing values');
+      }
 
       /* Build T1 name→variable map for alias creation */
       var _t1ByName = {};
@@ -3004,23 +3006,22 @@ async function generateComponentFromBlueprint(blueprint) {
         }
       }
 
-      /* Literal fallbacks (correct in both themes — proxy until Update
-         Variables creates the full T0→T1→T3 alias chain). */
-      var _nGrey  = { r: 0.420, g: 0.463, b: 0.502, a: 1 }; /* #6B7680 bg-default */
-      var _nHover = { r: 0.478, g: 0.522, b: 0.565, a: 1 }; /* ~#7A8590 bg-hover */
-      var _nPress = { r: 0.376, g: 0.416, b: 0.455, a: 1 }; /* ~#606A74 bg-press */
-      var _nWhite = { r: 1, g: 1, b: 1, a: 1 };              /* #FFFFFF on-comp */
-      var _nOutln = { r: 0.420, g: 0.463, b: 0.502, a: 1 }; /* same grey outline */
-      var _nCtnBg = { r: 0.867, g: 0.890, b: 0.910, a: 1 }; /* container bg */
-      var _nCtnTx = { r: 0.160, g: 0.184, b: 0.204, a: 1 }; /* on-container text */
+      /* Literal hex fallbacks (light-theme neutral grey + white on-comp).
+         Used when T1 semantic/neutral/* variables don't exist yet. */
+      var _nGrey  = { r: 0.420, g: 0.463, b: 0.502, a: 1 }; /* #6B7680 */
+      var _nHover = { r: 0.478, g: 0.522, b: 0.565, a: 1 }; /* ~#7A8590 */
+      var _nPress = { r: 0.376, g: 0.416, b: 0.455, a: 1 }; /* ~#606A74 */
+      var _nWhite = { r: 1, g: 1, b: 1, a: 1 };
       var _nSep   = { r: 0.420, g: 0.463, b: 0.502, a: 1 };
+      var _nCtnBg = { r: 0.867, g: 0.890, b: 0.910, a: 1 };
+      var _nCtnTx = { r: 0.160, g: 0.184, b: 0.204, a: 1 };
       var _neutralLiterals = {
         'component/bg-default':        _nGrey,
         'component/bg-hover':          _nHover,
         'component/bg-pressed':        _nPress,
-        'component/outline-default':   _nOutln,
-        'component/outline-hover':     _nOutln,
-        'component/outline-pressed':   _nOutln,
+        'component/outline-default':   _nSep,
+        'component/outline-hover':     _nSep,
+        'component/outline-pressed':   _nSep,
         'component/separator':         _nSep,
         'oncomponent-content/default': _nWhite,
         'content/default':             _nWhite,
@@ -3035,12 +3036,11 @@ async function generateComponentFromBlueprint(blueprint) {
         'oncontainer-content/default': _nCtnTx
       };
 
-      /* Set each T3 variable's neutral-mode value */
+      /* Write every T3 variable's neutral-mode value */
       var _t3ColVarIds = t3Col.variableIds || [];
       for (var _t3vi = 0; _t3vi < _t3ColVarIds.length; _t3vi++) {
         var _t3v = await figma.variables.getVariableByIdAsync(_t3ColVarIds[_t3vi]);
         if (!_t3v) continue;
-        /* T3 var 'component/bg-default' → T1 'semantic/neutral/component-bg-default' */
         var _t1AliasName = 'semantic/neutral/' + _t3v.name.replace(/\//g, '-');
         var _t1AliasVar  = _t1ByName[_t1AliasName];
         try {
@@ -3050,7 +3050,7 @@ async function generateComponentFromBlueprint(blueprint) {
             _t3v.setValueForMode(_nmId, _neutralLiterals[_t3v.name]);
           }
         } catch (_t3vErr) {
-          log('T3 neutral set failed ' + _t3v.name + ': ' + _t3vErr.message);
+          log('T3 neutral write failed ' + _t3v.name + ': ' + _t3vErr.message);
         }
       }
     } catch (_nmErr) {
